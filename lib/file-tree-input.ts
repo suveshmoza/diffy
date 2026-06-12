@@ -1,13 +1,15 @@
 import {
   prepareFileTreeInput,
   type FileTreePreparedInput,
+  type FileTreeRowDecoration,
   type GitStatusEntry,
 } from '@pierre/trees';
 
+import { formatReviewCommentDecorationTitle } from './file-tree-comment-badge';
 import type { GitHubPullRequestFile } from './github';
 
 export type PreparedFileTreeInput = {
-  annotationsByPath: Map<string, { text: string; title: string }>;
+  annotationsByPath: Map<string, FileTreeRowDecoration>;
   gitStatus: GitStatusEntry[];
   paths: string[];
   preparedInput: FileTreePreparedInput;
@@ -18,15 +20,12 @@ export function createFileTreeInput(
   reviewCommentCountByPath: ReadonlyMap<string, number> = new Map(),
 ): PreparedFileTreeInput {
   const paths = files.map((file) => file.filename);
-  const annotationsByPath = new Map<string, { text: string; title: string }>();
+  const annotationsByPath = new Map<string, FileTreeRowDecoration>();
   const gitStatus: GitStatusEntry[] = [];
 
   for (const file of files) {
     const reviewCommentCount = reviewCommentCountByPath.get(file.filename) ?? 0;
-    annotationsByPath.set(file.filename, {
-      text: formatFileTreeAnnotation(file, reviewCommentCount),
-      title: formatFileTreeAnnotationTitle(file, reviewCommentCount),
-    });
+    annotationsByPath.set(file.filename, formatFileTreeRowDecoration(file, reviewCommentCount));
     gitStatus.push({ path: file.filename, status: toTreeGitStatus(file.status) });
   }
 
@@ -38,27 +37,24 @@ export function createFileTreeInput(
   };
 }
 
-function formatFileTreeAnnotation(file: GitHubPullRequestFile, reviewCommentCount: number): string {
-  const changeSummary = formatFileChangeAnnotation(file);
-  if (reviewCommentCount === 0) {
-    return changeSummary;
-  }
-
-  const label = reviewCommentCount === 1 ? 'comment' : 'comments';
-  return `${changeSummary} · ${reviewCommentCount} ${label}`;
-}
-
-function formatFileTreeAnnotationTitle(
+function formatFileTreeRowDecoration(
   file: GitHubPullRequestFile,
   reviewCommentCount: number,
-): string {
+): FileTreeRowDecoration {
+  const changeSummary = formatFileChangeAnnotation(file);
   const changeTitle = `${file.changes.toLocaleString()} total changes: +${file.additions.toLocaleString()} / -${file.deletions.toLocaleString()}`;
+
   if (reviewCommentCount === 0) {
-    return changeTitle;
+    return {
+      text: changeSummary,
+      title: changeTitle,
+    };
   }
 
-  const commentLabel = reviewCommentCount === 1 ? 'review comment' : 'review comments';
-  return `${changeTitle} · ${reviewCommentCount.toLocaleString()} ${commentLabel}`;
+  return {
+    text: `${changeSummary} · `,
+    title: formatReviewCommentDecorationTitle(changeTitle, reviewCommentCount),
+  };
 }
 
 function formatFileChangeAnnotation(file: GitHubPullRequestFile): string {

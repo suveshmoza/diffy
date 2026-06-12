@@ -11,6 +11,11 @@ import {
   type RefObject,
 } from 'react';
 
+import {
+  buildCommentBadgeCountCss,
+  FILE_TREE_REVIEW_COMMENT_TITLE_MARKER,
+} from '@/lib/file-tree-comment-badge';
+import { FILE_TREE_COMMENT_ICON_MASK_URL } from '@/lib/file-tree-comment-icon';
 import { createFileTreeInput } from '@/lib/file-tree-input';
 import type { GitHubPullRequestFile } from '@/lib/github';
 
@@ -24,11 +29,52 @@ type FileTreePanelProps = {
   onSelectPath: (path: string) => void;
 };
 
+const FILE_TREE_COMMENT_BADGE_CSS = `
+  [data-item-section="decoration"] {
+    align-items: center;
+  }
+
+  [data-item-section="decoration"] > span[title*="${FILE_TREE_REVIEW_COMMENT_TITLE_MARKER}"] {
+    align-items: center;
+    display: inline-flex;
+    gap: 3px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  [data-item-section="decoration"] > span[title*="${FILE_TREE_REVIEW_COMMENT_TITLE_MARKER}"]::before {
+    background-color: var(--trees-fg-muted, #8b949e);
+    content: '';
+    display: block;
+    flex-shrink: 0;
+    height: 11px;
+    -webkit-mask-image: ${FILE_TREE_COMMENT_ICON_MASK_URL};
+    mask-image: ${FILE_TREE_COMMENT_ICON_MASK_URL};
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    order: 2;
+    width: 11px;
+  }
+
+  [data-item-section="decoration"] > span[title*="${FILE_TREE_REVIEW_COMMENT_TITLE_MARKER}"]::after {
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    order: 3;
+  }
+`;
+
 // Pierre renders its own search input in shadow DOM; we use a custom header instead.
-const HIDE_BUILTIN_SEARCH_CSS = `
+const FILE_TREE_PANEL_BASE_CSS = `
   [data-file-tree-search-container] {
     display: none !important;
   }
+
+  :host {
+    --trees-padding-inline-override: 0;
+  }
+
+  ${FILE_TREE_COMMENT_BADGE_CSS}
 `;
 
 type FileTreeSearchHeaderProps = {
@@ -150,6 +196,10 @@ export function FileTreePanel({
     () => createFileTreeInput(files, reviewCommentCountByPath),
     [files, reviewCommentCountByPath],
   );
+  const fileTreePanelCss = useMemo(
+    () => `${FILE_TREE_PANEL_BASE_CSS}\n${buildCommentBadgeCountCss(reviewCommentCountByPath)}`,
+    [reviewCommentCountByPath],
+  );
   const annotationsByPathRef = useRef(treeInput.annotationsByPath);
   const preparedInputRef = useRef(treeInput.preparedInput);
   const [searchQuery, setSearchQuery] = useState('');
@@ -178,7 +228,7 @@ export function FileTreePanel({
     search: true,
     fileTreeSearchMode: 'hide-non-matches',
     searchBlurBehavior: 'retain',
-    unsafeCSS: HIDE_BUILTIN_SEARCH_CSS,
+    unsafeCSS: fileTreePanelCss,
     initialVisibleRowCount: TREE_INITIAL_VISIBLE_ROW_COUNT,
     overscan: TREE_OVERSCAN,
     onSelectionChange: (selectedPaths) => {
