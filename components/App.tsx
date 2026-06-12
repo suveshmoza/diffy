@@ -41,6 +41,17 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
         return;
       }
 
+      const root = document.getElementById('github-pr-viewer-root');
+      const active = document.activeElement;
+      if (
+        root &&
+        active instanceof HTMLElement &&
+        root.contains(active) &&
+        (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
+      ) {
+        return;
+      }
+
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();

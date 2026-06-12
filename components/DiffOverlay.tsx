@@ -96,6 +96,10 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     refreshCodeViewLayout();
   }, [refreshCodeViewLayout, initialItems]);
 
+  const stopGitHubKeybindings = (event: React.KeyboardEvent) => {
+    event.stopPropagation();
+  };
+
   return (
     <>
       <div
@@ -108,6 +112,8 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         role='dialog'
         aria-modal='true'
         aria-label='Pull request diff'
+        onKeyDown={stopGitHubKeybindings}
+        onKeyUp={stopGitHubKeybindings}
       >
         <header className='gprv-header'>
           <div className='gprv-title'>
