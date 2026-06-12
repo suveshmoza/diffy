@@ -13,15 +13,11 @@
 
 **diffy** adds a `View Diff` button to GitHub pull request pages and opens the full change set in a fast, full-screen overlay powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com) `CodeView`.
 
+<https://github.com/user-attachments/assets/b1bd5acb-7538-4279-8a14-e03183198c3c>
 
+<https://github.com/user-attachments/assets/711071dc-7127-47e7-823d-2c174d6eb187>
 
-https://github.com/user-attachments/assets/b1bd5acb-7538-4279-8a14-e03183198c3c
-
-
-
-https://github.com/user-attachments/assets/711071dc-7127-47e7-823d-2c174d6eb187
-
-
+> This project was rebuilt after seeing [Linear View Diff](https://github.com/CarterMcAlister/linear-code-review) by [Carter McAlister](https://github.com/CarterMcAlister) — a Chrome extension that adds a **View Diff** button on Linear review pages and renders linked GitHub PRs with Pierre Trees and Pierre Diffs.
 
 ## Features
 
