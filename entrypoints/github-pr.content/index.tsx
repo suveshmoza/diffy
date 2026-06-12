@@ -1,4 +1,5 @@
 import { createRoot, type Root } from 'react-dom/client';
+
 import { App } from '@/components/App';
 import { prefetchPullRequestDiffData } from '@/lib/github';
 import {
@@ -8,6 +9,7 @@ import {
   removeOverlayRoot,
   syncViewDiffButton,
 } from '@/lib/github-page';
+
 import './style.css';
 
 export default defineContentScript({
@@ -28,7 +30,13 @@ export default defineContentScript({
       openPullRequestUrl = pullRequestUrl ?? location.href;
       const container = getOrCreateOverlayRoot();
       root ??= createRoot(container);
-      root.render(<App key={openPullRequestUrl} pullRequestUrl={openPullRequestUrl} onClose={closeOverlay} />);
+      root.render(
+        <App
+          key={openPullRequestUrl}
+          pullRequestUrl={openPullRequestUrl}
+          onClose={closeOverlay}
+        />,
+      );
     };
 
     const onOpen = (pullRequestUrl: string) => openOverlay(pullRequestUrl);

@@ -1,5 +1,5 @@
-import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { CodeViewHandle } from '@pierre/diffs/react';
+import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
 const CODE_VIEW_VIRTUALIZER_CONFIG = {
   overscrollSize: 900,
@@ -38,7 +38,9 @@ function refreshCodeViewInstance(viewerRef: RefObject<CodeViewHandle<undefined> 
   return true;
 }
 
-function scheduleCodeViewLayoutRefresh(viewerRef: RefObject<CodeViewHandle<undefined> | null>): void {
+function scheduleCodeViewLayoutRefresh(
+  viewerRef: RefObject<CodeViewHandle<undefined> | null>,
+): void {
   let frame = 0;
 
   const tick = () => {

@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { useWorkerPool } from '@pierre/diffs/react';
+import { useEffect } from 'react';
 
 type WorkerPoolRenderOptionsSyncProps = {
   theme: 'pierre-light' | 'pierre-dark';

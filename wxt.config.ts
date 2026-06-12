@@ -1,15 +1,14 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { defineConfig } from 'wxt';
+
 import type { Plugin } from 'vite';
+import { defineConfig } from 'wxt';
 
 function escapeToAscii(code: string): string {
   return code
     .split('')
     .map((ch) =>
-      ch.charCodeAt(0) <= 0x7f
-        ? ch
-        : '\\u' + ('0000' + ch.charCodeAt(0).toString(16)).slice(-4),
+      ch.charCodeAt(0) <= 0x7f ? ch : '\\u' + ('0000' + ch.charCodeAt(0).toString(16)).slice(-4),
     )
     .join('');
 }
@@ -77,10 +76,9 @@ export default defineConfig({
       : undefined,
   },
   manifest: {
-    version:'1.0.0',
+    version: '1.0.0',
     name: 'diffy',
-    description:
-      'Better PR diffs on GitHub',
+    description: 'Better PR diffs on GitHub',
     permissions: ['storage'],
     host_permissions: ['https://api.github.com/*', 'https://github.com/*'],
     web_accessible_resources: [
@@ -89,14 +87,14 @@ export default defineConfig({
         matches: ['https://github.com/*'],
       },
     ],
-    browser_specific_settings:{
-      gecko:{
-        id:"diffy@suveshmoza.com",
-        data_collection_permissions:{
-          required:['none']
-        }
-      }
-    }
+    browser_specific_settings: {
+      gecko: {
+        id: 'diffy@suveshmoza.com',
+        data_collection_permissions: {
+          required: ['none'],
+        },
+      },
+    },
   },
   vite: () => ({
     resolve: {

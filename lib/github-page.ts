@@ -113,7 +113,10 @@ export function removeOverlayRoot(): void {
   document.getElementById(ROOT_ID)?.remove();
 }
 
-function injectButton(onOpen: (pullRequestUrl: string) => void, onPrefetch: (pullRequestUrl: string) => void): void {
+function injectButton(
+  onOpen: (pullRequestUrl: string) => void,
+  onPrefetch: (pullRequestUrl: string) => void,
+): void {
   const ref = parseCurrentPullRequestUrl();
   if (!ref) {
     return;
@@ -163,7 +166,9 @@ function getMountedButton(): HTMLButtonElement | null {
 }
 
 function getPrHeaderRoots(): HTMLElement[] {
-  const roots = PR_HEADER_SELECTORS.flatMap((selector) => Array.from(document.querySelectorAll<HTMLElement>(selector)));
+  const roots = PR_HEADER_SELECTORS.flatMap((selector) =>
+    Array.from(document.querySelectorAll<HTMLElement>(selector)),
+  );
   return roots.length > 0 ? roots : [document.body];
 }
 
@@ -178,7 +183,9 @@ function queryInRoots<T extends Element>(roots: HTMLElement[], selector: string)
   return document.querySelector<T>(selector);
 }
 
-function findAnchorControl(headerRoots: HTMLElement[]): HTMLAnchorElement | HTMLButtonElement | null {
+function findAnchorControl(
+  headerRoots: HTMLElement[],
+): HTMLAnchorElement | HTMLButtonElement | null {
   for (const selector of FILES_TAB_SELECTORS) {
     const element = queryInRoots<HTMLAnchorElement | HTMLButtonElement>(headerRoots, selector);
     if (element) {
@@ -187,7 +194,9 @@ function findAnchorControl(headerRoots: HTMLElement[]): HTMLAnchorElement | HTML
   }
 
   for (const root of headerRoots) {
-    const controls = Array.from(root.querySelectorAll<HTMLAnchorElement | HTMLButtonElement>('a, button'));
+    const controls = Array.from(
+      root.querySelectorAll<HTMLAnchorElement | HTMLButtonElement>('a, button'),
+    );
     const filesTab = controls.find((control) => isFilesChangedControl(control));
     if (filesTab) {
       return filesTab;

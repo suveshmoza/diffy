@@ -1,5 +1,10 @@
 import { parsePatchFiles, type CodeViewItem } from '@pierre/diffs';
-import { buildPatchFromFiles, type GitHubPullRequestFile, type PullRequestDiffData } from './github';
+
+import {
+  buildPatchFromFiles,
+  type GitHubPullRequestFile,
+  type PullRequestDiffData,
+} from './github';
 
 export type CodeViewItemsResult = {
   items: CodeViewItem[];
@@ -48,7 +53,10 @@ function getCodeViewItemId(path: string, hasDiff: boolean): string {
   return hasDiff ? `diff:${path}` : `file:${path}`;
 }
 
-export function getCodeViewItemIdForFile(file: GitHubPullRequestFile, diffPathSet: ReadonlySet<string>): string {
+export function getCodeViewItemIdForFile(
+  file: GitHubPullRequestFile,
+  diffPathSet: ReadonlySet<string>,
+): string {
   return getCodeViewItemId(file.filename, isFileCoveredByDiff(file, diffPathSet));
 }
 
@@ -56,7 +64,10 @@ function addDiffPath(diffPathSet: Set<string>, path: string): void {
   diffPathSet.add(path);
 }
 
-function isFileCoveredByDiff(file: GitHubPullRequestFile, diffPathSet: ReadonlySet<string>): boolean {
+function isFileCoveredByDiff(
+  file: GitHubPullRequestFile,
+  diffPathSet: ReadonlySet<string>,
+): boolean {
   if (diffPathSet.has(file.filename)) {
     return true;
   }

@@ -44,7 +44,9 @@ const GITHUB_PULL_URL_PATTERN = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\
 const GITHUB_MAX_AGGREGATE_DIFF_FILES = 300;
 const pullRequestDiffCache = new Map<string, Promise<PullRequestDiffData>>();
 
-export function parseGitHubPullRequestUrl(url: string | null | undefined): GitHubPullRequestRef | null {
+export function parseGitHubPullRequestUrl(
+  url: string | null | undefined,
+): GitHubPullRequestRef | null {
   if (typeof url !== 'string' || url.length === 0) {
     return null;
   }
@@ -90,7 +92,9 @@ export function invalidatePullRequestDiffCache(ref: GitHubPullRequestRef): void 
   pullRequestDiffCache.delete(getPullRequestDiffCacheKey(ref));
 }
 
-export function fetchCachedPullRequestDiffData(ref: GitHubPullRequestRef): Promise<PullRequestDiffData> {
+export function fetchCachedPullRequestDiffData(
+  ref: GitHubPullRequestRef,
+): Promise<PullRequestDiffData> {
   const cacheKey = getPullRequestDiffCacheKey(ref);
   const cached = pullRequestDiffCache.get(cacheKey);
   if (cached) {
@@ -131,7 +135,10 @@ async function fetchAggregatePullRequestPatch(
   const diffHeaders = { ...headers, Accept: 'application/vnd.github.v3.diff' };
 
   if (pullRequest.changed_files > GITHUB_MAX_AGGREGATE_DIFF_FILES) {
-    return (await fetchFullPullRequestDiffWithFallbacks(ref, apiBase, diffHeaders, pullRequest)) ?? fallback();
+    return (
+      (await fetchFullPullRequestDiffWithFallbacks(ref, apiBase, diffHeaders, pullRequest)) ??
+      fallback()
+    );
   }
 
   try {
@@ -141,7 +148,10 @@ async function fetchAggregatePullRequestPatch(
       throw error;
     }
 
-    return (await fetchFullPullRequestDiffWithFallbacks(ref, apiBase, diffHeaders, pullRequest)) ?? fallback();
+    return (
+      (await fetchFullPullRequestDiffWithFallbacks(ref, apiBase, diffHeaders, pullRequest)) ??
+      fallback()
+    );
   }
 }
 
@@ -267,7 +277,10 @@ function createGitHubHeaders(token: string | null): Record<string, string> {
   };
 }
 
-async function fetchAllPullRequestFiles(url: string, headers: Record<string, string>): Promise<GitHubPullRequestFile[]> {
+async function fetchAllPullRequestFiles(
+  url: string,
+  headers: Record<string, string>,
+): Promise<GitHubPullRequestFile[]> {
   const files: GitHubPullRequestFile[] = [];
   let nextUrl: string | null = `${url}?per_page=100`;
 
@@ -314,6 +327,8 @@ function getNextLink(linkHeader: string | null): string | null {
 
 async function createGitHubError(response: Response): Promise<Error> {
   const body = await response.text().catch(() => '');
-  const message = body ? `${response.status} ${response.statusText}: ${body}` : `${response.status} ${response.statusText}`;
+  const message = body
+    ? `${response.status} ${response.statusText}: ${body}`
+    : `${response.status} ${response.statusText}`;
   return new Error(`GitHub API request failed (${message})`);
 }

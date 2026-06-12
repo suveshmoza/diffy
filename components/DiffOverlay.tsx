@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import diffsBaseCSS from '@pierre/diffs/dist/style.js';
 import { CodeView, WorkerPoolContextProvider, type CodeViewHandle } from '@pierre/diffs/react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
 import { buildCodeViewItems, getCodeViewItemIdForFile } from '@/lib/build-code-view-items';
 import {
   DEFAULT_DIFF_LAYOUT,
@@ -11,7 +13,7 @@ import {
 import { workerFactory } from '@/lib/diff-worker';
 import type { PullRequestDiffData } from '@/lib/github';
 import { getDiffTheme, getGitHubTheme, type GitHubTheme } from '@/lib/theme';
-import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
+
 import { FileTreePanel } from './FileTreePanel';
 import { WorkerPoolRenderOptionsSync } from './WorkerPoolRenderOptionsSync';
 
@@ -20,7 +22,10 @@ type DiffOverlayProps = {
   onClose: () => void;
 };
 
-const DIFF_WORKER_POOL_SIZE = Math.max(1, Math.min(4, Math.floor((navigator.hardwareConcurrency || 4) / 2)));
+const DIFF_WORKER_POOL_SIZE = Math.max(
+  1,
+  Math.min(4, Math.floor((navigator.hardwareConcurrency || 4) / 2)),
+);
 const DIFF_WORKER_RENDER_CACHE_SIZE = 200;
 
 export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
@@ -35,11 +40,14 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const diffTheme = getDiffTheme(theme);
   const isCodeViewHostReady = useCodeViewHostReady(codeViewHostRef);
 
-  const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } = useCodeViewLayoutRefresh(
-    viewerRef,
-    codeViewHostRef,
-    [initialItems, diffLayout, isSidebarCollapsed, diffTheme, isCodeViewHostReady],
-  );
+  const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
+    useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, [
+      initialItems,
+      diffLayout,
+      isSidebarCollapsed,
+      diffTheme,
+      isCodeViewHostReady,
+    ]);
 
   useEffect(() => {
     const observer = new MutationObserver(() => setTheme(getGitHubTheme()));
@@ -86,43 +94,71 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
 
   return (
     <>
-      <div className="gprv-backdrop" onClick={onClose} />
-      <section className="gprv-modal" data-theme={theme} role="dialog" aria-modal="true" aria-label="Pull request diff">
-        <header className="gprv-header">
-          <div className="gprv-title">
+      <div
+        className='gprv-backdrop'
+        onClick={onClose}
+      />
+      <section
+        className='gprv-modal'
+        data-theme={theme}
+        role='dialog'
+        aria-modal='true'
+        aria-label='Pull request diff'
+      >
+        <header className='gprv-header'>
+          <div className='gprv-title'>
             <strong>{data.pullRequest.title}</strong>
             <span>
-              {data.pullRequest.base.repo.full_name} #{data.pullRequest.number} · {data.pullRequest.base.ref} ←{' '}
-              {data.pullRequest.head.ref}
+              {data.pullRequest.base.repo.full_name} #{data.pullRequest.number} ·{' '}
+              {data.pullRequest.base.ref} ← {data.pullRequest.head.ref}
             </span>
           </div>
-          <button className="gprv-header-button" type="button" onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}>
+          <button
+            className='gprv-header-button'
+            type='button'
+            onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
+          >
             {isSidebarCollapsed ? 'Show files' : 'Hide files'}
           </button>
-          <DiffLayoutToggle value={diffLayout} onChange={updateDiffLayout} />
-          <button className="gprv-close" type="button" onClick={onClose} aria-label="Close View Diff">
+          <DiffLayoutToggle
+            value={diffLayout}
+            onChange={updateDiffLayout}
+          />
+          <button
+            className='gprv-close'
+            type='button'
+            onClick={onClose}
+            aria-label='Close View Diff'
+          >
             ✕
           </button>
         </header>
 
         <div className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}>
           {isSidebarCollapsed ? null : (
-            <aside className="gprv-sidebar">
-              <div className="gprv-summary">
+            <aside className='gprv-sidebar'>
+              <div className='gprv-summary'>
                 <span>{data.pullRequest.changed_files} files changed</span>
                 <span>
                   +{data.pullRequest.additions} / -{data.pullRequest.deletions}
                 </span>
               </div>
               {data.files.length > 0 ? (
-                <FileTreePanel files={data.files} selectedPath={selectedPath} onSelectPath={handleTreeSelect} />
+                <FileTreePanel
+                  files={data.files}
+                  selectedPath={selectedPath}
+                  onSelectPath={handleTreeSelect}
+                />
               ) : (
-                <div className="gprv-state">No changed files found.</div>
+                <div className='gprv-state'>No changed files found.</div>
               )}
             </aside>
           )}
 
-          <div ref={codeViewHostRef} className="gprv-code-view-host">
+          <div
+            ref={codeViewHostRef}
+            className='gprv-code-view-host'
+          >
             <WorkerPoolContextProvider
               poolOptions={{
                 workerFactory,
@@ -131,13 +167,16 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
               }}
               highlighterOptions={{ theme: diffTheme }}
             >
-              <WorkerPoolRenderOptionsSync theme={diffTheme} onSynced={refreshCodeViewLayout} />
+              <WorkerPoolRenderOptionsSync
+                theme={diffTheme}
+                onSynced={refreshCodeViewLayout}
+              />
               {isCodeViewHostReady ? (
                 <CodeView
                   ref={viewerRef}
                   containerRef={handleCodeViewContainer}
                   initialItems={initialItems}
-                  className="gprv-code-view"
+                  className='gprv-code-view'
                   style={{ height: '100%' }}
                   options={{
                     theme: { dark: 'pierre-dark', light: 'pierre-light' },
@@ -149,7 +188,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
                   }}
                 />
               ) : (
-                <div className="gprv-state">Preparing diff viewer…</div>
+                <div className='gprv-state'>Preparing diff viewer…</div>
               )}
             </WorkerPoolContextProvider>
           </div>
@@ -159,13 +198,31 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   );
 }
 
-function DiffLayoutToggle({ value, onChange }: { value: DiffLayout; onChange: (layout: DiffLayout) => void }) {
+function DiffLayoutToggle({
+  value,
+  onChange,
+}: {
+  value: DiffLayout;
+  onChange: (layout: DiffLayout) => void;
+}) {
   return (
-    <div className="gprv-layout-toggle" role="group" aria-label="Diff layout">
-      <button type="button" data-active={value === 'switched' ? '' : undefined} onClick={() => onChange('switched')}>
+    <div
+      className='gprv-layout-toggle'
+      role='group'
+      aria-label='Diff layout'
+    >
+      <button
+        type='button'
+        data-active={value === 'switched' ? '' : undefined}
+        onClick={() => onChange('switched')}
+      >
         Switched
       </button>
-      <button type="button" data-active={value === 'stacked' ? '' : undefined} onClick={() => onChange('stacked')}>
+      <button
+        type='button'
+        data-active={value === 'stacked' ? '' : undefined}
+        onClick={() => onChange('stacked')}
+      >
         Stacked
       </button>
     </div>

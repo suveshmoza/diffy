@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { DiffOverlay } from './DiffOverlay';
-import { ErrorOverlay } from './ErrorOverlay';
-import { LoadingOverlay } from './LoadingOverlay';
+
 import {
   fetchCachedPullRequestDiffData,
   invalidatePullRequestDiffCache,
@@ -9,6 +7,10 @@ import {
   type PullRequestDiffData,
 } from '@/lib/github';
 import { getGitHubTheme } from '@/lib/theme';
+
+import { DiffOverlay } from './DiffOverlay';
+import { ErrorOverlay } from './ErrorOverlay';
+import { LoadingOverlay } from './LoadingOverlay';
 
 type OverlayState =
   | { status: 'loading' }
@@ -54,7 +56,10 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
     const ref = parseGitHubPullRequestUrl(pullRequestUrl);
 
     if (!ref) {
-      setState({ status: 'error', message: 'Could not parse a GitHub pull request URL from this page.' });
+      setState({
+        status: 'error',
+        message: 'Could not parse a GitHub pull request URL from this page.',
+      });
       return;
     }
 
@@ -82,11 +87,28 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
   let content: ReactNode;
 
   if (state.status === 'loaded') {
-    content = <DiffOverlay data={state.data} onClose={onClose} />;
+    content = (
+      <DiffOverlay
+        data={state.data}
+        onClose={onClose}
+      />
+    );
   } else if (state.status === 'error') {
-    content = <ErrorOverlay message={state.message} onRetry={retry} onClose={onClose} theme={theme} />;
+    content = (
+      <ErrorOverlay
+        message={state.message}
+        onRetry={retry}
+        onClose={onClose}
+        theme={theme}
+      />
+    );
   } else {
-    content = <LoadingOverlay onClose={onClose} theme={theme} />;
+    content = (
+      <LoadingOverlay
+        onClose={onClose}
+        theme={theme}
+      />
+    );
   }
 
   return content;

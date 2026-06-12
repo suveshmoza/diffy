@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { FileTreeRowDecorationRenderer } from '@pierre/trees';
 import { FileTree, useFileTree } from '@pierre/trees/react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+
 import { createFileTreeInput } from '@/lib/file-tree-input';
 import type { GitHubPullRequestFile } from '@/lib/github';
 
@@ -62,5 +63,11 @@ export function FileTreePanel({ files, selectedPath, onSelectPath }: FileTreePan
     }
   }, [model, selectedPath, treeInput.annotationsByPath]);
 
-  return <FileTree className="gprv-tree" model={model} style={{ height: '100%' }} />;
+  return (
+    <FileTree
+      className='gprv-tree'
+      model={model}
+      style={{ height: '100%' }}
+    />
+  );
 }

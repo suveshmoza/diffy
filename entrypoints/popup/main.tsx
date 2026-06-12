@@ -1,6 +1,8 @@
-import logoUrl from '@/assets/logo.jpg';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+
+import logoUrl from '@/assets/logo.jpg';
+
 import './style.css';
 
 function PopupApp() {
@@ -53,63 +55,90 @@ function PopupApp() {
 
   return (
     <main>
-      <header className="header">
-        <img className="logo" src={logoUrl} alt="" width={36} height={36} />
-        <div className="header-copy">
+      <header className='header'>
+        <img
+          className='logo'
+          src={logoUrl}
+          alt=''
+          width={36}
+          height={36}
+        />
+        <div className='header-copy'>
           <h1>diffy</h1>
-          <p className="tagline">Better PR diffs on GitHub</p>
+          <p className='tagline'>Better PR diffs on GitHub</p>
         </div>
       </header>
 
-      <p className="intro">
+      <p className='intro'>
         Open a pull request and click <strong>View Diff</strong> in the PR header.
       </p>
 
-      <section className="card">
-        <div className="card-header">
+      <section className='card'>
+        <div className='card-header'>
           <h2>GitHub token</h2>
           <span className={`badge${hasSavedToken ? ' badge-saved' : ''}`}>
             {hasSavedToken ? 'Saved' : 'Optional'}
           </span>
         </div>
-        <p className="card-copy">For private repos or higher API rate limits.</p>
+        <p className='card-copy'>For private repos or higher API rate limits.</p>
 
         <form onSubmit={save}>
-          <label className="sr-only" htmlFor="github-token">
+          <label
+            className='sr-only'
+            htmlFor='github-token'
+          >
             GitHub token
           </label>
           <input
-            id="github-token"
-            type="password"
+            id='github-token'
+            type='password'
             value={token}
-            placeholder="github_pat_…"
+            placeholder='github_pat_…'
             onChange={(event) => setToken(event.currentTarget.value)}
-            autoComplete="off"
+            autoComplete='off'
             spellCheck={false}
           />
-          <div className="actions">
-            <button type="submit">Save</button>
-            <button type="button" className="button-secondary" onClick={clear} disabled={!token && !hasSavedToken}>
+          <div className='actions'>
+            <button type='submit'>Save</button>
+            <button
+              type='button'
+              className='button-secondary'
+              onClick={clear}
+              disabled={!token && !hasSavedToken}
+            >
               Clear
             </button>
           </div>
         </form>
 
-        {status ? <p className="status">{status}</p> : null}
-        <p className="hint">Read-only Contents and Pull requests scope.</p>
+        {status ? <p className='status'>{status}</p> : null}
+        <p className='hint'>Read-only Contents and Pull requests scope.</p>
       </section>
 
-      <a className="footer-link" href="https://github.com/pulls" target="_blank" rel="noreferrer">
+      <a
+        className='footer-link'
+        href='https://github.com/pulls'
+        target='_blank'
+        rel='noreferrer'
+      >
         Open GitHub pulls
       </a>
 
-      <p className="powered-by">
+      <p className='powered-by'>
         Powered by{' '}
-        <a href="https://trees.software" target="_blank" rel="noreferrer">
+        <a
+          href='https://trees.software'
+          target='_blank'
+          rel='noreferrer'
+        >
           Pierre Trees
         </a>{' '}
         &{' '}
-        <a href="https://diffs.com" target="_blank" rel="noreferrer">
+        <a
+          href='https://diffs.com'
+          target='_blank'
+          rel='noreferrer'
+        >
           Pierre Diffs
         </a>
       </p>

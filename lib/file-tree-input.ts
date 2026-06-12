@@ -1,4 +1,9 @@
-import { prepareFileTreeInput, type FileTreePreparedInput, type GitStatusEntry } from '@pierre/trees';
+import {
+  prepareFileTreeInput,
+  type FileTreePreparedInput,
+  type GitStatusEntry,
+} from '@pierre/trees';
+
 import type { GitHubPullRequestFile } from './github';
 
 export type PreparedFileTreeInput = {
@@ -45,7 +50,9 @@ function formatFileChangeAnnotation(file: GitHubPullRequestFile): string {
   return `+${file.additions.toLocaleString()} / -${file.deletions.toLocaleString()}`;
 }
 
-function toTreeGitStatus(status: GitHubPullRequestFile['status']): 'added' | 'deleted' | 'modified' | 'renamed' {
+function toTreeGitStatus(
+  status: GitHubPullRequestFile['status'],
+): 'added' | 'deleted' | 'modified' | 'renamed' {
   switch (status) {
     case 'added':
       return 'added';
