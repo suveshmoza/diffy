@@ -14,7 +14,11 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
   const items: CodeViewItem[] = [];
 
   for (const fileDiff of parsed.flatMap((patch) => patch.files)) {
-    diffPathSet.add(fileDiff.name);
+    addDiffPath(diffPathSet, fileDiff.name);
+    if (fileDiff.prevName) {
+      addDiffPath(diffPathSet, fileDiff.prevName);
+    }
+
     items.push({
       id: getCodeViewItemId(fileDiff.name, true),
       type: 'diff',
@@ -23,7 +27,7 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
   }
 
   for (const file of data.files) {
-    if (diffPathSet.has(file.filename)) {
+    if (isFileCoveredByDiff(file, diffPathSet)) {
       continue;
     }
 
@@ -32,7 +36,7 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
       type: 'file',
       file: {
         name: file.filename,
-        contents: file.patch ?? '(no text patch available for this file)',
+        contents: file.patch ?? getMissingPatchMessage(file),
       },
     });
   }
@@ -45,5 +49,29 @@ function getCodeViewItemId(path: string, hasDiff: boolean): string {
 }
 
 export function getCodeViewItemIdForFile(file: GitHubPullRequestFile, diffPathSet: ReadonlySet<string>): string {
-  return getCodeViewItemId(file.filename, diffPathSet.has(file.filename));
+  return getCodeViewItemId(file.filename, isFileCoveredByDiff(file, diffPathSet));
+}
+
+function addDiffPath(diffPathSet: Set<string>, path: string): void {
+  diffPathSet.add(path);
+}
+
+function isFileCoveredByDiff(file: GitHubPullRequestFile, diffPathSet: ReadonlySet<string>): boolean {
+  if (diffPathSet.has(file.filename)) {
+    return true;
+  }
+
+  return file.previous_filename != null && diffPathSet.has(file.previous_filename);
+}
+
+function getMissingPatchMessage(file: GitHubPullRequestFile): string {
+  if (file.status === 'renamed' && file.previous_filename) {
+    return `Renamed from ${file.previous_filename}. GitHub did not include diff text for this file.`;
+  }
+
+  if (file.status === 'copied' && file.previous_filename) {
+    return `Copied from ${file.previous_filename}. GitHub did not include diff text for this file.`;
+  }
+
+  return 'GitHub did not include diff text for this file.';
 }

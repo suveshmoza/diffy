@@ -11,7 +11,7 @@ export type GitHubPullRequest = {
   number: number;
   state: string;
   user?: { login: string };
-  base: { ref: string; repo: { full_name: string } };
+  base: { ref: string; sha: string; repo: { full_name: string } };
   head: { ref: string; sha: string; repo: { full_name: string } | null };
   additions: number;
   deletions: number;
@@ -111,40 +111,113 @@ async function fetchPullRequestDiffData(ref: GitHubPullRequestRef): Promise<Pull
     fetchAllPullRequestFiles(`${apiBase}/files`, headers),
   ]);
 
-  const patch = await fetchAggregatePullRequestPatch(apiBase, headers, pullRequest, files);
+  const patch = await fetchAggregatePullRequestPatch(ref, apiBase, headers, pullRequest, files);
 
   return { ref, pullRequest, files, patch };
 }
 
 async function fetchAggregatePullRequestPatch(
+  ref: GitHubPullRequestRef,
   apiBase: string,
   headers: Record<string, string>,
   pullRequest: GitHubPullRequest,
   files: GitHubPullRequestFile[],
 ): Promise<string> {
+  const fallback = () => buildPatchFromFiles(files);
+  const diffHeaders = { ...headers, Accept: 'application/vnd.github.v3.diff' };
+
   if (pullRequest.changed_files > GITHUB_MAX_AGGREGATE_DIFF_FILES) {
-    return buildPatchFromFiles(files);
+    return (await fetchFullPullRequestDiffWithFallbacks(ref, apiBase, diffHeaders, pullRequest)) ?? fallback();
   }
 
   try {
-    return await fetchText(apiBase, {
-      ...headers,
-      Accept: 'application/vnd.github.v3.diff',
-    });
+    return await fetchText(apiBase, diffHeaders);
   } catch (error) {
     if (!isGitHubDiffTooLargeError(error)) {
       throw error;
     }
 
-    return buildPatchFromFiles(files);
+    return (await fetchFullPullRequestDiffWithFallbacks(ref, apiBase, diffHeaders, pullRequest)) ?? fallback();
   }
+}
+
+async function fetchFullPullRequestDiffWithFallbacks(
+  ref: GitHubPullRequestRef,
+  apiBase: string,
+  diffHeaders: Record<string, string>,
+  pullRequest: GitHubPullRequest,
+): Promise<string | null> {
+  const attempts = [
+    () => fetchComparePullRequestDiff(ref, diffHeaders, pullRequest),
+    () => fetchWebPullRequestDiff(ref),
+    () => fetchText(apiBase, diffHeaders),
+  ];
+
+  for (const attempt of attempts) {
+    try {
+      const patch = await attempt();
+      if (patch.trim()) {
+        return patch;
+      }
+    } catch {
+      // Try the next source.
+    }
+  }
+
+  return null;
+}
+
+async function fetchComparePullRequestDiff(
+  ref: GitHubPullRequestRef,
+  headers: Record<string, string>,
+  pullRequest: GitHubPullRequest,
+): Promise<string> {
+  const compareUrl = `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/compare/${pullRequest.base.sha}...${pullRequest.head.sha}`;
+  return fetchText(compareUrl, headers);
+}
+
+async function fetchWebPullRequestDiff(ref: GitHubPullRequestRef): Promise<string> {
+  const url = `https://github.com/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pull/${ref.pullNumber}.diff`;
+  const response = await fetch(url, { credentials: 'include' });
+  if (!response.ok) {
+    throw await createGitHubError(response);
+  }
+
+  return response.text();
 }
 
 export function buildPatchFromFiles(files: GitHubPullRequestFile[]): string {
   return files
-    .filter((file) => file.patch)
-    .map((file) => wrapGitHubFilePatch(file))
+    .map((file) => {
+      if (file.patch) {
+        return wrapGitHubFilePatch(file);
+      }
+
+      return buildSyntheticRenamePatch(file) ?? '';
+    })
+    .filter((chunk) => chunk.length > 0)
     .join('\n');
+}
+
+function buildSyntheticRenamePatch(file: GitHubPullRequestFile): string | null {
+  if (file.status !== 'renamed' && file.status !== 'copied') {
+    return null;
+  }
+
+  const newPath = file.filename;
+  const oldPath = file.previous_filename;
+  if (!oldPath || oldPath === newPath || file.changes !== 0) {
+    return null;
+  }
+
+  const action = file.status === 'copied' ? 'copy' : 'rename';
+  return [
+    `diff --git a/${oldPath} b/${newPath}`,
+    'similarity index 100%',
+    `${action} from ${oldPath}`,
+    `${action} to ${newPath}`,
+    '',
+  ].join('\n');
 }
 
 function wrapGitHubFilePatch(file: GitHubPullRequestFile): string {
