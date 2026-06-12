@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ChromeModal } from './ChromeModal';
 import { DiffOverlay } from './DiffOverlay';
+import { ErrorOverlay } from './ErrorOverlay';
+import { LoadingOverlay } from './LoadingOverlay';
 import {
   fetchCachedPullRequestDiffData,
   invalidatePullRequestDiffCache,
@@ -83,42 +84,9 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
   if (state.status === 'loaded') {
     content = <DiffOverlay data={state.data} onClose={onClose} />;
   } else if (state.status === 'error') {
-    content = (
-      <ChromeModal title="Unable to load PR diff" onClose={onClose} theme={theme}>
-        <div className="gprv-modal-body">
-          <div className="gprv-error-panel">
-            <div className="gprv-error-icon" aria-hidden="true">
-              !
-            </div>
-            <p className="gprv-error-summary">Something went wrong while loading this pull request.</p>
-            <p className="gprv-error-hint">
-              If this is a private repo or you are rate-limited, add a GitHub token in the diffy popup.
-            </p>
-            <div className="gprv-error-actions">
-              <button className="gprv-header-button" type="button" onClick={retry}>
-                Try again
-              </button>
-            </div>
-            <details className="gprv-error-details">
-              <summary>Technical details</summary>
-              <pre>{state.message}</pre>
-            </details>
-          </div>
-        </div>
-      </ChromeModal>
-    );
+    content = <ErrorOverlay message={state.message} onRetry={retry} onClose={onClose} theme={theme} />;
   } else {
-    content = (
-      <ChromeModal title="Loading PR diff…" onClose={onClose} theme={theme}>
-        <div className="gprv-modal-body gprv-modal-body-centered">
-          <div className="gprv-loading-panel" role="status" aria-live="polite" aria-label="Loading pull request diff">
-            <div className="gprv-loading-spinner" aria-hidden="true" />
-            <p className="gprv-loading-summary">Fetching pull request metadata and changed files…</p>
-            <p className="gprv-loading-hint">Large pull requests may take a few seconds.</p>
-          </div>
-        </div>
-      </ChromeModal>
-    );
+    content = <LoadingOverlay onClose={onClose} theme={theme} />;
   }
 
   return content;
