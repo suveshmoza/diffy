@@ -5,6 +5,18 @@
   margin-left: 8px;
 }
 
+.gprv-view-diff-host {
+  position: fixed;
+  right: 24px;
+  top: 72px;
+  z-index: 99999;
+}
+
+.gprv-view-diff-host .gprv-inline-button,
+.gprv-view-diff-host .btn {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+}
+
 .gprv-backdrop {
   background: rgb(0 0 0 / 48%);
   inset: 0;

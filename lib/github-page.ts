@@ -1,7 +1,29 @@
 import { parseCurrentPullRequestUrl, parseGitHubPullRequestUrl } from './github';
 
 const BUTTON_ID = 'github-pr-viewer-button';
+const BUTTON_HOST_ID = 'github-pr-viewer-button-host';
 const ROOT_ID = 'github-pr-viewer-root';
+
+const PR_HEADER_SELECTORS = [
+  '[data-testid="pull-request-header"]',
+  '.gh-header',
+  '.PageHeader',
+  'react-app[app-name="react-app"]',
+] as const;
+
+const FILES_TAB_SELECTORS = [
+  'a#prs-files-anchor-tab',
+  'a[href*="/pull/"][href$="/changes"]',
+  'a[href*="/pull/"][href$="/files"]',
+  'a[data-tab-item="files-changed-tab"]',
+  'button[data-hotkey="g p"]',
+] as const;
+
+const HEADER_ACTIONS_SELECTORS = [
+  '[data-testid="pull-request-header-actions"]',
+  '.gh-header-actions',
+  '.PageHeader-actions',
+] as const;
 
 type ViewDiffButtonCallbacks = {
   onOpen: (pullRequestUrl: string) => void;
@@ -10,6 +32,7 @@ type ViewDiffButtonCallbacks = {
 
 let buttonInstaller: { disconnect: () => void } | null = null;
 let buttonCallbacks: ViewDiffButtonCallbacks | null = null;
+let syncScheduled = false;
 
 export function installViewDiffButton(
   onOpen: (pullRequestUrl: string) => void,
@@ -21,9 +44,7 @@ export function installViewDiffButton(
 
   buttonCallbacks = { onOpen, onPrefetch };
   const observer = new MutationObserver(() => {
-    if (buttonCallbacks) {
-      syncViewDiffButton(buttonCallbacks.onOpen, buttonCallbacks.onPrefetch);
-    }
+    scheduleSyncViewDiffButton();
   });
   observer.observe(document.body, { childList: true, subtree: true });
 
@@ -32,11 +53,28 @@ export function installViewDiffButton(
     removeViewDiffButton();
     buttonInstaller = null;
     buttonCallbacks = null;
+    syncScheduled = false;
   };
 
   buttonInstaller = { disconnect };
   syncViewDiffButton(onOpen, onPrefetch);
   return buttonInstaller;
+}
+
+function scheduleSyncViewDiffButton(): void {
+  if (syncScheduled || !buttonCallbacks) {
+    return;
+  }
+
+  syncScheduled = true;
+  requestAnimationFrame(() => {
+    syncScheduled = false;
+    if (!buttonCallbacks) {
+      return;
+    }
+
+    syncViewDiffButton(buttonCallbacks.onOpen, buttonCallbacks.onPrefetch);
+  });
 }
 
 export function syncViewDiffButton(
@@ -52,6 +90,7 @@ export function syncViewDiffButton(
 }
 
 export function removeViewDiffButton(): void {
+  document.getElementById(BUTTON_HOST_ID)?.remove();
   document.getElementById(BUTTON_ID)?.remove();
 }
 
@@ -80,27 +119,111 @@ function injectButton(onOpen: (pullRequestUrl: string) => void, onPrefetch: (pul
 
   onPrefetch(ref.url);
 
-  if (document.getElementById(BUTTON_ID)) {
+  const existing = getMountedButton();
+  if (existing) {
     return;
   }
 
-  const anchorControl = findAnchorControl();
+  document.getElementById(BUTTON_ID)?.remove();
+  document.getElementById(BUTTON_HOST_ID)?.remove();
+
+  const headerRoots = getPrHeaderRoots();
+  const anchorControl = findAnchorControl(headerRoots);
   const button = createButton(anchorControl, ref.url, onOpen);
-  const insertion = anchorControl ? findInsertionPoint(anchorControl) : null;
 
-  if (insertion) {
-    insertion.container.append(button);
+  if (anchorControl && insertButtonNearControl(button, anchorControl)) {
     return;
   }
 
-  const fallback = document.querySelector<HTMLElement>('.gh-header-actions, [data-testid="pull-request-header-actions"]');
-  if (fallback) {
-    fallback.prepend(button);
+  for (const selector of HEADER_ACTIONS_SELECTORS) {
+    const actions = queryInRoots<HTMLElement>(headerRoots, selector);
+    if (actions) {
+      actions.prepend(button);
+      return;
+    }
+  }
+
+  const titleHeader = queryInRoots<HTMLElement>(
+    headerRoots,
+    '.gh-header-title, [data-testid="pull-request-header"] .markdown-title, h1',
+  );
+  if (titleHeader) {
+    titleHeader.append(button);
     return;
   }
 
-  const titleHeader = document.querySelector<HTMLElement>('.gh-header-title, [data-testid="pull-request-header"]');
-  titleHeader?.append(button);
+  mountFloatingButtonHost(button);
+}
+
+function getMountedButton(): HTMLButtonElement | null {
+  const button = document.getElementById(BUTTON_ID);
+  return button instanceof HTMLButtonElement && button.isConnected ? button : null;
+}
+
+function getPrHeaderRoots(): HTMLElement[] {
+  const roots = PR_HEADER_SELECTORS.flatMap((selector) => Array.from(document.querySelectorAll<HTMLElement>(selector)));
+  return roots.length > 0 ? roots : [document.body];
+}
+
+function queryInRoots<T extends Element>(roots: HTMLElement[], selector: string): T | null {
+  for (const root of roots) {
+    const match = root.querySelector<T>(selector);
+    if (match) {
+      return match;
+    }
+  }
+
+  return document.querySelector<T>(selector);
+}
+
+function findAnchorControl(headerRoots: HTMLElement[]): HTMLAnchorElement | HTMLButtonElement | null {
+  for (const selector of FILES_TAB_SELECTORS) {
+    const element = queryInRoots<HTMLAnchorElement | HTMLButtonElement>(headerRoots, selector);
+    if (element) {
+      return element;
+    }
+  }
+
+  for (const root of headerRoots) {
+    const controls = Array.from(root.querySelectorAll<HTMLAnchorElement | HTMLButtonElement>('a, button'));
+    const filesTab = controls.find((control) => isFilesChangedControl(control));
+    if (filesTab) {
+      return filesTab;
+    }
+  }
+
+  return null;
+}
+
+function isFilesChangedControl(control: HTMLAnchorElement | HTMLButtonElement): boolean {
+  const label = control.textContent?.trim().toLowerCase() ?? '';
+  if (!label.includes('files')) {
+    return false;
+  }
+
+  if (control instanceof HTMLAnchorElement) {
+    return /\/pull\/\d+(?:\/files|\/changes)?\/?$/i.test(control.pathname);
+  }
+
+  return label.includes('changed') || label.includes('files');
+}
+
+function insertButtonNearControl(button: HTMLButtonElement, control: HTMLElement): boolean {
+  const parent = control.parentElement;
+  if (!parent) {
+    return false;
+  }
+
+  parent.insertBefore(button, control.nextSibling);
+  return true;
+}
+
+function mountFloatingButtonHost(button: HTMLButtonElement): void {
+  const host = document.createElement('div');
+  host.id = BUTTON_HOST_ID;
+  host.className = 'gprv-view-diff-host';
+  host.append(button);
+  document.body.append(host);
 }
 
 function createButton(
@@ -121,39 +244,13 @@ function createButton(
     }
   }
 
-  button.addEventListener('click', () => onOpen(pullRequestUrl));
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onOpen(pullRequestUrl);
+  });
+
   return button;
-}
-
-function findInsertionPoint(control: HTMLAnchorElement | HTMLButtonElement): { container: HTMLElement } | null {
-  const parent = control.parentElement;
-  if (!parent) {
-    return null;
-  }
-
-  return { container: parent };
-}
-
-function findAnchorControl(): HTMLAnchorElement | HTMLButtonElement | null {
-  const selectors = [
-    'a[href*="/files"]',
-    'button[data-hotkey="g p"]',
-    'a[data-tab-item="files-changed-tab"]',
-  ];
-
-  for (const selector of selectors) {
-    const element = document.querySelector<HTMLAnchorElement | HTMLButtonElement>(selector);
-    if (element) {
-      return element;
-    }
-  }
-
-  const controls = Array.from(document.querySelectorAll<HTMLAnchorElement | HTMLButtonElement>('a.btn, button.btn'));
-  return (
-    controls.find((control) => control.textContent?.toLowerCase().includes('files changed')) ??
-    controls.find((control) => control.textContent?.toLowerCase().includes('conversation')) ??
-    null
-  );
 }
 
 export function isPullRequestPage(url: string): boolean {
