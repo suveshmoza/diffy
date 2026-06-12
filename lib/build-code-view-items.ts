@@ -5,10 +5,17 @@ import {
   type GitHubPullRequestFile,
   type PullRequestDiffData,
 } from './github';
+import {
+  attachReviewCommentsToItems,
+  mapReviewCommentsToItems,
+  type ReviewCommentThreadMetadata,
+} from './review-comments';
 
 export type CodeViewItemsResult = {
-  items: CodeViewItem[];
+  items: CodeViewItem<ReviewCommentThreadMetadata>[];
   diffPathSet: ReadonlySet<string>;
+  reviewCommentCountByPath: ReadonlyMap<string, number>;
+  orphanedReviewThreadsByItemId: ReadonlyMap<string, ReviewCommentThreadMetadata[]>;
 };
 
 export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResult {
@@ -46,7 +53,14 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
     });
   }
 
-  return { items, diffPathSet };
+  const reviewCommentMaps = mapReviewCommentsToItems(items, data.reviewComments);
+
+  return {
+    items: attachReviewCommentsToItems(items, reviewCommentMaps),
+    diffPathSet,
+    reviewCommentCountByPath: reviewCommentMaps.countByPath,
+    orphanedReviewThreadsByItemId: reviewCommentMaps.orphanedByItemId,
+  };
 }
 
 function getCodeViewItemId(path: string, hasDiff: boolean): string {

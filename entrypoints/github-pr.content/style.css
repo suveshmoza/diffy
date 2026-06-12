@@ -227,18 +227,36 @@
   font-size: 12px;
 }
 
+.gprv-header-meta-stack {
+  display: grid;
+  flex-shrink: 0;
+  gap: 6px;
+  justify-items: end;
+}
+
 .gprv-header-stats {
   align-items: center;
   background: var(--gprv-control-bg);
   border: 1px solid var(--gprv-border);
   border-radius: 8px;
   display: inline-flex;
-  flex-shrink: 0;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   gap: 8px;
   line-height: 1;
   padding: 7px 10px;
+}
+
+.gprv-review-load-error {
+  color: var(--gprv-error);
+  font-size: 11px;
+  line-height: 1.2;
+  margin: 0;
+  max-width: 12rem;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .gprv-stat-files {
@@ -637,4 +655,215 @@
   padding: 10px 12px;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.gprv-review-thread {
+  box-sizing: border-box;
+  display: grid;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+  gap: 8px;
+  max-width: 100%;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.gprv-review-comment {
+  background: var(--gprv-control-bg);
+  border: 1px solid var(--gprv-border);
+  border-radius: 10px;
+  box-sizing: border-box;
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.gprv-review-comment-reply {
+  margin-left: 12px;
+}
+
+.gprv-review-comment-header {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.gprv-review-comment-avatar {
+  align-items: center;
+  background: var(--gprv-accent-subtle);
+  border-radius: 999px;
+  color: var(--gprv-accent);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  height: 24px;
+  justify-content: center;
+  overflow: hidden;
+  width: 24px;
+}
+
+.gprv-review-comment-avatar img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.gprv-review-comment-meta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gprv-review-comment-meta strong {
+  color: var(--gprv-text);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.gprv-review-comment-meta time {
+  color: var(--gprv-muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.gprv-review-comment-link {
+  align-items: center;
+  border-radius: 6px;
+  color: var(--gprv-muted);
+  display: inline-flex;
+  font-size: 12px;
+  height: 24px;
+  justify-content: center;
+  text-decoration: none;
+  width: 24px;
+}
+
+.gprv-review-comment-link:hover {
+  background: var(--gprv-control-active-bg);
+  color: var(--gprv-accent);
+}
+
+.gprv-review-comment-body {
+  color: var(--gprv-text);
+  display: grid;
+  font-size: 13px;
+  gap: 8px;
+  line-height: 1.45;
+  margin: 0;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.gprv-review-paragraph {
+  margin: 0;
+}
+
+.gprv-review-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.gprv-review-inline-code {
+  background: color-mix(in srgb, var(--gprv-border) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gprv-border) 80%, transparent);
+  border-radius: 6px;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    SF Mono,
+    Menlo,
+    Consolas,
+    Liberation Mono,
+    monospace;
+  font-size: 0.92em;
+  padding: 0.1em 0.35em;
+}
+
+.gprv-review-link {
+  color: var(--gprv-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.gprv-review-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.gprv-review-quote {
+  border-left: 3px solid var(--gprv-border);
+  color: var(--gprv-muted);
+  margin: 0;
+  padding-left: 10px;
+}
+
+.gprv-review-code {
+  border: 1px solid var(--gprv-border);
+  border-radius: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.gprv-review-code-label {
+  background: color-mix(in srgb, var(--gprv-border) 35%, transparent);
+  border-bottom: 1px solid var(--gprv-border);
+  color: var(--gprv-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 6px 10px;
+  text-transform: uppercase;
+}
+
+.gprv-review-suggestion {
+  border-color: color-mix(in srgb, var(--gprv-success) 45%, var(--gprv-border));
+}
+
+.gprv-review-suggestion .gprv-review-code-label {
+  background: color-mix(in srgb, var(--gprv-success) 14%, var(--gprv-control-bg));
+  border-bottom-color: color-mix(in srgb, var(--gprv-success) 28%, var(--gprv-border));
+  color: var(--gprv-success);
+  text-transform: none;
+}
+
+.gprv-review-code pre {
+  margin: 0;
+  overflow: auto;
+  padding: 10px 12px;
+}
+
+.gprv-review-code code {
+  display: block;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    SF Mono,
+    Menlo,
+    Consolas,
+    Liberation Mono,
+    monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.gprv-review-orphaned-panel {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  max-width: 100%;
+}
+
+.gprv-review-orphaned-badge {
+  background: color-mix(in srgb, var(--gprv-accent) 12%, var(--gprv-control-bg));
+  border: 1px solid color-mix(in srgb, var(--gprv-accent) 28%, var(--gprv-border));
+  border-radius: 999px;
+  color: var(--gprv-accent);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 8px;
 }
