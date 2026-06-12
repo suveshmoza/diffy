@@ -34,6 +34,7 @@ export function OrphanedReviewCommentsBadge({ threads }: OrphanedReviewCommentsB
           <ReviewCommentThread
             key={thread.comments[0]?.id ?? thread.comments.map((comment) => comment.id).join('-')}
             annotation={annotation}
+            variant='header'
           />
         );
       })}

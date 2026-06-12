@@ -27,6 +27,17 @@ type DiffOverlayProps = {
   onClose: () => void;
 };
 
+/* Pierre `overflow: 'wrap'` handles line + annotation wrapping; keep slots column-wide. */
+const REVIEW_ANNOTATION_OVERFLOW_CSS = `
+[data-annotation-content] {
+  align-self: stretch;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+`;
+
 const DIFF_WORKER_POOL_SIZE = Math.max(
   1,
   Math.min(4, Math.floor((navigator.hardwareConcurrency || 4) / 2)),
@@ -200,8 +211,9 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
                     theme: { dark: 'pierre-dark', light: 'pierre-light' },
                     themeType: theme,
                     diffStyle: diffLayout === 'switched' ? 'split' : 'unified',
+                    overflow: 'wrap',
                     stickyHeaders: true,
-                    unsafeCSS: diffsBaseCSS,
+                    unsafeCSS: diffsBaseCSS + REVIEW_ANNOTATION_OVERFLOW_CSS,
                     layout: { paddingTop: 0, paddingBottom: 0, gap: 16 },
                   }}
                 />

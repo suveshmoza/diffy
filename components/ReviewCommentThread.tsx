@@ -8,53 +8,63 @@ type ReviewCommentThreadProps = {
   annotation:
     | LineAnnotation<ReviewCommentThreadMetadata>
     | DiffLineAnnotation<ReviewCommentThreadMetadata>;
+  variant?: 'inline' | 'header';
 };
 
-export function ReviewCommentThread({ annotation }: ReviewCommentThreadProps) {
+export function ReviewCommentThread({ annotation, variant = 'inline' }: ReviewCommentThreadProps) {
   const thread = annotation.metadata;
-  if (!thread) {
+  if (!thread || thread.comments.length === 0) {
     return null;
   }
 
+  const [mainComment, ...replies] = thread.comments;
+
   return (
-    <div className='gprv-review-thread'>
-      {thread.comments.map((comment) => (
-        <ReviewComment
-          key={comment.id}
-          comment={comment}
-          isReply={comment.id !== thread.comments[0]?.id}
-        />
-      ))}
+    <div
+      className={`gprv-review-thread-shell${variant === 'header' ? ' gprv-review-thread-shell--header' : ''}`}
+    >
+      <div className='gprv-review-thread'>
+        <ReviewComment comment={mainComment} />
+        {replies.length > 0 ? (
+          <div className='gprv-review-replies'>
+            {replies.map((comment) => (
+              <ReviewComment
+                key={comment.id}
+                comment={comment}
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 type ReviewCommentProps = {
   comment: GitHubPullRequestReviewComment;
-  isReply: boolean;
 };
 
-function ReviewComment({ comment, isReply }: ReviewCommentProps) {
+function ReviewComment({ comment }: ReviewCommentProps) {
   const initials = comment.user.login.slice(0, 1).toUpperCase();
 
   return (
-    <article className={`gprv-review-comment${isReply ? ' gprv-review-comment-reply' : ''}`}>
-      <div className='gprv-review-comment-header'>
-        <span
-          className='gprv-review-comment-avatar'
-          aria-hidden='true'
-        >
-          {comment.user.avatar_url ? (
-            <img
-              src={comment.user.avatar_url}
-              alt=''
-              width={24}
-              height={24}
-            />
-          ) : (
-            initials
-          )}
-        </span>
+    <article className='gprv-review-comment'>
+      <span
+        className='gprv-review-comment-avatar'
+        aria-hidden='true'
+      >
+        {comment.user.avatar_url ? (
+          <img
+            src={comment.user.avatar_url}
+            alt=''
+            width={24}
+            height={24}
+          />
+        ) : (
+          initials
+        )}
+      </span>
+      <div className='gprv-review-comment-content'>
         <div className='gprv-review-comment-meta'>
           <strong>{comment.user.login}</strong>
           <time
@@ -63,19 +73,19 @@ function ReviewComment({ comment, isReply }: ReviewCommentProps) {
           >
             {formatRelativeTimestamp(comment.created_at)}
           </time>
+          <a
+            className='gprv-review-comment-link'
+            href={comment.html_url}
+            target='_blank'
+            rel='noopener noreferrer'
+            aria-label={`Open comment by ${comment.user.login} on GitHub`}
+            title='Open on GitHub'
+          >
+            ↗
+          </a>
         </div>
-        <a
-          className='gprv-review-comment-link'
-          href={comment.html_url}
-          target='_blank'
-          rel='noopener noreferrer'
-          aria-label={`Open comment by ${comment.user.login} on GitHub`}
-          title='Open on GitHub'
-        >
-          ↗
-        </a>
+        <div className='gprv-review-comment-text'>{renderGitHubCommentBody(comment.body)}</div>
       </div>
-      <div className='gprv-review-comment-body'>{renderGitHubCommentBody(comment.body)}</div>
     </article>
   );
 }

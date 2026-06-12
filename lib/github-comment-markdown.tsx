@@ -32,6 +32,7 @@ export function renderGitHubCommentBody(body: string): ReactNode {
 
 function CommentCodeBlock({ language, content }: { language: string; content: string }) {
   const isSuggestion = language === 'suggestion';
+  const normalizedContent = isSuggestion ? normalizeSuggestionContent(content) : content;
 
   return (
     <div
@@ -44,16 +45,33 @@ function CommentCodeBlock({ language, content }: { language: string; content: st
       {isSuggestion ? <div className='gprv-review-code-label'>Suggested change</div> : null}
       {!isSuggestion && language ? <div className='gprv-review-code-label'>{language}</div> : null}
       <pre>
-        <code>{content}</code>
+        <code>{normalizedContent}</code>
       </pre>
     </div>
   );
 }
 
+function normalizeSuggestionContent(content: string): string {
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  const nonEmptyLines = lines.filter((line) => line.trim().length > 0);
+  if (nonEmptyLines.length === 0) {
+    return '';
+  }
+
+  const minIndent = Math.min(
+    ...nonEmptyLines.map((line) => line.match(/^[\t ]*/)?.[0].length ?? 0),
+  );
+
+  return lines
+    .map((line) => (line.trim().length === 0 ? '' : line.slice(minIndent)))
+    .join('\n')
+    .trimEnd();
+}
+
 function CommentTextBlock({ content }: { content: string }) {
   const paragraphs = content.split(/\n{2,}/);
 
-  return paragraphs.map((paragraph, index) => {
+  const blocks = paragraphs.map((paragraph, index) => {
     const trimmed = paragraph.trim();
     if (!trimmed) {
       return null;
@@ -79,6 +97,8 @@ function CommentTextBlock({ content }: { content: string }) {
       </p>
     );
   });
+
+  return <div className='gprv-review-prose'>{blocks}</div>;
 }
 
 function renderInlineMarkdown(text: string): ReactNode[] {
