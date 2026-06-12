@@ -5,6 +5,24 @@
   margin-left: 8px;
 }
 
+#github-pr-viewer-button.gprv-view-diff-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  line-height: 1;
+}
+
+.gprv-view-diff-icon {
+  display: block;
+  flex-shrink: 0;
+  height: 1.15em;
+  width: 0.86em;
+}
+
+.gprv-view-diff-label {
+  line-height: 1;
+}
+
 .gprv-view-diff-host {
   position: fixed;
   right: 24px;
