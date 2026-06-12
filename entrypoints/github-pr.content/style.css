@@ -210,6 +210,11 @@
   position: absolute;
 }
 
+.gprv-modal-body {
+  min-height: 0;
+  overflow: auto;
+}
+
 .gprv-state {
   align-items: center;
   color: var(--gprv-state);
@@ -220,6 +225,67 @@
   text-align: center;
 }
 
-.gprv-error {
+.gprv-error-panel {
+  display: grid;
+  gap: 20px;
+  margin: 0 auto;
+  max-width: 32rem;
+  padding: 32px 24px 40px;
+}
+
+.gprv-error-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--gprv-error) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gprv-error) 35%, transparent);
+  border-radius: 999px;
   color: var(--gprv-error);
+  display: inline-flex;
+  font-size: 20px;
+  font-weight: 700;
+  height: 44px;
+  justify-content: center;
+  justify-self: start;
+  width: 44px;
+}
+
+.gprv-error-summary {
+  color: var(--gprv-text);
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.gprv-error-hint {
+  color: var(--gprv-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.gprv-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gprv-error-details {
+  color: var(--gprv-muted);
+  font-size: 12px;
+}
+
+.gprv-error-details summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+.gprv-error-details pre {
+  background: var(--gprv-control-bg);
+  border: 1px solid var(--gprv-border);
+  border-radius: 8px;
+  margin: 8px 0 0;
+  max-height: 140px;
+  overflow: auto;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }

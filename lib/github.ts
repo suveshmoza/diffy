@@ -86,6 +86,10 @@ export function prefetchPullRequestDiffData(url: string | null | undefined): voi
   void fetchCachedPullRequestDiffData(ref).catch(() => undefined);
 }
 
+export function invalidatePullRequestDiffCache(ref: GitHubPullRequestRef): void {
+  pullRequestDiffCache.delete(getPullRequestDiffCacheKey(ref));
+}
+
 export function fetchCachedPullRequestDiffData(ref: GitHubPullRequestRef): Promise<PullRequestDiffData> {
   const cacheKey = getPullRequestDiffCacheKey(ref);
   const cached = pullRequestDiffCache.get(cacheKey);
