@@ -44,7 +44,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
     useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, [
       initialItems,
-      diffLayout,
       isSidebarCollapsed,
       diffTheme,
       isCodeViewHostReady,
