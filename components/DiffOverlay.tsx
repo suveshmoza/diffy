@@ -14,6 +14,7 @@ import { workerFactory } from '@/lib/diff-worker';
 import type { PullRequestDiffData } from '@/lib/github';
 import { getDiffTheme, getGitHubTheme, type GitHubTheme } from '@/lib/theme';
 
+import { DiffOverlayHeader } from './DiffOverlayHeader';
 import { FileTreePanel } from './FileTreePanel';
 import { WorkerPoolRenderOptionsSync } from './WorkerPoolRenderOptionsSync';
 
@@ -115,44 +116,18 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         onKeyDown={stopGitHubKeybindings}
         onKeyUp={stopGitHubKeybindings}
       >
-        <header className='gprv-header'>
-          <div className='gprv-title'>
-            <strong>{data.pullRequest.title}</strong>
-            <span>
-              {data.pullRequest.base.repo.full_name} #{data.pullRequest.number} ·{' '}
-              {data.pullRequest.base.ref} ← {data.pullRequest.head.ref}
-            </span>
-          </div>
-          <button
-            className='gprv-header-button'
-            type='button'
-            onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
-          >
-            {isSidebarCollapsed ? 'Show files' : 'Hide files'}
-          </button>
-          <DiffLayoutToggle
-            value={diffLayout}
-            onChange={updateDiffLayout}
-          />
-          <button
-            className='gprv-close'
-            type='button'
-            onClick={onClose}
-            aria-label='Close View Diff'
-          >
-            ✕
-          </button>
-        </header>
+        <DiffOverlayHeader
+          pullRequest={data.pullRequest}
+          diffLayout={diffLayout}
+          isSidebarCollapsed={isSidebarCollapsed}
+          onToggleSidebar={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
+          onDiffLayoutChange={updateDiffLayout}
+          onClose={onClose}
+        />
 
         <div className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}>
           {isSidebarCollapsed ? null : (
             <aside className='gprv-sidebar'>
-              <div className='gprv-summary'>
-                <span>{data.pullRequest.changed_files} files changed</span>
-                <span>
-                  +{data.pullRequest.additions} / -{data.pullRequest.deletions}
-                </span>
-              </div>
               {data.files.length > 0 ? (
                 <FileTreePanel
                   files={data.files}
@@ -205,36 +180,5 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         </div>
       </section>
     </>
-  );
-}
-
-function DiffLayoutToggle({
-  value,
-  onChange,
-}: {
-  value: DiffLayout;
-  onChange: (layout: DiffLayout) => void;
-}) {
-  return (
-    <div
-      className='gprv-layout-toggle'
-      role='group'
-      aria-label='Diff layout'
-    >
-      <button
-        type='button'
-        data-active={value === 'switched' ? '' : undefined}
-        onClick={() => onChange('switched')}
-      >
-        Switched
-      </button>
-      <button
-        type='button'
-        data-active={value === 'stacked' ? '' : undefined}
-        onClick={() => onChange('stacked')}
-      >
-        Stacked
-      </button>
-    </div>
   );
 }
