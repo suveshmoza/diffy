@@ -13,7 +13,7 @@ type CodeViewInternals = {
   renderState: { scrollTop: number };
 };
 
-function refreshCodeViewInstance(viewerRef: RefObject<CodeViewHandle<undefined> | null>): boolean {
+function refreshCodeViewInstance<T>(viewerRef: RefObject<CodeViewHandle<T> | null>): boolean {
   const instance = viewerRef.current?.getInstance();
   const scrollRoot = instance?.getContainerElement();
   if (!instance || !scrollRoot) {
@@ -38,9 +38,7 @@ function refreshCodeViewInstance(viewerRef: RefObject<CodeViewHandle<undefined> 
   return true;
 }
 
-function scheduleCodeViewLayoutRefresh(
-  viewerRef: RefObject<CodeViewHandle<undefined> | null>,
-): void {
+function scheduleCodeViewLayoutRefresh<T>(viewerRef: RefObject<CodeViewHandle<T> | null>): void {
   let frame = 0;
 
   const tick = () => {
@@ -57,8 +55,8 @@ function scheduleCodeViewLayoutRefresh(
   tick();
 }
 
-export function useCodeViewLayoutRefresh(
-  viewerRef: RefObject<CodeViewHandle<undefined> | null>,
+export function useCodeViewLayoutRefresh<T>(
+  viewerRef: RefObject<CodeViewHandle<T> | null>,
   hostRef: RefObject<HTMLDivElement | null>,
   deps: readonly unknown[],
 ) {

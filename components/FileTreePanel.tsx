@@ -20,6 +20,7 @@ const TREE_OVERSCAN = 12;
 type FileTreePanelProps = {
   files: GitHubPullRequestFile[];
   selectedPath: string | null;
+  reviewCommentCountByPath?: ReadonlyMap<string, number>;
   onSelectPath: (path: string) => void;
 };
 
@@ -139,8 +140,16 @@ function FileTreeSearchHeader({
   );
 }
 
-export function FileTreePanel({ files, selectedPath, onSelectPath }: FileTreePanelProps) {
-  const treeInput = useMemo(() => createFileTreeInput(files), [files]);
+export function FileTreePanel({
+  files,
+  selectedPath,
+  reviewCommentCountByPath,
+  onSelectPath,
+}: FileTreePanelProps) {
+  const treeInput = useMemo(
+    () => createFileTreeInput(files, reviewCommentCountByPath),
+    [files, reviewCommentCountByPath],
+  );
   const annotationsByPathRef = useRef(treeInput.annotationsByPath);
   const preparedInputRef = useRef(treeInput.preparedInput);
   const [searchQuery, setSearchQuery] = useState('');

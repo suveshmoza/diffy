@@ -13,15 +13,19 @@ export type PreparedFileTreeInput = {
   preparedInput: FileTreePreparedInput;
 };
 
-export function createFileTreeInput(files: GitHubPullRequestFile[]): PreparedFileTreeInput {
+export function createFileTreeInput(
+  files: GitHubPullRequestFile[],
+  reviewCommentCountByPath: ReadonlyMap<string, number> = new Map(),
+): PreparedFileTreeInput {
   const paths = files.map((file) => file.filename);
   const annotationsByPath = new Map<string, { text: string; title: string }>();
   const gitStatus: GitStatusEntry[] = [];
 
   for (const file of files) {
+    const reviewCommentCount = reviewCommentCountByPath.get(file.filename) ?? 0;
     annotationsByPath.set(file.filename, {
-      text: formatFileChangeAnnotation(file),
-      title: `${file.changes.toLocaleString()} total changes: +${file.additions.toLocaleString()} / -${file.deletions.toLocaleString()}`,
+      text: formatFileTreeAnnotation(file, reviewCommentCount),
+      title: formatFileTreeAnnotationTitle(file, reviewCommentCount),
     });
     gitStatus.push({ path: file.filename, status: toTreeGitStatus(file.status) });
   }
@@ -32,6 +36,29 @@ export function createFileTreeInput(files: GitHubPullRequestFile[]): PreparedFil
     paths,
     preparedInput: prepareFileTreeInput(paths, { flattenEmptyDirectories: true }),
   };
+}
+
+function formatFileTreeAnnotation(file: GitHubPullRequestFile, reviewCommentCount: number): string {
+  const changeSummary = formatFileChangeAnnotation(file);
+  if (reviewCommentCount === 0) {
+    return changeSummary;
+  }
+
+  const label = reviewCommentCount === 1 ? 'comment' : 'comments';
+  return `${changeSummary} · ${reviewCommentCount} ${label}`;
+}
+
+function formatFileTreeAnnotationTitle(
+  file: GitHubPullRequestFile,
+  reviewCommentCount: number,
+): string {
+  const changeTitle = `${file.changes.toLocaleString()} total changes: +${file.additions.toLocaleString()} / -${file.deletions.toLocaleString()}`;
+  if (reviewCommentCount === 0) {
+    return changeTitle;
+  }
+
+  const commentLabel = reviewCommentCount === 1 ? 'review comment' : 'review comments';
+  return `${changeTitle} · ${reviewCommentCount.toLocaleString()} ${commentLabel}`;
 }
 
 function formatFileChangeAnnotation(file: GitHubPullRequestFile): string {

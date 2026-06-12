@@ -5,6 +5,7 @@ type DiffOverlayHeaderProps = {
   pullRequest: GitHubPullRequest;
   diffLayout: DiffLayout;
   isSidebarCollapsed: boolean;
+  reviewCommentsLoadError?: string | null;
   onToggleSidebar: () => void;
   onDiffLayoutChange: (layout: DiffLayout) => void;
   onClose: () => void;
@@ -14,6 +15,7 @@ export function DiffOverlayHeader({
   pullRequest,
   diffLayout,
   isSidebarCollapsed,
+  reviewCommentsLoadError,
   onToggleSidebar,
   onDiffLayoutChange,
   onClose,
@@ -64,15 +66,25 @@ export function DiffOverlayHeader({
           </div>
         </div>
 
-        <div
-          className='gprv-header-stats'
-          aria-label={`${pullRequest.changed_files} files changed, ${pullRequest.additions} additions, ${pullRequest.deletions} deletions`}
-        >
-          <span className='gprv-stat-files'>
-            {pullRequest.changed_files} file{pullRequest.changed_files === 1 ? '' : 's'}
-          </span>
-          <span className='gprv-stat-additions'>+{pullRequest.additions}</span>
-          <span className='gprv-stat-deletions'>−{pullRequest.deletions}</span>
+        <div className='gprv-header-meta-stack'>
+          <div
+            className='gprv-header-stats'
+            aria-label={`${pullRequest.changed_files} files changed, ${pullRequest.additions} additions, ${pullRequest.deletions} deletions`}
+          >
+            <span className='gprv-stat-files'>
+              {pullRequest.changed_files} file{pullRequest.changed_files === 1 ? '' : 's'}
+            </span>
+            <span className='gprv-stat-additions'>+{pullRequest.additions}</span>
+            <span className='gprv-stat-deletions'>−{pullRequest.deletions}</span>
+          </div>
+          {reviewCommentsLoadError ? (
+            <p
+              className='gprv-review-load-error'
+              title={reviewCommentsLoadError}
+            >
+              Review comments unavailable
+            </p>
+          ) : null}
         </div>
       </div>
 

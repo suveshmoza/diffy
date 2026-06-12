@@ -18,6 +18,27 @@ export type GitHubPullRequest = {
   changed_files: number;
 };
 
+export type GitHubPullRequestReviewComment = {
+  id: number;
+  path: string;
+  body: string;
+  html_url: string;
+  user: { login: string; avatar_url?: string };
+  created_at: string;
+  updated_at: string;
+  line: number | null;
+  original_line: number | null;
+  start_line: number | null;
+  original_start_line: number | null;
+  side: 'LEFT' | 'RIGHT' | null;
+  in_reply_to_id: number | null;
+};
+
+type ReviewCommentsFetchResult = {
+  comments: GitHubPullRequestReviewComment[];
+  loadError: string | null;
+};
+
 export type GitHubPullRequestFile = {
   sha: string;
   filename: string;
@@ -37,6 +58,8 @@ export type PullRequestDiffData = {
   pullRequest: GitHubPullRequest;
   files: GitHubPullRequestFile[];
   patch: string;
+  reviewComments: GitHubPullRequestReviewComment[];
+  reviewCommentsLoadError: string | null;
 };
 
 const GITHUB_PULL_URL_PATTERN = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/i;
@@ -114,14 +137,22 @@ async function fetchPullRequestDiffData(ref: GitHubPullRequestRef): Promise<Pull
   const headers = createGitHubHeaders(token);
   const apiBase = `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/${ref.pullNumber}`;
 
-  const [pullRequest, files] = await Promise.all([
+  const [pullRequest, files, reviewCommentsResult] = await Promise.all([
     fetchJson<GitHubPullRequest>(apiBase, headers),
     fetchAllPullRequestFiles(`${apiBase}/files`, headers),
+    fetchAllPullRequestReviewComments(`${apiBase}/comments`, headers),
   ]);
 
   const patch = await fetchAggregatePullRequestPatch(ref, apiBase, headers, pullRequest, files);
 
-  return { ref, pullRequest, files, patch };
+  return {
+    ref,
+    pullRequest,
+    files,
+    patch,
+    reviewComments: reviewCommentsResult.comments,
+    reviewCommentsLoadError: reviewCommentsResult.loadError,
+  };
 }
 
 async function fetchAggregatePullRequestPatch(
@@ -281,7 +312,30 @@ async function fetchAllPullRequestFiles(
   url: string,
   headers: Record<string, string>,
 ): Promise<GitHubPullRequestFile[]> {
-  const files: GitHubPullRequestFile[] = [];
+  return fetchAllPaginated<GitHubPullRequestFile>(url, headers);
+}
+
+async function fetchAllPullRequestReviewComments(
+  url: string,
+  headers: Record<string, string>,
+): Promise<ReviewCommentsFetchResult> {
+  try {
+    return {
+      comments: await fetchAllPaginated<GitHubPullRequestReviewComment>(url, headers),
+      loadError: null,
+    };
+  } catch (error: unknown) {
+    // Review comments are optional; keep the diff usable when this endpoint fails.
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      comments: [],
+      loadError: message,
+    };
+  }
+}
+
+async function fetchAllPaginated<T>(url: string, headers: Record<string, string>): Promise<T[]> {
+  const items: T[] = [];
   let nextUrl: string | null = `${url}?per_page=100`;
 
   while (nextUrl) {
@@ -290,11 +344,11 @@ async function fetchAllPullRequestFiles(
       throw await createGitHubError(response);
     }
 
-    files.push(...((await response.json()) as GitHubPullRequestFile[]));
+    items.push(...((await response.json()) as T[]));
     nextUrl = getNextLink(response.headers.get('Link'));
   }
 
-  return files;
+  return items;
 }
 
 async function fetchJson<T>(url: string, headers: Record<string, string>): Promise<T> {

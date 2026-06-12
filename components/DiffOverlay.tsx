@@ -1,6 +1,7 @@
+import type { DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
 import diffsBaseCSS from '@pierre/diffs/dist/style.js';
 import { CodeView, WorkerPoolContextProvider, type CodeViewHandle } from '@pierre/diffs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
 import { buildCodeViewItems, getCodeViewItemIdForFile } from '@/lib/build-code-view-items';
@@ -12,10 +13,13 @@ import {
 } from '@/lib/diff-layout-prefs';
 import { workerFactory } from '@/lib/diff-worker';
 import type { PullRequestDiffData } from '@/lib/github';
+import type { ReviewCommentThreadMetadata } from '@/lib/review-comments';
 import { getDiffTheme, getGitHubTheme, type GitHubTheme } from '@/lib/theme';
 
 import { DiffOverlayHeader } from './DiffOverlayHeader';
 import { FileTreePanel } from './FileTreePanel';
+import { OrphanedReviewCommentsBadge } from './OrphanedReviewCommentsBadge';
+import { ReviewCommentThread } from './ReviewCommentThread';
 import { WorkerPoolRenderOptionsSync } from './WorkerPoolRenderOptionsSync';
 
 type DiffOverlayProps = {
@@ -30,14 +34,19 @@ const DIFF_WORKER_POOL_SIZE = Math.max(
 const DIFF_WORKER_RENDER_CACHE_SIZE = 200;
 
 export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
-  const viewerRef = useRef<CodeViewHandle<undefined>>(null);
+  const viewerRef = useRef<CodeViewHandle<ReviewCommentThreadMetadata>>(null);
   const codeViewHostRef = useRef<HTMLDivElement>(null);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [diffLayout, setDiffLayout] = useState<DiffLayout>(DEFAULT_DIFF_LAYOUT);
   const [theme, setTheme] = useState<GitHubTheme>(() => getGitHubTheme());
 
-  const { items: initialItems, diffPathSet } = useMemo(() => buildCodeViewItems(data), [data]);
+  const {
+    items: initialItems,
+    diffPathSet,
+    reviewCommentCountByPath,
+    orphanedReviewThreadsByItemId,
+  } = useMemo(() => buildCodeViewItems(data), [data]);
   const diffTheme = getDiffTheme(theme);
   const isCodeViewHostReady = useCodeViewHostReady(codeViewHostRef);
 
@@ -100,6 +109,27 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     event.stopPropagation();
   };
 
+  const renderReviewAnnotation = useCallback(
+    (
+      annotation:
+        | LineAnnotation<ReviewCommentThreadMetadata>
+        | DiffLineAnnotation<ReviewCommentThreadMetadata>,
+    ) => <ReviewCommentThread annotation={annotation} />,
+    [],
+  );
+
+  const renderReviewHeaderMetadata = useCallback(
+    (item: (typeof initialItems)[number]) => {
+      const orphanedThreads = orphanedReviewThreadsByItemId.get(item.id);
+      if (!orphanedThreads?.length) {
+        return null;
+      }
+
+      return <OrphanedReviewCommentsBadge threads={orphanedThreads} />;
+    },
+    [orphanedReviewThreadsByItemId],
+  );
+
   return (
     <>
       <div
@@ -119,6 +149,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
           pullRequest={data.pullRequest}
           diffLayout={diffLayout}
           isSidebarCollapsed={isSidebarCollapsed}
+          reviewCommentsLoadError={data.reviewCommentsLoadError}
           onToggleSidebar={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
           onDiffLayoutChange={updateDiffLayout}
           onClose={onClose}
@@ -131,6 +162,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
                 <FileTreePanel
                   files={data.files}
                   selectedPath={selectedPath}
+                  reviewCommentCountByPath={reviewCommentCountByPath}
                   onSelectPath={handleTreeSelect}
                 />
               ) : (
@@ -156,12 +188,14 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
                 onSynced={refreshCodeViewLayout}
               />
               {isCodeViewHostReady ? (
-                <CodeView
+                <CodeView<ReviewCommentThreadMetadata>
                   ref={viewerRef}
                   containerRef={handleCodeViewContainer}
                   initialItems={initialItems}
                   className='gprv-code-view'
                   style={{ height: '100%' }}
+                  renderAnnotation={renderReviewAnnotation}
+                  renderHeaderMetadata={renderReviewHeaderMetadata}
                   options={{
                     theme: { dark: 'pierre-dark', light: 'pierre-light' },
                     themeType: theme,
