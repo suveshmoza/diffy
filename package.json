@@ -13,7 +13,9 @@
     "postinstall": "wxt prepare",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix"
   },
   "dependencies": {
     "@pierre/diffs": "1.2.9",
@@ -30,11 +32,16 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
     "oxfmt": "^0.54.0",
+    "oxlint": "^1.69.0",
     "typescript": "6.0.3",
     "vite": "^8.0.16",
     "wxt": "^0.20.26"
   },
   "lint-staged": {
-    "*": "oxfmt --no-error-on-unmatched-pattern"
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "oxlint --fix",
+      "oxfmt --no-error-on-unmatched-pattern"
+    ],
+    "*.{json,css,md}": "oxfmt --no-error-on-unmatched-pattern"
   }
 }

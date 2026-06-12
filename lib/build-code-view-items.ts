@@ -18,7 +18,7 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
   const diffPathSet = new Set<string>();
   const items: CodeViewItem[] = [];
 
-  for (const fileDiff of parsed.flatMap((patch) => patch.files)) {
+  for (const fileDiff of parsed.flatMap((parsedPatch) => parsedPatch.files)) {
     addDiffPath(diffPathSet, fileDiff.name);
     if (fileDiff.prevName) {
       addDiffPath(diffPathSet, fileDiff.prevName);

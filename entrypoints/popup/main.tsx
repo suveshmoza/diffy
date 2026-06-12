@@ -15,12 +15,17 @@ function PopupApp() {
       return;
     }
 
-    browser.storage.sync.get('githubToken').then((stored) => {
-      if (typeof stored.githubToken === 'string' && stored.githubToken.trim()) {
-        setToken(stored.githubToken);
-        setHasSavedToken(true);
-      }
-    });
+    browser.storage.sync
+      .get('githubToken')
+      .then((stored) => {
+        if (typeof stored.githubToken === 'string' && stored.githubToken.trim()) {
+          setToken(stored.githubToken);
+          setHasSavedToken(true);
+        }
+      })
+      .catch(() => {
+        // Ignore storage read failures and keep the empty token state.
+      });
   }, []);
 
   async function save(event: SubmitEvent<HTMLFormElement>) {

@@ -61,11 +61,15 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   useEffect(() => {
     let isCancelled = false;
 
-    readDiffLayoutPreference().then((storedLayout) => {
-      if (!isCancelled) {
-        setDiffLayout(storedLayout);
-      }
-    });
+    readDiffLayoutPreference()
+      .then((storedLayout) => {
+        if (!isCancelled) {
+          setDiffLayout(storedLayout);
+        }
+      })
+      .catch(() => {
+        // Ignore preference read failures and keep the default layout.
+      });
 
     return () => {
       isCancelled = true;
