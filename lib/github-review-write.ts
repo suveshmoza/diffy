@@ -11,16 +11,6 @@ export type GitHubViewer = {
   avatar_url?: string;
 };
 
-export type GitHubPullRequestReview = {
-  id: number;
-  user: { login: string };
-  state: 'PENDING' | 'COMMENTED' | 'APPROVED' | 'CHANGES_REQUESTED' | 'DISMISSED';
-  submitted_at: string | null;
-  commit_id: string;
-};
-
-export type ReviewSubmitEvent = 'APPROVE' | 'COMMENT' | 'REQUEST_CHANGES';
-
 export type GitHubReviewWriteErrorCode =
   | 'missing_token'
   | 'unauthorized'
@@ -44,7 +34,6 @@ type CreateReviewCommentInput = {
   commitId: string;
   path: string;
   range: SelectedLineRange;
-  pullRequestReviewId?: number;
 };
 
 function createGitHubHeaders(token: string | null): Record<string, string> {
@@ -128,6 +117,24 @@ async function postJson<T>(url: string, token: string, body: unknown): Promise<T
   return (await response.json()) as T;
 }
 
+async function patchJson<T>(url: string, token: string, body: unknown): Promise<T> {
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: createGitHubHeaders(token),
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '');
+    const message = detail
+      ? `${response.status} ${response.statusText}: ${detail}`
+      : `${response.status} ${response.statusText}`;
+    throw new Error(message);
+  }
+
+  return (await response.json()) as T;
+}
+
 async function deleteRequest(url: string, token: string): Promise<void> {
   const response = await fetch(url, {
     method: 'DELETE',
@@ -180,10 +187,6 @@ export function selectedRangeToCommentPayload(
     payload.start_side = startSide;
   }
 
-  if (input.pullRequestReviewId != null) {
-    payload.pull_request_review_id = input.pullRequestReviewId;
-  }
-
   return payload;
 }
 
@@ -216,132 +219,53 @@ export async function createImmediateReviewComment(
   }
 }
 
-export async function createPendingReview(
+export async function createReviewCommentReply(
   ref: GitHubPullRequestRef,
-  commitId: string,
-): Promise<GitHubPullRequestReview> {
-  try {
-    const token = await requireToken();
-    return await postJson<GitHubPullRequestReview>(`${pullRequestApiBase(ref)}/reviews`, token, {
-      commit_id: commitId,
-    });
-  } catch (error: unknown) {
-    throw toGitHubReviewWriteError(error);
-  }
-}
-
-export async function findPendingReviewForViewer(
-  ref: GitHubPullRequestRef,
-  viewerLogin: string,
-): Promise<GitHubPullRequestReview | null> {
-  const token = await getGitHubToken();
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const reviews = await fetchJson<GitHubPullRequestReview[]>(
-      `${pullRequestApiBase(ref)}/reviews`,
-      token,
-    );
-
-    return (
-      reviews.find(
-        (review) =>
-          review.state === 'PENDING' &&
-          review.submitted_at == null &&
-          review.user.login === viewerLogin,
-      ) ?? null
-    );
-  } catch {
-    return null;
-  }
-}
-
-export async function addPendingReviewComment(
-  ref: GitHubPullRequestRef,
-  input: CreateReviewCommentInput & { pullRequestReviewId: number },
+  input: { body: string; inReplyToId: number },
 ): Promise<GitHubPullRequestReviewComment> {
   try {
     const token = await requireToken();
     return await postJson<GitHubPullRequestReviewComment>(
       `${pullRequestApiBase(ref)}/comments`,
       token,
-      selectedRangeToCommentPayload(input),
+      {
+        body: input.body,
+        in_reply_to: input.inReplyToId,
+      },
     );
   } catch (error: unknown) {
     throw toGitHubReviewWriteError(error);
   }
 }
 
-export async function submitPendingReview(
+export async function updateReviewComment(
   ref: GitHubPullRequestRef,
-  reviewId: number,
-  event: ReviewSubmitEvent,
-  body?: string,
-): Promise<GitHubPullRequestReview> {
+  commentId: number,
+  body: string,
+): Promise<GitHubPullRequestReviewComment> {
   try {
     const token = await requireToken();
-    const payload: Record<string, unknown> = { event };
-    if (body?.trim()) {
-      payload.body = body.trim();
-    } else if (event === 'COMMENT' || event === 'REQUEST_CHANGES') {
-      payload.body = '';
-    }
-
-    return await postJson<GitHubPullRequestReview>(
-      `${pullRequestApiBase(ref)}/reviews/${reviewId}/events`,
+    return await patchJson<GitHubPullRequestReviewComment>(
+      `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/comments/${commentId}`,
       token,
-      payload,
+      { body },
     );
   } catch (error: unknown) {
     throw toGitHubReviewWriteError(error);
   }
 }
 
-export async function discardPendingReview(
+export async function deleteReviewComment(
   ref: GitHubPullRequestRef,
-  reviewId: number,
+  commentId: number,
 ): Promise<void> {
   try {
     const token = await requireToken();
-    await deleteRequest(`${pullRequestApiBase(ref)}/reviews/${reviewId}`, token);
+    await deleteRequest(
+      `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/comments/${commentId}`,
+      token,
+    );
   } catch (error: unknown) {
     throw toGitHubReviewWriteError(error);
   }
-}
-
-export async function fetchPullRequestReviewComments(
-  ref: GitHubPullRequestRef,
-): Promise<GitHubPullRequestReviewComment[]> {
-  const token = await getGitHubToken();
-  if (!token) {
-    return [];
-  }
-
-  const items: GitHubPullRequestReviewComment[] = [];
-  let nextUrl: string | null = `${pullRequestApiBase(ref)}/comments?per_page=100`;
-
-  while (nextUrl) {
-    const response = await fetch(nextUrl, { headers: createGitHubHeaders(token) });
-    if (!response.ok) {
-      throw toGitHubReviewWriteError(new Error(`${response.status} ${response.statusText}`));
-    }
-
-    items.push(...((await response.json()) as GitHubPullRequestReviewComment[]));
-    const linkHeader = response.headers.get('Link');
-    nextUrl = getNextLink(linkHeader);
-  }
-
-  return items;
-}
-
-function getNextLink(linkHeader: string | null): string | null {
-  if (!linkHeader) {
-    return null;
-  }
-
-  const nextPart = linkHeader.split(',').find((part) => part.includes('rel="next"'));
-  const match = nextPart?.match(/<([^>]+)>/);
-  return match?.[1] ?? null;
 }
