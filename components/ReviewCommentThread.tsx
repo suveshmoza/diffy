@@ -97,48 +97,50 @@ const ReviewComment = memo(function ReviewComment({ comment, lineRangeLabel }: R
   const initials = comment.user.login.slice(0, 1).toUpperCase();
 
   return (
-    <article className='gprv-review-comment'>
-      <span
-        className='gprv-review-comment-avatar'
-        aria-hidden='true'
-      >
-        {comment.user.avatar_url ? (
-          <img
-            src={comment.user.avatar_url}
-            alt=''
-            width={24}
-            height={24}
-            loading='lazy'
-            decoding='async'
-          />
-        ) : (
-          initials
-        )}
-      </span>
-      <div className='gprv-review-comment-content'>
-        <div className='gprv-review-comment-meta'>
-          <strong>{comment.user.login}</strong>
-          <time
-            dateTime={comment.created_at}
-            title={formatFullTimestamp(comment.created_at)}
-          >
-            {formatRelativeTimestamp(comment.created_at)}
-          </time>
-          <a
-            className='gprv-review-comment-link'
-            href={comment.html_url}
-            target='_blank'
-            rel='noopener noreferrer'
-            aria-label={`Open comment by ${comment.user.login} on GitHub`}
-            title='Open on GitHub'
-          >
-            ↗
-          </a>
+    <>
+      {lineRangeLabel ? <p className='gprv-review-line-range'>{lineRangeLabel}</p> : null}
+      <article className='gprv-review-comment'>
+        <span
+          className='gprv-review-comment-avatar'
+          aria-hidden='true'
+        >
+          {comment.user.avatar_url ? (
+            <img
+              src={comment.user.avatar_url}
+              alt=''
+              width={24}
+              height={24}
+              loading='lazy'
+              decoding='async'
+            />
+          ) : (
+            initials
+          )}
+        </span>
+        <div className='gprv-review-comment-content'>
+          <div className='gprv-review-comment-meta'>
+            <strong>{comment.user.login}</strong>
+            <time
+              dateTime={comment.created_at}
+              title={formatFullTimestamp(comment.created_at)}
+            >
+              {formatRelativeTimestamp(comment.created_at)}
+            </time>
+            <a
+              className='gprv-review-comment-link'
+              href={comment.html_url}
+              target='_blank'
+              rel='noopener noreferrer'
+              aria-label={`Open comment by ${comment.user.login} on GitHub`}
+              title='Open on GitHub'
+            >
+              ↗
+            </a>
+          </div>
+          <div className='gprv-review-comment-text'>{renderGitHubCommentBody(comment.body)}</div>
         </div>
-        {lineRangeLabel ? <p className='gprv-review-line-range'>{lineRangeLabel}</p> : null}
-        <div className='gprv-review-comment-text'>{renderGitHubCommentBody(comment.body)}</div>
-      </div>
-    </article>
+      </article>
+    </>
   );
 });
 

@@ -125,6 +125,7 @@ export function ReviewCommentComposer({
   return (
     <div className='gprv-review-thread-shell'>
       <div className='gprv-review-thread gprv-review-composer'>
+        <p className='gprv-review-line-range'>{formatSelectedLineRangeLabel(range)}</p>
         <div className='gprv-review-comment'>
           <span
             className='gprv-review-comment-avatar'
@@ -149,7 +150,6 @@ export function ReviewCommentComposer({
                 <strong>{viewerUser.login}</strong>
               </div>
             ) : null}
-            <p className='gprv-review-line-range'>{formatSelectedLineRangeLabel(range)}</p>
             <label className='gprv-review-composer-field'>
               <span className='sr-only'>Comment</span>
               <textarea
