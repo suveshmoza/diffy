@@ -12,6 +12,7 @@ import {
   getCommentAnchorLine,
   toAnnotationSide,
   type ReviewAnnotationMetadata,
+  type ReviewDraftMetadata,
   type ReviewThreadMetadata,
 } from './review-comments';
 
@@ -26,16 +27,49 @@ export function bumpItemVersion<T>(item: CodeViewItem<T>): CodeViewItem<T> {
   };
 }
 
+function areRangesEqual(left: SelectedLineRange, right: SelectedLineRange): boolean {
+  return (
+    left.start === right.start &&
+    left.end === right.end &&
+    left.side === right.side &&
+    left.endSide === right.endSide
+  );
+}
+
 export function hasDraftAnnotation(item: CodeViewItem<ReviewAnnotationMetadata>): boolean {
   return getAnnotations(item).some((annotation) => annotation.metadata?.kind === 'draft');
 }
 
+export function hasAnyDraftAnnotation(
+  viewer: { getItem(id: string): CodeViewItem<ReviewAnnotationMetadata> | undefined },
+  items: readonly CodeViewItem<ReviewAnnotationMetadata>[],
+): boolean {
+  for (const item of items) {
+    const liveItem = viewer.getItem(item.id);
+    if (liveItem && hasDraftAnnotation(liveItem)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function removeDraftAnnotation(
   item: CodeViewItem<ReviewAnnotationMetadata>,
+  draftId?: string,
 ): CodeViewItem<ReviewAnnotationMetadata> {
-  const annotations = getAnnotations(item).filter(
-    (annotation) => annotation.metadata?.kind !== 'draft',
-  );
+  const annotations = getAnnotations(item).filter((annotation) => {
+    const metadata = annotation.metadata;
+    if (metadata?.kind !== 'draft') {
+      return true;
+    }
+
+    if (draftId == null) {
+      return false;
+    }
+
+    return metadata.draftId !== draftId;
+  });
 
   if (annotations.length === getAnnotations(item).length) {
     return item;
@@ -44,27 +78,46 @@ export function removeDraftAnnotation(
   return withAnnotations(item, annotations);
 }
 
-export function upsertDraftAnnotation(
+export function addDraftAnnotation(
   item: CodeViewItem<ReviewAnnotationMetadata>,
   range: SelectedLineRange,
-): CodeViewItem<ReviewAnnotationMetadata> {
-  const withoutDraft = removeDraftAnnotation(item);
-  const metadata: ReviewAnnotationMetadata = { kind: 'draft', range };
+): { item: CodeViewItem<ReviewAnnotationMetadata>; draftId: string } {
+  for (const annotation of getAnnotations(item)) {
+    const metadata = annotation.metadata;
+    if (metadata?.kind === 'draft' && areRangesEqual(metadata.range, range)) {
+      return { item, draftId: metadata.draftId };
+    }
+  }
+
+  const draftId = crypto.randomUUID();
+  const metadata: ReviewDraftMetadata = { kind: 'draft', draftId, range };
   const draftAnnotation = createAnnotationForMetadata(
-    withoutDraft,
+    item,
     range.end,
     range.endSide ?? range.side,
     metadata,
   );
 
-  return withAnnotations(withoutDraft, [...getAnnotations(withoutDraft), draftAnnotation]);
+  return {
+    item: withAnnotations(item, [...getAnnotations(item), draftAnnotation]),
+    draftId,
+  };
+}
+
+/** @deprecated Use addDraftAnnotation */
+export function upsertDraftAnnotation(
+  item: CodeViewItem<ReviewAnnotationMetadata>,
+  range: SelectedLineRange,
+): CodeViewItem<ReviewAnnotationMetadata> {
+  return addDraftAnnotation(item, range).item;
 }
 
 export function replaceDraftWithThreadAnnotation(
   item: CodeViewItem<ReviewAnnotationMetadata>,
   comment: GitHubPullRequestReviewComment,
+  draftId: string,
 ): CodeViewItem<ReviewAnnotationMetadata> {
-  const withoutDraft = removeDraftAnnotation(item);
+  const withoutDraft = removeDraftAnnotation(item, draftId);
   const threadMetadata: ReviewThreadMetadata = {
     kind: 'thread',
     comments: [comment],
