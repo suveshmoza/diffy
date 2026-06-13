@@ -3,31 +3,40 @@ import { memo } from 'react';
 
 import type { GitHubPullRequestReviewComment } from '@/lib/github';
 import { renderGitHubCommentBody } from '@/lib/github-comment-markdown';
-import type { ReviewCommentThreadMetadata } from '@/lib/review-comments';
+import type { ReviewAnnotationMetadata } from '@/lib/review-comments';
 
 type ReviewCommentThreadProps = {
   annotation:
-    | LineAnnotation<ReviewCommentThreadMetadata>
-    | DiffLineAnnotation<ReviewCommentThreadMetadata>;
+    | LineAnnotation<ReviewAnnotationMetadata>
+    | DiffLineAnnotation<ReviewAnnotationMetadata>;
   variant?: 'inline' | 'header';
+  showPendingBadge?: boolean;
 };
 
 export const ReviewCommentThread = memo(function ReviewCommentThread({
   annotation,
   variant = 'inline',
+  showPendingBadge = false,
 }: ReviewCommentThreadProps) {
-  const thread = annotation.metadata;
-  if (!thread || thread.comments.length === 0) {
+  const metadata = annotation.metadata;
+  if (!metadata || (metadata.kind !== 'thread' && metadata.kind !== 'pending')) {
     return null;
   }
 
-  const [mainComment, ...replies] = thread.comments;
+  if (metadata.comments.length === 0) {
+    return null;
+  }
+
+  const [mainComment, ...replies] = metadata.comments;
 
   return (
     <div
       className={`gprv-review-thread-shell${variant === 'header' ? ' gprv-review-thread-shell--header' : ''}`}
     >
-      <div className='gprv-review-thread'>
+      <div
+        className={`gprv-review-thread${showPendingBadge ? ' gprv-review-thread--pending' : ''}`}
+      >
+        {showPendingBadge ? <span className='gprv-review-pending-badge'>Pending</span> : null}
         <ReviewComment comment={mainComment} />
         {replies.length > 0 ? (
           <div className='gprv-review-replies'>

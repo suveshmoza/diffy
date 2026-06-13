@@ -1,12 +1,12 @@
 import type { LineAnnotation } from '@pierre/diffs';
 import { memo, useMemo } from 'react';
 
-import type { ReviewCommentThreadMetadata } from '@/lib/review-comments';
+import type { ReviewThreadMetadata } from '@/lib/review-comments';
 
 import { ReviewCommentThread } from './ReviewCommentThread';
 
 type OrphanedReviewCommentsBadgeProps = {
-  threads: ReviewCommentThreadMetadata[];
+  threads: ReviewThreadMetadata[];
 };
 
 export const OrphanedReviewCommentsBadge = memo(function OrphanedReviewCommentsBadge({
@@ -19,7 +19,7 @@ export const OrphanedReviewCommentsBadge = memo(function OrphanedReviewCommentsB
         annotation: {
           lineNumber: thread.comments[0]?.line ?? thread.comments[0]?.original_line ?? 0,
           metadata: thread,
-        } satisfies LineAnnotation<ReviewCommentThreadMetadata>,
+        } satisfies LineAnnotation<ReviewThreadMetadata>,
       })),
     [threads],
   );
