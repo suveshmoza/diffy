@@ -28,10 +28,12 @@ type DiffOverlayProps = {
 export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const viewerRef = useRef<CodeViewHandle<ReviewCommentThreadMetadata>>(null);
   const codeViewHostRef = useRef<HTMLDivElement>(null);
+  const orphanedThreadsByItemIdRef = useRef<
+    ReadonlyMap<string, ReviewCommentThreadMetadata[]> | undefined
+  >(undefined);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [diffLayout, setDiffLayout] = useState<DiffLayout>(DEFAULT_DIFF_LAYOUT);
-
   useEffect(() => {
     let isCancelled = false;
 
@@ -54,9 +56,11 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     diffLayout,
   });
 
-  const { result: codeViewItems, isBuilding } = useCodeViewItems(data);
+  const { result: codeViewItems, isBuilding, error: codeViewBuildError } = useCodeViewItems(data);
   const isCodeViewHostReady = useCodeViewHostReady(codeViewHostRef);
   const isCodeViewMounted = isCodeViewHostReady && isThemeReady && codeViewItems != null;
+
+  orphanedThreadsByItemIdRef.current = codeViewItems?.orphanedReviewThreadsByItemId;
 
   const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
     useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, [
@@ -135,18 +139,14 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
 
   const renderReviewHeaderMetadata = useCallback(
     (item: NonNullable<typeof codeViewItems>['items'][number]) => {
-      if (!codeViewItems) {
-        return null;
-      }
-
-      const orphanedThreads = codeViewItems.orphanedReviewThreadsByItemId.get(item.id);
+      const orphanedThreads = orphanedThreadsByItemIdRef.current?.get(item.id);
       if (!orphanedThreads?.length) {
         return null;
       }
 
       return <OrphanedReviewCommentsBadge threads={orphanedThreads} />;
     },
-    [codeViewItems],
+    [],
   );
 
   return (
@@ -196,7 +196,14 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
             ref={codeViewHostRef}
             className='gprv-code-view-host'
           >
-            {isCodeViewMounted && codeViewItems ? (
+            {codeViewBuildError ? (
+              <div
+                className='gprv-state'
+                style={{ color: 'var(--gprv-error)' }}
+              >
+                {codeViewBuildError}
+              </div>
+            ) : isCodeViewMounted && codeViewItems ? (
               <CodeView<ReviewCommentThreadMetadata>
                 ref={viewerRef}
                 containerRef={handleCodeViewContainer}

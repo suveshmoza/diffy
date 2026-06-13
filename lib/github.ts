@@ -66,6 +66,7 @@ const GITHUB_PULL_URL_PATTERN = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\
 /** GitHub rejects unified diffs above this file count. */
 const GITHUB_MAX_AGGREGATE_DIFF_FILES = 300;
 const pullRequestDiffCache = new Map<string, Promise<PullRequestDiffData>>();
+const pullRequestDiffInFlight = new Map<string, Promise<PullRequestDiffData>>();
 let cachedGitHubToken: string | null | undefined;
 let githubTokenPromise: Promise<string | null> | null = null;
 
@@ -142,34 +143,70 @@ export function prefetchPullRequestDiffData(url: string | null | undefined): voi
   void fetchCachedPullRequestDiffData(ref).catch(() => undefined);
 }
 
+export function getPullRequestRefPrefix(ref: GitHubPullRequestRef): string {
+  return `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}#${ref.pullNumber}`;
+}
+
+export function getPullRequestContentCacheKey(ref: GitHubPullRequestRef, headSha: string): string {
+  return `${getPullRequestRefPrefix(ref)}@${headSha}`;
+}
+
 export function invalidatePullRequestDiffCache(ref: GitHubPullRequestRef): void {
-  pullRequestDiffCache.delete(getPullRequestDiffCacheKey(ref));
+  const prefix = getPullRequestRefPrefix(ref);
+  for (const key of pullRequestDiffCache.keys()) {
+    if (key.startsWith(prefix)) {
+      pullRequestDiffCache.delete(key);
+    }
+  }
 }
 
 export function fetchCachedPullRequestDiffData(
   ref: GitHubPullRequestRef,
 ): Promise<PullRequestDiffData> {
-  const cacheKey = getPullRequestDiffCacheKey(ref);
+  const inFlightKey = getPullRequestRefPrefix(ref);
+  const inFlight = pullRequestDiffInFlight.get(inFlightKey);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const promise = fetchPullRequestDiffDataCached(ref).finally(() => {
+    pullRequestDiffInFlight.delete(inFlightKey);
+  });
+  pullRequestDiffInFlight.set(inFlightKey, promise);
+  return promise;
+}
+
+async function fetchPullRequestDiffDataCached(
+  ref: GitHubPullRequestRef,
+): Promise<PullRequestDiffData> {
+  const token = await getGitHubToken();
+  const headers = createGitHubHeaders(token);
+  const apiBase = `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/${ref.pullNumber}`;
+
+  const pullRequest = await fetchJson<GitHubPullRequest>(apiBase, headers);
+  const cacheKey = getPullRequestContentCacheKey(ref, pullRequest.head.sha);
   const cached = pullRequestDiffCache.get(cacheKey);
   if (cached) {
     return cached;
   }
 
-  const promise = fetchPullRequestDiffData(ref).catch((error: unknown) => {
-    pullRequestDiffCache.delete(cacheKey);
-    throw error;
-  });
+  const promise = fetchPullRequestDiffDataBody(ref, pullRequest, headers, apiBase).catch(
+    (error: unknown) => {
+      pullRequestDiffCache.delete(cacheKey);
+      throw error;
+    },
+  );
   pullRequestDiffCache.set(cacheKey, promise);
   return promise;
 }
 
-async function fetchPullRequestDiffData(ref: GitHubPullRequestRef): Promise<PullRequestDiffData> {
-  const token = await getGitHubToken();
-  const headers = createGitHubHeaders(token);
-  const apiBase = `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/${ref.pullNumber}`;
-
-  const [pullRequest, files, reviewCommentsResult] = await Promise.all([
-    fetchJson<GitHubPullRequest>(apiBase, headers),
+async function fetchPullRequestDiffDataBody(
+  ref: GitHubPullRequestRef,
+  pullRequest: GitHubPullRequest,
+  headers: Record<string, string>,
+  apiBase: string,
+): Promise<PullRequestDiffData> {
+  const [files, reviewCommentsResult] = await Promise.all([
     fetchAllPullRequestFiles(`${apiBase}/files`, headers),
     fetchAllPullRequestReviewComments(`${apiBase}/comments`, headers),
   ]);
@@ -325,10 +362,6 @@ function isGitHubDiffTooLargeError(error: unknown): boolean {
   }
 
   return error.message.includes('406') && error.message.includes('too_large');
-}
-
-function getPullRequestDiffCacheKey(ref: GitHubPullRequestRef): string {
-  return `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}#${ref.pullNumber}`;
 }
 
 function createGitHubHeaders(token: string | null): Record<string, string> {

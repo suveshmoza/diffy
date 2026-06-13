@@ -204,7 +204,7 @@ export function FileTreePanel({
     [reviewCommentCountByPath],
   );
   const annotationsByPathRef = useRef(treeInput.annotationsByPath);
-  const preparedInputRef = useRef(treeInput.preparedInput);
+  const pathsSignatureRef = useRef(treeInput.pathsSignature);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const keepSearchFocusRef = useRef(false);
@@ -248,11 +248,9 @@ export function FileTreePanel({
     return annotationsByPathRef.current.get(item.path) ?? null;
   }, []);
 
-  const initialExpansion = files.length > 150 ? ('closed' as const) : ('open' as const);
-
   const { model } = useFileTree({
     preparedInput: treeInput.preparedInput,
-    initialExpansion,
+    initialExpansion: 'open',
     initialSelectedPaths: selectedPath ? [selectedPath] : [],
     icons: 'complete',
     gitStatus: treeInput.gitStatus,
@@ -292,11 +290,12 @@ export function FileTreePanel({
   }, [model]);
 
   useEffect(() => {
-    if (preparedInputRef.current === treeInput.preparedInput) {
+    if (pathsSignatureRef.current === treeInput.pathsSignature) {
+      model.setGitStatus(treeInput.gitStatus);
       return;
     }
 
-    preparedInputRef.current = treeInput.preparedInput;
+    pathsSignatureRef.current = treeInput.pathsSignature;
     model.resetPaths(treeInput.paths, { preparedInput: treeInput.preparedInput });
     model.setGitStatus(treeInput.gitStatus);
     setSearchQuery('');

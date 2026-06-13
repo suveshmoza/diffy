@@ -1,5 +1,5 @@
 import {
-  prepareFileTreeInput,
+  preparePresortedFileTreeInput,
   type FileTreePreparedInput,
   type FileTreeRowDecoration,
   type GitStatusEntry,
@@ -12,14 +12,34 @@ export type PreparedFileTreeInput = {
   annotationsByPath: Map<string, FileTreeRowDecoration>;
   gitStatus: GitStatusEntry[];
   paths: string[];
+  pathsSignature: string;
   preparedInput: FileTreePreparedInput;
 };
+
+const preparedInputCache = new Map<string, FileTreePreparedInput>();
+
+function getPathsSignature(paths: readonly string[]): string {
+  return paths.join('\0');
+}
+
+function getOrCreatePreparedInput(paths: string[]): FileTreePreparedInput {
+  const signature = getPathsSignature(paths);
+  const cached = preparedInputCache.get(signature);
+  if (cached) {
+    return cached;
+  }
+
+  const preparedInput = preparePresortedFileTreeInput(paths);
+  preparedInputCache.set(signature, preparedInput);
+  return preparedInput;
+}
 
 export function createFileTreeInput(
   files: GitHubPullRequestFile[],
   reviewCommentCountByPath: ReadonlyMap<string, number> = new Map(),
 ): PreparedFileTreeInput {
   const paths = files.map((file) => file.filename);
+  const pathsSignature = getPathsSignature(paths);
   const annotationsByPath = new Map<string, FileTreeRowDecoration>();
   const gitStatus: GitStatusEntry[] = [];
 
@@ -33,7 +53,8 @@ export function createFileTreeInput(
     annotationsByPath,
     gitStatus,
     paths,
-    preparedInput: prepareFileTreeInput(paths, { flattenEmptyDirectories: true }),
+    pathsSignature,
+    preparedInput: getOrCreatePreparedInput(paths),
   };
 }
 

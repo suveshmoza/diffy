@@ -2,6 +2,7 @@ import { parsePatchFiles, type CodeViewItem } from '@pierre/diffs';
 
 import {
   buildPatchFromFiles,
+  getPullRequestContentCacheKey,
   type GitHubPullRequestFile,
   type PullRequestDiffData,
 } from './github';
@@ -22,7 +23,7 @@ export type CodeViewItemsResult = {
 const codeViewItemsCache = new Map<string, CodeViewItemsResult>();
 
 function getCodeViewItemsCacheKey(data: PullRequestDiffData): string {
-  return `${data.ref.owner.toLowerCase()}/${data.ref.repo.toLowerCase()}#${data.ref.pullNumber}`;
+  return getPullRequestContentCacheKey(data.ref, data.pullRequest.head.sha);
 }
 
 export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResult {
@@ -33,7 +34,15 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
   }
 
   const patch = data.patch.trim() ? data.patch : buildPatchFromFiles(data.files);
-  const parsed = parsePatchFiles(patch, cacheKey, true);
+
+  let parsed;
+  try {
+    parsed = parsePatchFiles(patch, cacheKey, true);
+  } catch (error: unknown) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to parse pull request diff: ${detail}`, { cause: error });
+  }
+
   const diffPathSet = new Set<string>();
   const items: CodeViewItem[] = [];
 
@@ -94,9 +103,12 @@ export function invalidateCodeViewItemsCache(ref?: {
     return;
   }
 
-  codeViewItemsCache.delete(
-    `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}#${ref.pullNumber}`,
-  );
+  const prefix = `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}#${ref.pullNumber}`;
+  for (const key of codeViewItemsCache.keys()) {
+    if (key.startsWith(prefix)) {
+      codeViewItemsCache.delete(key);
+    }
+  }
 }
 
 function getCodeViewItemId(path: string, hasDiff: boolean): string {

@@ -10,33 +10,52 @@ import type { PullRequestDiffData } from '@/lib/github';
 type UseCodeViewItemsState = {
   result: CodeViewItemsResult | null;
   isBuilding: boolean;
+  error: string | null;
 };
 
 export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsState {
   const [state, setState] = useState<UseCodeViewItemsState>(() => {
     if (isLargePullRequestData(data)) {
-      return { result: null, isBuilding: true };
+      return { result: null, isBuilding: true, error: null };
     }
 
-    return {
-      result: buildCodeViewItems(data),
-      isBuilding: false,
-    };
+    try {
+      return {
+        result: buildCodeViewItems(data),
+        isBuilding: false,
+        error: null,
+      };
+    } catch (error: unknown) {
+      return {
+        result: null,
+        isBuilding: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   });
 
   useEffect(() => {
     if (!isLargePullRequestData(data)) {
       startTransition(() => {
-        setState({
-          result: buildCodeViewItems(data),
-          isBuilding: false,
-        });
+        try {
+          setState({
+            result: buildCodeViewItems(data),
+            isBuilding: false,
+            error: null,
+          });
+        } catch (error: unknown) {
+          setState({
+            result: null,
+            isBuilding: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       });
       return;
     }
 
     let isCancelled = false;
-    setState({ result: null, isBuilding: true });
+    setState({ result: null, isBuilding: true, error: null });
 
     const build = () => {
       if (isCancelled) {
@@ -48,10 +67,19 @@ export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsSta
           return;
         }
 
-        setState({
-          result: buildCodeViewItems(data),
-          isBuilding: false,
-        });
+        try {
+          setState({
+            result: buildCodeViewItems(data),
+            isBuilding: false,
+            error: null,
+          });
+        } catch (error: unknown) {
+          setState({
+            result: null,
+            isBuilding: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       });
     };
 
