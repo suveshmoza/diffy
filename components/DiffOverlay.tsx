@@ -66,11 +66,16 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const viewerRef = useRef<CodeViewHandle<ReviewAnnotationMetadata>>(null);
   const codeViewHostRef = useRef<HTMLDivElement>(null);
   const selectedLinesRef = useRef<CodeViewLineSelection | null>(null);
+  const draftLineSelectionRef = useRef<CodeViewLineSelection | null>(null);
+  const hoveredThreadSelectionRef = useRef<CodeViewLineSelection | null>(null);
   const orphanedThreadsByItemIdRef = useRef<
     ReadonlyMap<string, ReviewThreadMetadata[]> | undefined
   >(undefined);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [selectedLines, setSelectedLines] = useState<CodeViewLineSelection | null>(null);
+  const [draftLineSelection, setDraftLineSelection] = useState<CodeViewLineSelection | null>(null);
+  const [hoveredThreadSelection, setHoveredThreadSelection] =
+    useState<CodeViewLineSelection | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [diffLayout, setDiffLayout] = useState<DiffLayout>(DEFAULT_DIFF_LAYOUT);
   const [liveReviewComments, setLiveReviewComments] = useState(data.reviewComments);
@@ -83,6 +88,8 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const [isReviewBusy, setIsReviewBusy] = useState(false);
 
   selectedLinesRef.current = selectedLines;
+  draftLineSelectionRef.current = draftLineSelection;
+  hoveredThreadSelectionRef.current = hoveredThreadSelection;
   const pendingReviewIdRef = useRef(pendingReviewId);
   pendingReviewIdRef.current = pendingReviewId;
 
@@ -203,6 +210,9 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       }
 
       viewer.updateItem(upsertDraftAnnotation(targetItem, selection.range));
+      setDraftLineSelection(selection);
+      viewer.setSelectedLines(selection);
+      setSelectedLines(selection);
       refreshCodeViewLayoutRef.current?.();
     },
     [clearAllDrafts, codeViewItems],
@@ -359,6 +369,22 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     [codeViewItems, refreshCodeViewLayout],
   );
 
+  const handleThreadHighlight = useCallback((selection: CodeViewLineSelection) => {
+    setHoveredThreadSelection(selection);
+    viewerRef.current?.setSelectedLines(selection);
+    setSelectedLines(selection);
+  }, []);
+
+  const handleThreadHighlightClear = useCallback(() => {
+    setHoveredThreadSelection(null);
+    if (draftLineSelectionRef.current != null) {
+      return;
+    }
+
+    viewerRef.current?.clearSelectedLines();
+    setSelectedLines(null);
+  }, []);
+
   const handleCancelDraft = useCallback(
     (itemId: string) => {
       const viewer = viewerRef.current;
@@ -372,6 +398,8 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       }
 
       viewer.clearSelectedLines();
+      setDraftLineSelection(null);
+      setHoveredThreadSelection(null);
       setSelectedLines(null);
       refreshCodeViewLayout();
     },
@@ -392,6 +420,8 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
 
       setLiveReviewComments((comments) => [...comments, comment]);
       viewer.clearSelectedLines();
+      setDraftLineSelection(null);
+      setHoveredThreadSelection(null);
       setSelectedLines(null);
       refreshCodeViewLayout();
     },
@@ -412,6 +442,8 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
 
       setPendingReviewComments((comments) => [...comments, comment]);
       viewer.clearSelectedLines();
+      setDraftLineSelection(null);
+      setHoveredThreadSelection(null);
       setSelectedLines(null);
       refreshCodeViewLayout();
     },
@@ -511,6 +543,18 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
 
   const handleSelectedLinesChange = useCallback(
     (selection: CodeViewLineSelection | null) => {
+      if (selection == null && draftLineSelectionRef.current != null) {
+        return;
+      }
+
+      if (selection == null && hoveredThreadSelectionRef.current != null) {
+        return;
+      }
+
+      if (selection != null) {
+        setHoveredThreadSelection(null);
+      }
+
       setSelectedLines(selection);
       if (!selection || !itemById) {
         return;
@@ -564,12 +608,22 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         return (
           <ReviewCommentThread
             annotation={annotation}
+            itemId={item.id}
             showPendingBadge
+            onHighlightRange={handleThreadHighlight}
+            onClearHighlight={handleThreadHighlightClear}
           />
         );
       }
 
-      return <ReviewCommentThread annotation={annotation} />;
+      return (
+        <ReviewCommentThread
+          annotation={annotation}
+          itemId={item.id}
+          onHighlightRange={handleThreadHighlight}
+          onClearHighlight={handleThreadHighlightClear}
+        />
+      );
     },
     [
       data.pullRequest.head.sha,
@@ -577,6 +631,8 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       handleCancelDraft,
       handleImmediateCommentSuccess,
       handlePendingCommentSuccess,
+      handleThreadHighlight,
+      handleThreadHighlightClear,
       hasToken,
       pendingReviewId,
       viewerUser,
@@ -590,9 +646,16 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         return null;
       }
 
-      return <OrphanedReviewCommentsBadge threads={orphanedThreads} />;
+      return (
+        <OrphanedReviewCommentsBadge
+          threads={orphanedThreads}
+          itemId={item.id}
+          onHighlightRange={handleThreadHighlight}
+          onClearHighlight={handleThreadHighlightClear}
+        />
+      );
     },
-    [],
+    [handleThreadHighlight, handleThreadHighlightClear],
   );
 
   return (
@@ -672,7 +735,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
                 renderAnnotation={renderReviewAnnotation}
                 renderHeaderMetadata={renderReviewHeaderMetadata}
                 options={codeViewOptionsWithInteractions ?? codeViewOptions}
-                selectedLines={selectedLines}
+                selectedLines={draftLineSelection ?? hoveredThreadSelection ?? selectedLines}
                 onSelectedLinesChange={handleSelectedLinesChange}
               />
             ) : (

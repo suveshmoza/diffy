@@ -1,7 +1,10 @@
-import type { DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
-import { memo } from 'react';
+import type { CodeViewLineSelection, DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
+import { memo, useCallback } from 'react';
 
-import { formatReviewCommentLineLabel } from '@/lib/format-line-range';
+import {
+  formatReviewCommentLineLabel,
+  reviewCommentToSelectedLineRange,
+} from '@/lib/format-line-range';
 import type { GitHubPullRequestReviewComment } from '@/lib/github';
 import { renderGitHubCommentBody } from '@/lib/github-comment-markdown';
 import type { ReviewAnnotationMetadata } from '@/lib/review-comments';
@@ -10,29 +13,57 @@ type ReviewCommentThreadProps = {
   annotation:
     | LineAnnotation<ReviewAnnotationMetadata>
     | DiffLineAnnotation<ReviewAnnotationMetadata>;
+  itemId?: string;
   variant?: 'inline' | 'header';
   showPendingBadge?: boolean;
+  onHighlightRange?: (selection: CodeViewLineSelection) => void;
+  onClearHighlight?: () => void;
 };
 
 export const ReviewCommentThread = memo(function ReviewCommentThread({
   annotation,
+  itemId,
   variant = 'inline',
   showPendingBadge = false,
+  onHighlightRange,
+  onClearHighlight,
 }: ReviewCommentThreadProps) {
   const metadata = annotation.metadata;
+  const mainComment =
+    metadata?.kind === 'thread' || metadata?.kind === 'pending' ? metadata.comments[0] : undefined;
+  const replies =
+    metadata?.kind === 'thread' || metadata?.kind === 'pending' ? metadata.comments.slice(1) : [];
+
+  const handleMouseEnter = useCallback(() => {
+    if (!itemId || !onHighlightRange || !mainComment) {
+      return;
+    }
+
+    const range = reviewCommentToSelectedLineRange(mainComment);
+    if (!range) {
+      return;
+    }
+
+    onHighlightRange({ id: itemId, range });
+  }, [itemId, mainComment, onHighlightRange]);
+
+  const handleMouseLeave = useCallback(() => {
+    onClearHighlight?.();
+  }, [onClearHighlight]);
+
   if (!metadata || (metadata.kind !== 'thread' && metadata.kind !== 'pending')) {
     return null;
   }
 
-  if (metadata.comments.length === 0) {
+  if (metadata.comments.length === 0 || !mainComment) {
     return null;
   }
-
-  const [mainComment, ...replies] = metadata.comments;
 
   return (
     <div
       className={`gprv-review-thread-shell${variant === 'header' ? ' gprv-review-thread-shell--header' : ''}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div
         className={`gprv-review-thread${showPendingBadge ? ' gprv-review-thread--pending' : ''}`}

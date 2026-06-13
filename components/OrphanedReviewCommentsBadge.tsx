@@ -1,4 +1,4 @@
-import type { LineAnnotation } from '@pierre/diffs';
+import type { CodeViewLineSelection, LineAnnotation } from '@pierre/diffs';
 import { memo, useMemo } from 'react';
 
 import type { ReviewThreadMetadata } from '@/lib/review-comments';
@@ -7,10 +7,16 @@ import { ReviewCommentThread } from './ReviewCommentThread';
 
 type OrphanedReviewCommentsBadgeProps = {
   threads: ReviewThreadMetadata[];
+  itemId: string;
+  onHighlightRange: (selection: CodeViewLineSelection) => void;
+  onClearHighlight: () => void;
 };
 
 export const OrphanedReviewCommentsBadge = memo(function OrphanedReviewCommentsBadge({
   threads,
+  itemId,
+  onHighlightRange,
+  onClearHighlight,
 }: OrphanedReviewCommentsBadgeProps) {
   const threadAnnotations = useMemo(
     () =>
@@ -43,7 +49,10 @@ export const OrphanedReviewCommentsBadge = memo(function OrphanedReviewCommentsB
         <ReviewCommentThread
           key={thread.comments[0]?.id ?? thread.comments.map((comment) => comment.id).join('-')}
           annotation={annotation}
+          itemId={itemId}
           variant='header'
+          onHighlightRange={onHighlightRange}
+          onClearHighlight={onClearHighlight}
         />
       ))}
     </div>
