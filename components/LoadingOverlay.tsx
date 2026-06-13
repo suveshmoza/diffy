@@ -1,10 +1,8 @@
-import type { GitHubTheme } from '@/lib/theme';
-
 import { ChromeModal } from './ChromeModal';
 
 type LoadingOverlayProps = {
   onClose: () => void;
-  theme: GitHubTheme;
+  theme: 'light' | 'dark';
 };
 
 export function LoadingOverlay({ onClose, theme }: LoadingOverlayProps) {

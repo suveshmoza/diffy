@@ -1,12 +1,10 @@
-import type { GitHubTheme } from '@/lib/theme';
-
 import { ChromeModal } from './ChromeModal';
 
 type ErrorOverlayProps = {
   message: string;
   onRetry: () => void;
   onClose: () => void;
-  theme: GitHubTheme;
+  theme: 'light' | 'dark';
 };
 
 export function ErrorOverlay({ message, onRetry, onClose, theme }: ErrorOverlayProps) {

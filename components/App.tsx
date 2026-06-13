@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
+import { useDiffTheme } from '@/hooks/useDiffTheme';
+import { diffThemeType } from '@/lib/diff-themes';
 import {
   fetchCachedPullRequestDiffData,
   invalidatePullRequestDiffCache,
   parseGitHubPullRequestUrl,
   type PullRequestDiffData,
 } from '@/lib/github';
-import { getGitHubTheme } from '@/lib/theme';
 
 import { DiffOverlay } from './DiffOverlay';
 import { ErrorOverlay } from './ErrorOverlay';
@@ -25,7 +26,8 @@ type AppProps = {
 export function App({ pullRequestUrl, onClose }: AppProps) {
   const [state, setState] = useState<OverlayState>({ status: 'loading' });
   const [retryCount, setRetryCount] = useState(0);
-  const theme = getGitHubTheme();
+  const { theme } = useDiffTheme();
+  const chromeTheme = diffThemeType(theme);
 
   const retry = useCallback(() => {
     const ref = parseGitHubPullRequestUrl(pullRequestUrl);
@@ -110,14 +112,14 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
         message={state.message}
         onRetry={retry}
         onClose={onClose}
-        theme={theme}
+        theme={chromeTheme}
       />
     );
   } else {
     content = (
       <LoadingOverlay
         onClose={onClose}
-        theme={theme}
+        theme={chromeTheme}
       />
     );
   }

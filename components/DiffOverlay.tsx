@@ -1,20 +1,22 @@
 import type { DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
-import diffsBaseCSS from '@pierre/diffs/dist/style.js';
+import type { DiffsThemeNames } from '@pierre/diffs';
 import { CodeView, WorkerPoolContextProvider, type CodeViewHandle } from '@pierre/diffs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
+import { useDiffTheme } from '@/hooks/useDiffTheme';
 import { buildCodeViewItems, getCodeViewItemIdForFile } from '@/lib/build-code-view-items';
+import { buildCodeViewUnsafeCss } from '@/lib/code-view-unsafe-css';
 import {
   DEFAULT_DIFF_LAYOUT,
   readDiffLayoutPreference,
   writeDiffLayoutPreference,
   type DiffLayout,
 } from '@/lib/diff-layout-prefs';
+import { diffThemeType } from '@/lib/diff-themes';
 import { workerFactory } from '@/lib/diff-worker';
 import type { PullRequestDiffData } from '@/lib/github';
 import type { ReviewCommentThreadMetadata } from '@/lib/review-comments';
-import { getDiffTheme, getGitHubTheme, type GitHubTheme } from '@/lib/theme';
 
 import { DiffOverlayHeader } from './DiffOverlayHeader';
 import { FileTreePanel } from './FileTreePanel';
@@ -26,17 +28,6 @@ type DiffOverlayProps = {
   data: PullRequestDiffData;
   onClose: () => void;
 };
-
-/* Pierre `overflow: 'wrap'` handles line + annotation wrapping; keep slots column-wide. */
-const REVIEW_ANNOTATION_OVERFLOW_CSS = `
-[data-annotation-content] {
-  align-self: stretch;
-  box-sizing: border-box;
-  max-width: 100%;
-  min-width: 0;
-  width: 100%;
-}
-`;
 
 const DIFF_WORKER_POOL_SIZE = Math.max(
   1,
@@ -50,7 +41,35 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [diffLayout, setDiffLayout] = useState<DiffLayout>(DEFAULT_DIFF_LAYOUT);
-  const [theme, setTheme] = useState<GitHubTheme>(() => getGitHubTheme());
+  const { theme, isReady: isThemeReady } = useDiffTheme();
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
+  const chromeTheme = diffThemeType(theme);
+  const [codeViewTheme, setCodeViewTheme] = useState<DiffsThemeNames | null>(null);
+  const [codeViewUnsafeCss, setCodeViewUnsafeCss] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCodeViewTheme(null);
+    setCodeViewUnsafeCss(null);
+  }, [theme]);
+
+  const diffStyle = diffLayout === 'switched' ? ('split' as const) : ('unified' as const);
+  const codeViewThemeType = codeViewTheme ? diffThemeType(codeViewTheme) : chromeTheme;
+  const codeViewOptions = useMemo(() => {
+    if (codeViewTheme == null || codeViewUnsafeCss == null) {
+      return undefined;
+    }
+
+    return {
+      theme: codeViewTheme,
+      themeType: diffThemeType(codeViewTheme),
+      diffStyle,
+      overflow: 'wrap' as const,
+      stickyHeaders: true,
+      unsafeCSS: codeViewUnsafeCss,
+      layout: { paddingTop: 0, paddingBottom: 0, gap: 0 },
+    };
+  }, [codeViewTheme, codeViewUnsafeCss, diffStyle]);
 
   const {
     items: initialItems,
@@ -58,25 +77,39 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     reviewCommentCountByPath,
     orphanedReviewThreadsByItemId,
   } = useMemo(() => buildCodeViewItems(data), [data]);
-  const diffTheme = getDiffTheme(theme);
   const isCodeViewHostReady = useCodeViewHostReady(codeViewHostRef);
 
   const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
     useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, [
       initialItems,
       isSidebarCollapsed,
-      diffTheme,
+      codeViewTheme,
       isCodeViewHostReady,
     ]);
 
-  useEffect(() => {
-    const observer = new MutationObserver(() => setTheme(getGitHubTheme()));
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-color-mode', 'class', 'style'],
+  const handleWorkerThemeSynced = useCallback((syncedTheme: DiffsThemeNames) => {
+    if (syncedTheme !== themeRef.current) {
+      return;
+    }
+
+    void buildCodeViewUnsafeCss(syncedTheme).then((unsafeCss) => {
+      if (syncedTheme !== themeRef.current) {
+        return;
+      }
+
+      setCodeViewUnsafeCss(unsafeCss);
+      setCodeViewTheme(syncedTheme);
     });
-    return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (codeViewTheme == null || codeViewUnsafeCss == null) {
+      return;
+    }
+
+    viewerRef.current?.getInstance()?.render(true);
+    refreshCodeViewLayout();
+  }, [codeViewTheme, codeViewUnsafeCss, refreshCodeViewLayout]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -149,7 +182,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       />
       <section
         className='gprv-modal'
-        data-theme={theme}
+        data-theme={chromeTheme}
         role='dialog'
         aria-modal='true'
         aria-label='Pull request diff'
@@ -173,6 +206,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
                 <FileTreePanel
                   files={data.files}
                   selectedPath={selectedPath}
+                  theme={theme}
                   reviewCommentCountByPath={reviewCommentCountByPath}
                   onSelectPath={handleTreeSelect}
                 />
@@ -186,41 +220,41 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
             ref={codeViewHostRef}
             className='gprv-code-view-host'
           >
-            <WorkerPoolContextProvider
-              poolOptions={{
-                workerFactory,
-                poolSize: DIFF_WORKER_POOL_SIZE,
-                totalASTLRUCacheSize: DIFF_WORKER_RENDER_CACHE_SIZE,
-              }}
-              highlighterOptions={{ theme: diffTheme }}
-            >
-              <WorkerPoolRenderOptionsSync
-                theme={diffTheme}
-                onSynced={refreshCodeViewLayout}
-              />
-              {isCodeViewHostReady ? (
-                <CodeView<ReviewCommentThreadMetadata>
-                  ref={viewerRef}
-                  containerRef={handleCodeViewContainer}
-                  initialItems={initialItems}
-                  className='gprv-code-view'
-                  style={{ height: '100%' }}
-                  renderAnnotation={renderReviewAnnotation}
-                  renderHeaderMetadata={renderReviewHeaderMetadata}
-                  options={{
-                    theme: { dark: 'pierre-dark', light: 'pierre-light' },
-                    themeType: theme,
-                    diffStyle: diffLayout === 'switched' ? 'split' : 'unified',
-                    overflow: 'wrap',
-                    stickyHeaders: true,
-                    unsafeCSS: diffsBaseCSS + REVIEW_ANNOTATION_OVERFLOW_CSS,
-                    layout: { paddingTop: 0, paddingBottom: 0, gap: 16 },
-                  }}
+            {isThemeReady ? (
+              <WorkerPoolContextProvider
+                poolOptions={{
+                  workerFactory,
+                  poolSize: DIFF_WORKER_POOL_SIZE,
+                  totalASTLRUCacheSize: DIFF_WORKER_RENDER_CACHE_SIZE,
+                }}
+                highlighterOptions={{ theme }}
+              >
+                <WorkerPoolRenderOptionsSync
+                  theme={theme}
+                  onSynced={handleWorkerThemeSynced}
                 />
-              ) : (
-                <div className='gprv-state'>Preparing diff viewer…</div>
-              )}
-            </WorkerPoolContextProvider>
+                {isCodeViewHostReady &&
+                codeViewTheme != null &&
+                codeViewUnsafeCss != null &&
+                codeViewOptions != null ? (
+                  <CodeView<ReviewCommentThreadMetadata>
+                    key={codeViewTheme}
+                    ref={viewerRef}
+                    containerRef={handleCodeViewContainer}
+                    initialItems={initialItems}
+                    className='gprv-code-view'
+                    style={{ height: '100%', colorScheme: codeViewThemeType }}
+                    renderAnnotation={renderReviewAnnotation}
+                    renderHeaderMetadata={renderReviewHeaderMetadata}
+                    options={codeViewOptions}
+                  />
+                ) : (
+                  <div className='gprv-state'>Preparing diff viewer…</div>
+                )}
+              </WorkerPoolContextProvider>
+            ) : (
+              <div className='gprv-state'>Preparing diff viewer…</div>
+            )}
           </div>
         </div>
       </section>

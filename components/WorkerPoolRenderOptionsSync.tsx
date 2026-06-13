@@ -1,19 +1,34 @@
+import type { DiffsThemeNames } from '@pierre/diffs';
 import { useWorkerPool } from '@pierre/diffs/react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 type WorkerPoolRenderOptionsSyncProps = {
-  theme: 'pierre-light' | 'pierre-dark';
-  onSynced?: () => void;
+  theme: DiffsThemeNames;
+  onSynced?: (theme: DiffsThemeNames) => void;
 };
 
 export function WorkerPoolRenderOptionsSync({ theme, onSynced }: WorkerPoolRenderOptionsSyncProps) {
   const workerPool = useWorkerPool();
+  const onSyncedRef = useRef(onSynced);
+  onSyncedRef.current = onSynced;
 
   useEffect(() => {
-    void workerPool?.setRenderOptions({ theme }).finally(() => {
-      onSynced?.();
+    if (!workerPool) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    void workerPool.setRenderOptions({ theme }).then(() => {
+      if (!isCancelled) {
+        onSyncedRef.current?.(theme);
+      }
     });
-  }, [theme, workerPool, onSynced]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [theme, workerPool]);
 
   return null;
 }

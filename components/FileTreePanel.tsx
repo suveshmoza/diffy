@@ -1,4 +1,7 @@
+import type { DiffsThemeNames } from '@pierre/diffs';
+import { resolveTheme } from '@pierre/diffs';
 import type { FileTreeRowDecorationRenderer } from '@pierre/trees';
+import { themeToTreeStyles } from '@pierre/trees';
 import { FileTree, useFileTree, useFileTreeSearch } from '@pierre/trees/react';
 import {
   useCallback,
@@ -11,6 +14,7 @@ import {
   type RefObject,
 } from 'react';
 
+import { diffThemeType } from '@/lib/diff-themes';
 import {
   buildCommentBadgeCountCss,
   FILE_TREE_REVIEW_COMMENT_TITLE_MARKER,
@@ -25,6 +29,7 @@ const TREE_OVERSCAN = 12;
 type FileTreePanelProps = {
   files: GitHubPullRequestFile[];
   selectedPath: string | null;
+  theme: DiffsThemeNames;
   reviewCommentCountByPath?: ReadonlyMap<string, number>;
   onSelectPath: (path: string) => void;
 };
@@ -189,6 +194,7 @@ function FileTreeSearchHeader({
 export function FileTreePanel({
   files,
   selectedPath,
+  theme,
   reviewCommentCountByPath,
   onSelectPath,
 }: FileTreePanelProps) {
@@ -207,6 +213,26 @@ export function FileTreePanel({
   const keepSearchFocusRef = useRef(false);
   const searchQueryRef = useRef(searchQuery);
   searchQueryRef.current = searchQuery;
+  const [treeThemeStyles, setTreeThemeStyles] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    resolveTheme(theme)
+      .then((resolved) => {
+        if (!isCancelled) {
+          setTreeThemeStyles({
+            ...themeToTreeStyles(resolved),
+            colorScheme: diffThemeType(theme),
+          });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [theme]);
 
   const handleSearchQueryChange = useCallback((query: string) => {
     keepSearchFocusRef.current = document.activeElement === searchInputRef.current;
@@ -299,7 +325,7 @@ export function FileTreePanel({
       <FileTree
         className='gprv-tree'
         model={model}
-        style={{ height: '100%' }}
+        style={{ height: '100%', ...treeThemeStyles }}
       />
     </div>
   );
