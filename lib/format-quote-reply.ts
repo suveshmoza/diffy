@@ -7,5 +7,5 @@ export function formatQuoteReplyPrefill(comment: GitHubPullRequestReviewComment)
     .map((line) => `> ${line}`)
     .join('\n');
 
-  return `${quotedBody}\n\n@${comment.user.login} `;
+  return `${quotedBody}\n\n `;
 }
