@@ -1,6 +1,7 @@
 import type { SelectedLineRange } from '@pierre/diffs';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
+import { formatSelectedLineRangeLabel } from '@/lib/format-line-range';
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github';
 import {
   addPendingReviewComment,
@@ -148,6 +149,7 @@ export function ReviewCommentComposer({
                 <strong>{viewerUser.login}</strong>
               </div>
             ) : null}
+            <p className='gprv-review-line-range'>{formatSelectedLineRangeLabel(range)}</p>
             <label className='gprv-review-composer-field'>
               <span className='sr-only'>Comment</span>
               <textarea

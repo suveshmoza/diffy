@@ -1004,6 +1004,14 @@
   width: 100%;
 }
 
+.gprv-review-line-range {
+  color: var(--gprv-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 6px 0 0;
+}
+
 .gprv-review-composer-hint,
 .gprv-review-composer-error,
 .gprv-review-session-error {

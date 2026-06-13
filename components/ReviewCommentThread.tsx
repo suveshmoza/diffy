@@ -1,6 +1,7 @@
 import type { DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
 import { memo } from 'react';
 
+import { formatReviewCommentLineLabel } from '@/lib/format-line-range';
 import type { GitHubPullRequestReviewComment } from '@/lib/github';
 import { renderGitHubCommentBody } from '@/lib/github-comment-markdown';
 import type { ReviewAnnotationMetadata } from '@/lib/review-comments';
@@ -37,7 +38,10 @@ export const ReviewCommentThread = memo(function ReviewCommentThread({
         className={`gprv-review-thread${showPendingBadge ? ' gprv-review-thread--pending' : ''}`}
       >
         {showPendingBadge ? <span className='gprv-review-pending-badge'>Pending</span> : null}
-        <ReviewComment comment={mainComment} />
+        <ReviewComment
+          comment={mainComment}
+          lineRangeLabel={formatReviewCommentLineLabel(mainComment)}
+        />
         {replies.length > 0 ? (
           <div className='gprv-review-replies'>
             {replies.map((comment) => (
@@ -55,9 +59,10 @@ export const ReviewCommentThread = memo(function ReviewCommentThread({
 
 type ReviewCommentProps = {
   comment: GitHubPullRequestReviewComment;
+  lineRangeLabel?: string | null;
 };
 
-const ReviewComment = memo(function ReviewComment({ comment }: ReviewCommentProps) {
+const ReviewComment = memo(function ReviewComment({ comment, lineRangeLabel }: ReviewCommentProps) {
   const initials = comment.user.login.slice(0, 1).toUpperCase();
 
   return (
@@ -99,6 +104,7 @@ const ReviewComment = memo(function ReviewComment({ comment }: ReviewCommentProp
             ↗
           </a>
         </div>
+        {lineRangeLabel ? <p className='gprv-review-line-range'>{lineRangeLabel}</p> : null}
         <div className='gprv-review-comment-text'>{renderGitHubCommentBody(comment.body)}</div>
       </div>
     </article>
