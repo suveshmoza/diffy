@@ -28,6 +28,8 @@
 - Review comment indicators on file tree rows (icon and count)
 - **Stacked** (unified) and **Switched** (split) diff layouts
 - Inline PR review comment threads rendered in the diff viewer
+- Select and highlight diff lines (click/drag line numbers, gutter `+` on hover)
+- Post inline review comments immediately or as part of a pending PR review (Approve / Comment / Request changes)
 - Syntax highlighting with sticky file headers
 - Theme picker in the extension popup (60+ Shiki themes, including GitHub light/dark variants)
 - Prefetches PR diff data when you land on a PR page
