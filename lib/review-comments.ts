@@ -29,6 +29,7 @@ export type ReviewThreadMetadata = {
 
 export type ReviewDraftMetadata = {
   kind: 'draft';
+  draftId: string;
   range: SelectedLineRange;
 };
 
