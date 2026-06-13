@@ -55,3 +55,18 @@ pnpm dev
 ```bash
 pnpm build
 ```
+
+### Load in Chrome (manual)
+
+1. Build the extension (or keep `pnpm dev` running for development):
+
+   ```bash
+   pnpm build
+   ```
+
+2. Open Chrome and go to `chrome://extensions`.
+3. Turn on **Developer mode** (top-right toggle).
+4. Click **Load unpacked**.
+5. Select the `.output/chrome-mv3` folder inside this repo.
+
+To remove it, click **Remove** on the extension card.
