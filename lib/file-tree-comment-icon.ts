@@ -4,3 +4,19 @@ const COMMENT_ICON_PATH =
 export const FILE_TREE_COMMENT_ICON_MASK_URL = `url("data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="black" d="${COMMENT_ICON_PATH}"/></svg>`,
 )}")`;
+
+export const COMMENT_ICON_MASK_STYLE = {
+  backgroundColor: 'currentColor',
+  display: 'block',
+  flexShrink: 0,
+  height: '1rem',
+  width: '1rem',
+  WebkitMaskImage: FILE_TREE_COMMENT_ICON_MASK_URL,
+  maskImage: FILE_TREE_COMMENT_ICON_MASK_URL,
+  WebkitMaskPosition: 'center',
+  maskPosition: 'center',
+  WebkitMaskRepeat: 'no-repeat',
+  maskRepeat: 'no-repeat',
+  WebkitMaskSize: 'contain',
+  maskSize: 'contain',
+} as const;
