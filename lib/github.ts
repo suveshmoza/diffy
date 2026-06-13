@@ -33,6 +33,9 @@ export type GitHubPullRequestReviewComment = {
   side: 'LEFT' | 'RIGHT' | null;
   in_reply_to_id: number | null;
   pull_request_review_id?: number | null;
+  is_minimized?: boolean;
+  minimized_reason?: string | null;
+  hidden?: boolean;
 };
 
 type ReviewCommentsFetchResult = {
