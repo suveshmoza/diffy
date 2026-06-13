@@ -8,6 +8,19 @@ import type {
 
 import type { GitHubPullRequestReviewComment } from './github';
 
+export function isReviewCommentHidden(comment: GitHubPullRequestReviewComment): boolean {
+  return comment.is_minimized === true || comment.hidden === true;
+}
+
+export function formatReviewCommentHiddenLabel(comment: GitHubPullRequestReviewComment): string {
+  const reason = comment.minimized_reason?.trim();
+  if (!reason) {
+    return 'This comment was hidden.';
+  }
+
+  return `This comment was hidden (${reason.replace(/_/g, ' ')}).`;
+}
+
 export type ReviewThreadMetadata = {
   kind: 'thread';
   comments: GitHubPullRequestReviewComment[];
@@ -19,16 +32,7 @@ export type ReviewDraftMetadata = {
   range: SelectedLineRange;
 };
 
-export type ReviewPendingMetadata = {
-  kind: 'pending';
-  comments: GitHubPullRequestReviewComment[];
-  reviewId: number;
-};
-
-export type ReviewAnnotationMetadata =
-  | ReviewThreadMetadata
-  | ReviewDraftMetadata
-  | ReviewPendingMetadata;
+export type ReviewAnnotationMetadata = ReviewThreadMetadata | ReviewDraftMetadata;
 
 /** @deprecated Use ReviewThreadMetadata */
 export type ReviewCommentThreadMetadata = ReviewThreadMetadata;
@@ -255,17 +259,4 @@ export function isThreadMetadata(
   metadata: ReviewAnnotationMetadata,
 ): metadata is ReviewThreadMetadata {
   return metadata.kind === 'thread';
-}
-
-export function filterPublishedReviewComments(
-  comments: readonly GitHubPullRequestReviewComment[],
-): GitHubPullRequestReviewComment[] {
-  return comments.filter((comment) => comment.pull_request_review_id == null);
-}
-
-export function filterPendingReviewComments(
-  comments: readonly GitHubPullRequestReviewComment[],
-  reviewId: number,
-): GitHubPullRequestReviewComment[] {
-  return comments.filter((comment) => comment.pull_request_review_id === reviewId);
 }
