@@ -3,23 +3,46 @@ import type {
   CodeViewItem,
   DiffLineAnnotation,
   LineAnnotation,
+  SelectedLineRange,
 } from '@pierre/diffs';
 
 import type { GitHubPullRequestReviewComment } from './github';
 
-export type ReviewCommentThreadMetadata = {
+export function isReviewCommentHidden(comment: GitHubPullRequestReviewComment): boolean {
+  return comment.is_minimized === true || comment.hidden === true;
+}
+
+export function formatReviewCommentHiddenLabel(comment: GitHubPullRequestReviewComment): string {
+  const reason = comment.minimized_reason?.trim();
+  if (!reason) {
+    return 'This comment was hidden.';
+  }
+
+  return `This comment was hidden (${reason.replace(/_/g, ' ')}).`;
+}
+
+export type ReviewThreadMetadata = {
+  kind: 'thread';
   comments: GitHubPullRequestReviewComment[];
   orphaned: boolean;
 };
 
+export type ReviewDraftMetadata = {
+  kind: 'draft';
+  range: SelectedLineRange;
+};
+
+export type ReviewAnnotationMetadata = ReviewThreadMetadata | ReviewDraftMetadata;
+
+/** @deprecated Use ReviewThreadMetadata */
+export type ReviewCommentThreadMetadata = ReviewThreadMetadata;
+
 export type ReviewCommentItemMaps = {
   inlineByItemId: Map<
     string,
-    Array<
-      DiffLineAnnotation<ReviewCommentThreadMetadata> | LineAnnotation<ReviewCommentThreadMetadata>
-    >
+    Array<DiffLineAnnotation<ReviewAnnotationMetadata> | LineAnnotation<ReviewAnnotationMetadata>>
   >;
-  orphanedByItemId: Map<string, ReviewCommentThreadMetadata[]>;
+  orphanedByItemId: Map<string, ReviewThreadMetadata[]>;
   countByPath: Map<string, number>;
 };
 
@@ -29,11 +52,9 @@ export function mapReviewCommentsToItems(
 ): ReviewCommentItemMaps {
   const inlineByItemId = new Map<
     string,
-    Array<
-      DiffLineAnnotation<ReviewCommentThreadMetadata> | LineAnnotation<ReviewCommentThreadMetadata>
-    >
+    Array<DiffLineAnnotation<ReviewAnnotationMetadata> | LineAnnotation<ReviewAnnotationMetadata>>
   >();
-  const orphanedByItemId = new Map<string, ReviewCommentThreadMetadata[]>();
+  const orphanedByItemId = new Map<string, ReviewThreadMetadata[]>();
   const countByPath = new Map<string, number>();
 
   if (comments.length === 0) {
@@ -75,26 +96,44 @@ export function mapReviewCommentsToItems(
   return { inlineByItemId, orphanedByItemId, countByPath };
 }
 
+export function buildReviewCommentCountByPath(
+  comments: readonly GitHubPullRequestReviewComment[],
+  items: readonly CodeViewItem<unknown>[],
+): Map<string, number> {
+  const countByPath = new Map<string, number>();
+  const itemIdByPath = buildItemIdByPath([...items]);
+  const itemById = new Map(items.map((item) => [item.id, item]));
+
+  for (const comment of comments) {
+    const itemId = itemIdByPath.get(comment.path);
+    const item = itemId ? itemById.get(itemId) : undefined;
+    const path = item ? getItemPath(item) : comment.path;
+    countByPath.set(path, (countByPath.get(path) ?? 0) + 1);
+  }
+
+  return countByPath;
+}
+
 export function attachReviewCommentsToItems(
   items: CodeViewItem[],
   maps: ReviewCommentItemMaps,
-): CodeViewItem<ReviewCommentThreadMetadata>[] {
+): CodeViewItem<ReviewAnnotationMetadata>[] {
   const { inlineByItemId } = maps;
 
   return items.map((item) => {
     const annotations = inlineByItemId.get(item.id);
     if (!annotations || annotations.length === 0) {
-      return item as CodeViewItem<ReviewCommentThreadMetadata>;
+      return item as CodeViewItem<ReviewAnnotationMetadata>;
     }
 
     if (item.type === 'file') {
       const fileAnnotations = annotations.filter(
-        (annotation): annotation is LineAnnotation<ReviewCommentThreadMetadata> =>
+        (annotation): annotation is LineAnnotation<ReviewAnnotationMetadata> =>
           !('side' in annotation),
       );
 
       if (fileAnnotations.length === 0) {
-        return item as CodeViewItem<ReviewCommentThreadMetadata>;
+        return item as CodeViewItem<ReviewAnnotationMetadata>;
       }
 
       return {
@@ -104,12 +143,12 @@ export function attachReviewCommentsToItems(
     }
 
     const diffAnnotations = annotations.filter(
-      (annotation): annotation is DiffLineAnnotation<ReviewCommentThreadMetadata> =>
+      (annotation): annotation is DiffLineAnnotation<ReviewAnnotationMetadata> =>
         'side' in annotation,
     );
 
     if (diffAnnotations.length === 0) {
-      return item as CodeViewItem<ReviewCommentThreadMetadata>;
+      return item as CodeViewItem<ReviewAnnotationMetadata>;
     }
 
     return {
@@ -121,7 +160,7 @@ export function attachReviewCommentsToItems(
 
 function buildReviewCommentThreads(
   comments: GitHubPullRequestReviewComment[],
-): ReviewCommentThreadMetadata[] {
+): ReviewThreadMetadata[] {
   const byId = new Map(comments.map((comment) => [comment.id, comment]));
   const threads = new Map<number, GitHubPullRequestReviewComment[]>();
 
@@ -140,6 +179,7 @@ function buildReviewCommentThreads(
     const line = getCommentAnchorLine(anchor);
 
     return {
+      kind: 'thread' as const,
       comments: sorted,
       orphaned: line == null,
     };
@@ -150,8 +190,8 @@ function createAnnotationForItem(
   item: CodeViewItem | undefined,
   lineNumber: number,
   side: AnnotationSide,
-  thread: ReviewCommentThreadMetadata,
-): DiffLineAnnotation<ReviewCommentThreadMetadata> | LineAnnotation<ReviewCommentThreadMetadata> {
+  thread: ReviewThreadMetadata,
+): DiffLineAnnotation<ReviewAnnotationMetadata> | LineAnnotation<ReviewAnnotationMetadata> {
   if (item?.type === 'file') {
     return {
       lineNumber,
@@ -166,7 +206,7 @@ function createAnnotationForItem(
   };
 }
 
-function buildItemIdByPath(items: CodeViewItem[]): Map<string, string> {
+function buildItemIdByPath(items: readonly CodeViewItem<unknown>[]): Map<string, string> {
   const itemIdByPath = new Map<string, string>();
 
   for (const item of items) {
@@ -180,11 +220,11 @@ function buildItemIdByPath(items: CodeViewItem[]): Map<string, string> {
   return itemIdByPath;
 }
 
-function getItemPath(item: CodeViewItem): string {
+export function getItemPath(item: CodeViewItem<unknown>): string {
   return item.type === 'diff' ? item.fileDiff.name : item.file.name;
 }
 
-function getCommentAnchorLine(comment: GitHubPullRequestReviewComment): number | null {
+export function getCommentAnchorLine(comment: GitHubPullRequestReviewComment): number | null {
   return comment.start_line ?? comment.line ?? comment.original_start_line ?? comment.original_line;
 }
 
@@ -211,6 +251,12 @@ function getThreadRoot(
   return current;
 }
 
-function toAnnotationSide(side: GitHubPullRequestReviewComment['side']): AnnotationSide {
+export function toAnnotationSide(side: GitHubPullRequestReviewComment['side']): AnnotationSide {
   return side === 'LEFT' ? 'deletions' : 'additions';
+}
+
+export function isThreadMetadata(
+  metadata: ReviewAnnotationMetadata,
+): metadata is ReviewThreadMetadata {
+  return metadata.kind === 'thread';
 }

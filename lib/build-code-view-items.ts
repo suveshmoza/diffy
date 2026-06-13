@@ -9,15 +9,15 @@ import {
 import {
   attachReviewCommentsToItems,
   mapReviewCommentsToItems,
-  type ReviewCommentThreadMetadata,
+  type ReviewAnnotationMetadata,
 } from './review-comments';
 
 export type CodeViewItemsResult = {
-  items: CodeViewItem<ReviewCommentThreadMetadata>[];
+  items: CodeViewItem<ReviewAnnotationMetadata>[];
   diffPathSet: ReadonlySet<string>;
   fileByPath: ReadonlyMap<string, GitHubPullRequestFile>;
   reviewCommentCountByPath: ReadonlyMap<string, number>;
-  orphanedReviewThreadsByItemId: ReadonlyMap<string, ReviewCommentThreadMetadata[]>;
+  orphanedReviewThreadsByItemId: ReadonlyMap<string, ReviewAnnotationMetadata[]>;
 };
 
 const codeViewItemsCache = new Map<string, CodeViewItemsResult>();

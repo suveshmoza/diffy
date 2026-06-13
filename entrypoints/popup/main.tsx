@@ -139,7 +139,9 @@ function PopupApp() {
         </form>
 
         {status ? <p className='status'>{status}</p> : null}
-        <p className='hint'>Read-only Contents and Pull requests scope.</p>
+        <p className='hint'>
+          Needs pull request write access (repo or public_repo scope) to post comments.
+        </p>
       </section>
 
       <a

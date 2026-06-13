@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { DiffLayout } from '@/lib/diff-layout-prefs';
 import { diffThemeType } from '@/lib/diff-themes';
 import { getCodeViewUnsafeCss, getFallbackCodeViewUnsafeCss } from '@/lib/resolve-diff-theme';
-import type { ReviewCommentThreadMetadata } from '@/lib/review-comments';
+import type { ReviewAnnotationMetadata } from '@/lib/review-comments';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 
 type UseCodeViewThemeBootstrapOptions = {
@@ -32,7 +32,7 @@ export function useCodeViewThemeBootstrap({ diffLayout }: UseCodeViewThemeBootst
 
   const diffStyle = diffLayout === 'switched' ? ('split' as const) : ('unified' as const);
 
-  const codeViewOptions = useMemo((): CodeViewOptions<ReviewCommentThreadMetadata> => {
+  const codeViewOptions = useMemo((): CodeViewOptions<ReviewAnnotationMetadata> => {
     return {
       theme,
       themeType: diffThemeType(theme),
