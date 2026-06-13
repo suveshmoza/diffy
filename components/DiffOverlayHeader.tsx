@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import type { DiffLayout } from '@/lib/diff-layout-prefs';
 import type { GitHubPullRequest } from '@/lib/github';
 
@@ -11,7 +13,7 @@ type DiffOverlayHeaderProps = {
   onClose: () => void;
 };
 
-export function DiffOverlayHeader({
+export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   pullRequest,
   diffLayout,
   isSidebarCollapsed,
@@ -122,7 +124,7 @@ export function DiffOverlayHeader({
       </div>
     </header>
   );
-}
+});
 
 function DiffLayoutToggle({
   value,

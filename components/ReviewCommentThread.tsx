@@ -1,4 +1,5 @@
 import type { DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
+import { memo } from 'react';
 
 import type { GitHubPullRequestReviewComment } from '@/lib/github';
 import { renderGitHubCommentBody } from '@/lib/github-comment-markdown';
@@ -11,7 +12,10 @@ type ReviewCommentThreadProps = {
   variant?: 'inline' | 'header';
 };
 
-export function ReviewCommentThread({ annotation, variant = 'inline' }: ReviewCommentThreadProps) {
+export const ReviewCommentThread = memo(function ReviewCommentThread({
+  annotation,
+  variant = 'inline',
+}: ReviewCommentThreadProps) {
   const thread = annotation.metadata;
   if (!thread || thread.comments.length === 0) {
     return null;
@@ -38,13 +42,13 @@ export function ReviewCommentThread({ annotation, variant = 'inline' }: ReviewCo
       </div>
     </div>
   );
-}
+});
 
 type ReviewCommentProps = {
   comment: GitHubPullRequestReviewComment;
 };
 
-function ReviewComment({ comment }: ReviewCommentProps) {
+const ReviewComment = memo(function ReviewComment({ comment }: ReviewCommentProps) {
   const initials = comment.user.login.slice(0, 1).toUpperCase();
 
   return (
@@ -59,6 +63,8 @@ function ReviewComment({ comment }: ReviewCommentProps) {
             alt=''
             width={24}
             height={24}
+            loading='lazy'
+            decoding='async'
           />
         ) : (
           initials
@@ -88,7 +94,7 @@ function ReviewComment({ comment }: ReviewCommentProps) {
       </div>
     </article>
   );
-}
+});
 
 function formatFullTimestamp(value: string): string {
   return new Date(value).toLocaleString();

@@ -3,8 +3,8 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import logoUrl from '@/assets/logo.jpg';
-import { useDiffTheme } from '@/hooks/useDiffTheme';
 import { DIFF_THEMES } from '@/lib/diff-themes';
+import { DiffThemeProvider, useDiffThemeContext } from '@/providers/DiffThemeProvider';
 
 import './style.css';
 
@@ -12,7 +12,7 @@ function PopupApp() {
   const [token, setToken] = useState('');
   const [hasSavedToken, setHasSavedToken] = useState(false);
   const [status, setStatus] = useState('');
-  const { theme, setTheme } = useDiffTheme();
+  const { theme, setTheme } = useDiffThemeContext();
 
   useEffect(() => {
     if (!browser?.storage?.sync) {
@@ -175,5 +175,9 @@ function PopupApp() {
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
-  createRoot(rootElement).render(<PopupApp />);
+  createRoot(rootElement).render(
+    <DiffThemeProvider>
+      <PopupApp />
+    </DiffThemeProvider>,
+  );
 }

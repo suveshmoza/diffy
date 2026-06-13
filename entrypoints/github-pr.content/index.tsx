@@ -1,14 +1,12 @@
-import { createRoot, type Root } from 'react-dom/client';
-
-import { App } from '@/components/App';
-import { prefetchPullRequestDiffData } from '@/lib/github';
+import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github';
 import {
   getOrCreateOverlayRoot,
+  hideOverlayRoot,
   installViewDiffButton,
   isPullRequestPage,
-  removeOverlayRoot,
-  syncViewDiffButton,
+  uninstallViewDiffButton,
 } from '@/lib/github-page';
+import { loadDiffOverlayModule, preloadDiffOverlayModule } from '@/lib/preload-diff-overlay';
 
 import './style.css';
 
@@ -16,51 +14,75 @@ export default defineContentScript({
   matches: ['*://github.com/*'],
   runAt: 'document_idle',
   main(ctx) {
-    let root: Root | null = null;
     let openPullRequestUrl: string | null = null;
 
-    const closeOverlay = () => {
+    const hideOverlay = () => {
+      hideOverlayRoot();
+    };
+
+    const destroyOverlay = () => {
       openPullRequestUrl = null;
-      root?.unmount();
-      root = null;
-      removeOverlayRoot();
+      void loadDiffOverlayModule()
+        .then((mod) => {
+          mod.unmountOverlayApp();
+        })
+        .catch(() => undefined);
+      hideOverlayRoot();
     };
 
-    const openOverlay = (pullRequestUrl?: string) => {
-      openPullRequestUrl = pullRequestUrl ?? location.href;
+    const openOverlay = async (pullRequestUrl?: string) => {
+      const url = pullRequestUrl ?? location.href;
+
+      if (openPullRequestUrl === url) {
+        getOrCreateOverlayRoot();
+        return;
+      }
+
+      openPullRequestUrl = url;
       const container = getOrCreateOverlayRoot();
-      root ??= createRoot(container);
-      root.render(
-        <App
-          key={openPullRequestUrl}
-          pullRequestUrl={openPullRequestUrl}
-          onClose={closeOverlay}
-        />,
-      );
+      const mod = await loadDiffOverlayModule();
+      mod.mountOverlay({
+        container,
+        pullRequestUrl: openPullRequestUrl,
+        onClose: hideOverlay,
+      });
     };
 
-    const onOpen = (pullRequestUrl: string) => openOverlay(pullRequestUrl);
-    const onPrefetch = (url: string) => prefetchPullRequestDiffData(url);
+    const onOpen = (pullRequestUrl: string) => {
+      void openOverlay(pullRequestUrl);
+    };
+
+    const onPrefetch = (url: string) => {
+      warmGitHubTokenCache();
+      prefetchPullRequestDiffData(url);
+      preloadDiffOverlayModule();
+    };
 
     const syncPage = () => {
       if (!isPullRequestPage(location.href)) {
-        closeOverlay();
-        syncViewDiffButton(onOpen, onPrefetch);
+        destroyOverlay();
+        uninstallViewDiffButton();
         return;
       }
 
       if (openPullRequestUrl != null && openPullRequestUrl !== location.href) {
-        closeOverlay();
+        destroyOverlay();
       }
 
-      syncViewDiffButton(onOpen, onPrefetch);
-      prefetchPullRequestDiffData(location.href);
+      installViewDiffButton(onOpen, onPrefetch);
+      onPrefetch(location.href);
     };
 
-    const { disconnect } = installViewDiffButton(onOpen, onPrefetch);
-    prefetchPullRequestDiffData(location.href);
+    syncPage();
 
-    ctx.onInvalidated(disconnect);
+    ctx.onInvalidated(() => {
+      uninstallViewDiffButton();
+      void loadDiffOverlayModule()
+        .then((mod) => {
+          mod.destroyOverlayRuntime();
+        })
+        .catch(() => undefined);
+    });
 
     ctx.addEventListener(window, 'wxt:locationchange', () => {
       syncPage();

@@ -14,31 +14,48 @@ import {
 export type CodeViewItemsResult = {
   items: CodeViewItem<ReviewCommentThreadMetadata>[];
   diffPathSet: ReadonlySet<string>;
+  fileByPath: ReadonlyMap<string, GitHubPullRequestFile>;
   reviewCommentCountByPath: ReadonlyMap<string, number>;
   orphanedReviewThreadsByItemId: ReadonlyMap<string, ReviewCommentThreadMetadata[]>;
 };
 
+const codeViewItemsCache = new Map<string, CodeViewItemsResult>();
+
+function getCodeViewItemsCacheKey(data: PullRequestDiffData): string {
+  return `${data.ref.owner.toLowerCase()}/${data.ref.repo.toLowerCase()}#${data.ref.pullNumber}`;
+}
+
 export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResult {
-  const cacheKey = `${data.ref.owner}-${data.ref.repo}-${data.ref.pullNumber}`;
+  const cacheKey = getCodeViewItemsCacheKey(data);
+  const cached = codeViewItemsCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const patch = data.patch.trim() ? data.patch : buildPatchFromFiles(data.files);
   const parsed = parsePatchFiles(patch, cacheKey, true);
   const diffPathSet = new Set<string>();
   const items: CodeViewItem[] = [];
 
-  for (const fileDiff of parsed.flatMap((parsedPatch) => parsedPatch.files)) {
-    addDiffPath(diffPathSet, fileDiff.name);
-    if (fileDiff.prevName) {
-      addDiffPath(diffPathSet, fileDiff.prevName);
-    }
+  for (const parsedPatch of parsed) {
+    for (const fileDiff of parsedPatch.files) {
+      addDiffPath(diffPathSet, fileDiff.name);
+      if (fileDiff.prevName) {
+        addDiffPath(diffPathSet, fileDiff.prevName);
+      }
 
-    items.push({
-      id: getCodeViewItemId(fileDiff.name, true),
-      type: 'diff',
-      fileDiff,
-    });
+      items.push({
+        id: getCodeViewItemId(fileDiff.name, true),
+        type: 'diff',
+        fileDiff,
+      });
+    }
   }
 
+  const fileByPath = new Map<string, GitHubPullRequestFile>();
   for (const file of data.files) {
+    fileByPath.set(file.filename, file);
+
     if (isFileCoveredByDiff(file, diffPathSet)) {
       continue;
     }
@@ -55,12 +72,31 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
 
   const reviewCommentMaps = mapReviewCommentsToItems(items, data.reviewComments);
 
-  return {
+  const result: CodeViewItemsResult = {
     items: attachReviewCommentsToItems(items, reviewCommentMaps),
     diffPathSet,
+    fileByPath,
     reviewCommentCountByPath: reviewCommentMaps.countByPath,
     orphanedReviewThreadsByItemId: reviewCommentMaps.orphanedByItemId,
   };
+
+  codeViewItemsCache.set(cacheKey, result);
+  return result;
+}
+
+export function invalidateCodeViewItemsCache(ref?: {
+  owner: string;
+  repo: string;
+  pullNumber: number;
+}): void {
+  if (!ref) {
+    codeViewItemsCache.clear();
+    return;
+  }
+
+  codeViewItemsCache.delete(
+    `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}#${ref.pullNumber}`,
+  );
 }
 
 function getCodeViewItemId(path: string, hasDiff: boolean): string {
@@ -99,4 +135,8 @@ function getMissingPatchMessage(file: GitHubPullRequestFile): string {
   }
 
   return 'GitHub did not include diff text for this file.';
+}
+
+export function isLargePullRequestData(data: PullRequestDiffData): boolean {
+  return data.files.length > 150 || data.patch.length > 500_000;
 }

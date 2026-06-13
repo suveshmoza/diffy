@@ -10,6 +10,7 @@ import {
 
 const STORAGE_KEY = 'diffTheme';
 
+/** Theme hook for standalone surfaces (popup). Overlay uses DiffThemeProvider + useDiffThemeContext. */
 export function useDiffTheme() {
   const [theme, setTheme] = useState<DiffsThemeNames>(DEFAULT_DIFF_THEME);
   const [isReady, setIsReady] = useState(false);

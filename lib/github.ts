@@ -66,6 +66,48 @@ const GITHUB_PULL_URL_PATTERN = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\
 /** GitHub rejects unified diffs above this file count. */
 const GITHUB_MAX_AGGREGATE_DIFF_FILES = 300;
 const pullRequestDiffCache = new Map<string, Promise<PullRequestDiffData>>();
+let cachedGitHubToken: string | null | undefined;
+let githubTokenPromise: Promise<string | null> | null = null;
+
+export function warmGitHubTokenCache(): void {
+  void getGitHubToken().catch(() => undefined);
+}
+
+export async function getGitHubToken(): Promise<string | null> {
+  if (cachedGitHubToken !== undefined) {
+    return cachedGitHubToken;
+  }
+
+  if (!githubTokenPromise) {
+    githubTokenPromise = readGitHubTokenFromStorage().then((token) => {
+      cachedGitHubToken = token;
+      githubTokenPromise = null;
+      return token;
+    });
+  }
+
+  return githubTokenPromise;
+}
+
+async function readGitHubTokenFromStorage(): Promise<string | null> {
+  if (!browser?.storage?.sync) {
+    return null;
+  }
+
+  const stored = await browser.storage.sync.get('githubToken');
+  return typeof stored.githubToken === 'string' && stored.githubToken.trim()
+    ? stored.githubToken.trim()
+    : null;
+}
+
+if (browser?.storage?.onChanged) {
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync' && changes.githubToken) {
+      cachedGitHubToken = undefined;
+      githubTokenPromise = null;
+    }
+  });
+}
 
 export function parseGitHubPullRequestUrl(
   url: string | null | undefined,
@@ -89,17 +131,6 @@ export function parseGitHubPullRequestUrl(
 
 export function parseCurrentPullRequestUrl(): GitHubPullRequestRef | null {
   return parseGitHubPullRequestUrl(window.location.href);
-}
-
-export async function getGitHubToken(): Promise<string | null> {
-  if (!browser?.storage?.sync) {
-    return null;
-  }
-
-  const stored = await browser.storage.sync.get('githubToken');
-  return typeof stored.githubToken === 'string' && stored.githubToken.trim()
-    ? stored.githubToken.trim()
-    : null;
 }
 
 export function prefetchPullRequestDiffData(url: string | null | undefined): void {
