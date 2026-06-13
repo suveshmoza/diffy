@@ -1,12 +1,10 @@
 import type { ReactNode } from 'react';
 
-import type { GitHubTheme } from '@/lib/theme';
-
 type ChromeModalProps = {
   title: string;
   children: ReactNode;
   onClose: () => void;
-  theme?: GitHubTheme;
+  theme?: 'light' | 'dark';
 };
 
 export function ChromeModal({ title, children, onClose, theme }: ChromeModalProps) {

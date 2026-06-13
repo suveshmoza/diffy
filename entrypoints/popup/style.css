@@ -77,6 +77,38 @@ h1 {
   padding: 14px;
 }
 
+.card-compact {
+  gap: 0;
+}
+
+.card-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.card-row h2 {
+  flex-shrink: 0;
+}
+
+.card-row select {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: inherit;
+  font: inherit;
+  max-width: 180px;
+  padding: 9px 11px;
+}
+
+.card-row select:focus {
+  border-color: #58a6ff;
+  outline: 2px solid rgb(88 166 255 / 25%);
+  outline-offset: 0;
+}
+
 .card-header {
   align-items: center;
   display: flex;
@@ -167,31 +199,31 @@ button,
   text-decoration: none;
 }
 
-button {
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.actions button:not(.button-secondary) {
   background: #238636;
   border: 1px solid #238636;
   color: #fff;
   font-weight: 600;
 }
 
-button:hover:not(:disabled) {
+.actions button:not(.button-secondary):hover:not(:disabled) {
   background: #2ea043;
   border-color: #2ea043;
 }
 
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.button-secondary {
+.actions .button-secondary {
   background: #21262d;
   border-color: #30363d;
   color: #e6edf3;
   font-weight: 500;
 }
 
-.button-secondary:hover:not(:disabled) {
+.actions .button-secondary:hover:not(:disabled) {
   background: #30363d;
   border-color: #484f58;
 }

@@ -1,7 +1,10 @@
+import type { DiffsThemeNames } from '@pierre/diffs';
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import logoUrl from '@/assets/logo.jpg';
+import { useDiffTheme } from '@/hooks/useDiffTheme';
+import { DIFF_THEMES } from '@/lib/diff-themes';
 
 import './style.css';
 
@@ -9,6 +12,7 @@ function PopupApp() {
   const [token, setToken] = useState('');
   const [hasSavedToken, setHasSavedToken] = useState(false);
   const [status, setStatus] = useState('');
+  const { theme, setTheme } = useDiffTheme();
 
   useEffect(() => {
     if (!browser?.storage?.sync) {
@@ -23,9 +27,7 @@ function PopupApp() {
           setHasSavedToken(true);
         }
       })
-      .catch(() => {
-        // Ignore storage read failures and keep the empty token state.
-      });
+      .catch(() => {});
   }, []);
 
   async function save(event: SubmitEvent<HTMLFormElement>) {
@@ -77,6 +79,26 @@ function PopupApp() {
       <p className='intro'>
         Open a pull request and click <strong>View Diff</strong> in the PR header.
       </p>
+
+      <section className='card card-compact'>
+        <div className='card-row'>
+          <h2>Appearance</h2>
+          <select
+            aria-label='Theme'
+            value={theme}
+            onChange={(event) => void setTheme(event.currentTarget.value as DiffsThemeNames)}
+          >
+            {DIFF_THEMES.map((id) => (
+              <option
+                key={id}
+                value={id}
+              >
+                {id}
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
 
       <section className='card'>
         <div className='card-header'>
