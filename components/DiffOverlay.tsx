@@ -16,14 +16,16 @@ import {
   invalidateCodeViewItemsCache,
 } from '@/lib/build-code-view-items';
 import {
+  addDraftAnnotation,
   appendReplyToThreadAnnotation,
+  hasAnyDraftAnnotation,
   hasDraftAnnotation,
   removeCommentFromAnnotation,
   removeDraftAnnotation,
   replaceDraftWithThreadAnnotation,
   updateCommentInAnnotation,
-  upsertDraftAnnotation,
 } from '@/lib/code-view-review-mutations';
+import { runCodeViewMutationPreservingScroll } from '@/lib/code-view-scroll-anchor';
 import {
   DEFAULT_DIFF_LAYOUT,
   readDiffLayoutPreference,
@@ -71,14 +73,12 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const codeViewHostRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLElement>(null);
   const selectedLinesRef = useRef<CodeViewLineSelection | null>(null);
-  const draftLineSelectionRef = useRef<CodeViewLineSelection | null>(null);
   const hoveredThreadSelectionRef = useRef<CodeViewLineSelection | null>(null);
   const orphanedThreadsByItemIdRef = useRef<
     ReadonlyMap<string, ReviewThreadMetadata[]> | undefined
   >(undefined);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [selectedLines, setSelectedLines] = useState<CodeViewLineSelection | null>(null);
-  const [draftLineSelection, setDraftLineSelection] = useState<CodeViewLineSelection | null>(null);
   const [hoveredThreadSelection, setHoveredThreadSelection] =
     useState<CodeViewLineSelection | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -88,7 +88,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const [hasToken, setHasToken] = useState(false);
 
   selectedLinesRef.current = selectedLines;
-  draftLineSelectionRef.current = draftLineSelection;
   hoveredThreadSelectionRef.current = hoveredThreadSelection;
 
   useEffect(() => {
@@ -186,14 +185,16 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       return;
     }
 
-    for (const item of codeViewItems.items) {
-      const liveItem = viewer.getItem(item.id);
-      if (!liveItem || !hasDraftAnnotation(liveItem)) {
-        continue;
-      }
+    runCodeViewMutationPreservingScroll(viewer, () => {
+      for (const item of codeViewItems.items) {
+        const liveItem = viewer.getItem(item.id);
+        if (!liveItem || !hasDraftAnnotation(liveItem)) {
+          continue;
+        }
 
-      viewer.updateItem(removeDraftAnnotation(liveItem));
-    }
+        viewer.updateItem(removeDraftAnnotation(liveItem));
+      }
+    });
   }, [codeViewItems]);
 
   const openDraftComposer = useCallback(
@@ -203,35 +204,38 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         return;
       }
 
-      clearAllDrafts();
       if (modalRef.current) {
         closeAllReplyComposers(modalRef.current);
       }
 
-      const targetItem = viewer.getItem(selection.id);
-      if (!targetItem) {
-        return;
-      }
+      runCodeViewMutationPreservingScroll(
+        viewer,
+        () => {
+          const targetItem = viewer.getItem(selection.id);
+          if (!targetItem) {
+            return;
+          }
 
-      viewer.updateItem(upsertDraftAnnotation(targetItem, selection.range));
-      setDraftLineSelection(selection);
-      viewer.setSelectedLines(selection);
-      setSelectedLines(selection);
-      refreshCodeViewLayoutRef.current?.();
+          const { item: nextItem } = addDraftAnnotation(targetItem, selection.range);
+          viewer.updateItem(nextItem);
+        },
+        () => {
+          setSelectedLines(selection);
+
+          const item = itemById?.get(selection.id);
+          if (item) {
+            const path = getItemPath(item);
+            setSelectedPath((current) => (current === path ? current : path));
+          }
+        },
+      );
     },
-    [clearAllDrafts, codeViewItems],
+    [codeViewItems, itemById],
   );
 
-  const refreshCodeViewLayoutRef = useRef<(() => void) | null>(null);
-
   const handleGutterUtilityClick = useCallback(
-    (_range: SelectedLineRange) => {
-      const selection = viewerRef.current?.getSelectedLines() ?? selectedLinesRef.current;
-      if (!selection) {
-        return;
-      }
-
-      openDraftComposer(selection);
+    (range: SelectedLineRange, context: { item: { id: string } }) => {
+      openDraftComposer({ id: context.item.id, range });
     },
     [openDraftComposer],
   );
@@ -263,8 +267,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       codeViewOptionsWithInteractions,
     ]);
 
-  refreshCodeViewLayoutRef.current = refreshCodeViewLayout;
-
   useEffect(() => {
     if (!isCodeViewMounted || codeViewOptionsWithInteractions == null) {
       return;
@@ -293,7 +295,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const handleReplyOpen = useCallback(
     (replyKey: string) => {
       clearAllDrafts();
-      setDraftLineSelection(null);
       setHoveredThreadSelection(null);
       viewerRef.current?.clearSelectedLines();
       setSelectedLines(null);
@@ -417,46 +418,86 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   );
 
   const handleCancelDraft = useCallback(
-    (itemId: string) => {
+    (itemId: string, draftId: string, range: SelectedLineRange) => {
       const viewer = viewerRef.current;
-      if (!viewer) {
+      if (!viewer || !codeViewItems) {
         return;
       }
 
       const item = viewer.getItem(itemId);
-      if (item) {
-        viewer.updateItem(removeDraftAnnotation(item));
-      }
+      runCodeViewMutationPreservingScroll(
+        viewer,
+        () => {
+          if (item) {
+            viewer.updateItem(removeDraftAnnotation(item, draftId));
+          }
+        },
+        () => {
+          const activeSelection = selectedLinesRef.current;
+          if (
+            activeSelection?.id === itemId &&
+            activeSelection.range.start === range.start &&
+            activeSelection.range.end === range.end &&
+            activeSelection.range.side === range.side &&
+            activeSelection.range.endSide === range.endSide
+          ) {
+            setSelectedLines(null);
+          }
 
-      viewer.clearSelectedLines();
-      setDraftLineSelection(null);
-      setHoveredThreadSelection(null);
-      setSelectedLines(null);
-      refreshCodeViewLayout();
+          if (!hasAnyDraftAnnotation(viewer, codeViewItems.items)) {
+            viewer.clearSelectedLines();
+            setSelectedLines(null);
+            setHoveredThreadSelection(null);
+          }
+        },
+      );
     },
-    [refreshCodeViewLayout],
+    [codeViewItems],
   );
 
   const handleImmediateCommentSuccess = useCallback(
-    (itemId: string, comment: GitHubPullRequestReviewComment) => {
+    (
+      itemId: string,
+      comment: GitHubPullRequestReviewComment,
+      draftId: string,
+      range: SelectedLineRange,
+    ) => {
       const viewer = viewerRef.current;
-      if (!viewer) {
+      if (!viewer || !codeViewItems) {
         return;
       }
 
       const item = viewer.getItem(itemId);
-      if (item) {
-        viewer.updateItem(replaceDraftWithThreadAnnotation(item, comment));
-      }
-
       setLiveReviewComments((comments) => [...comments, comment]);
-      viewer.clearSelectedLines();
-      setDraftLineSelection(null);
-      setHoveredThreadSelection(null);
-      setSelectedLines(null);
-      refreshCodeViewLayout();
+
+      runCodeViewMutationPreservingScroll(
+        viewer,
+        () => {
+          if (item) {
+            viewer.updateItem(replaceDraftWithThreadAnnotation(item, comment, draftId));
+          }
+        },
+        () => {
+          const activeSelection = selectedLinesRef.current;
+          if (
+            activeSelection?.id === itemId &&
+            activeSelection.range.start === range.start &&
+            activeSelection.range.end === range.end &&
+            activeSelection.range.side === range.side &&
+            activeSelection.range.endSide === range.endSide
+          ) {
+            setSelectedLines(null);
+          }
+
+          if (!hasAnyDraftAnnotation(viewer, codeViewItems.items)) {
+            viewer.clearSelectedLines();
+            setSelectedLines(null);
+            setHoveredThreadSelection(null);
+          }
+        },
+      );
     },
-    [refreshCodeViewLayout],
+    [codeViewItems],
   );
 
   const codeViewStyle = useMemo(
@@ -498,7 +539,13 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
 
   const handleSelectedLinesChange = useCallback(
     (selection: CodeViewLineSelection | null) => {
-      if (selection == null && draftLineSelectionRef.current != null) {
+      const viewer = viewerRef.current;
+      if (
+        selection == null &&
+        viewer &&
+        codeViewItems &&
+        hasAnyDraftAnnotation(viewer, codeViewItems.items)
+      ) {
         return;
       }
 
@@ -523,7 +570,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       const path = getItemPath(item);
       setSelectedPath((current) => (current === path ? current : path));
     },
-    [itemById],
+    [codeViewItems, itemById],
   );
 
   const stopGitHubKeybindings = useCallback((event: React.KeyboardEvent) => {
@@ -545,14 +592,17 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       if (metadata.kind === 'draft') {
         return (
           <ReviewCommentComposer
+            key={metadata.draftId}
             path={getItemPath(item)}
             range={metadata.range}
             pullRequestRef={data.ref}
             commitId={data.pullRequest.head.sha}
             viewerUser={viewerUser}
             hasToken={hasToken}
-            onCancel={() => handleCancelDraft(item.id)}
-            onSuccess={(comment) => handleImmediateCommentSuccess(item.id, comment)}
+            onCancel={() => handleCancelDraft(item.id, metadata.draftId, metadata.range)}
+            onSuccess={(comment) =>
+              handleImmediateCommentSuccess(item.id, comment, metadata.draftId, metadata.range)
+            }
           />
         );
       }
@@ -696,7 +746,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
                 renderAnnotation={renderReviewAnnotation}
                 renderHeaderMetadata={renderReviewHeaderMetadata}
                 options={codeViewOptionsWithInteractions ?? codeViewOptions}
-                selectedLines={draftLineSelection ?? hoveredThreadSelection ?? selectedLines}
+                selectedLines={hoveredThreadSelection ?? selectedLines}
                 onSelectedLinesChange={handleSelectedLinesChange}
               />
             ) : (
