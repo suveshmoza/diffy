@@ -85,72 +85,129 @@ export function replaceDraftWithThreadAnnotation(
   return withAnnotations(withoutDraft, [...getAnnotations(withoutDraft), annotation]);
 }
 
-export function replaceDraftWithPendingAnnotation(
-  item: CodeViewItem<ReviewAnnotationMetadata>,
-  comment: GitHubPullRequestReviewComment,
-  reviewId: number,
-): CodeViewItem<ReviewAnnotationMetadata> {
-  const withoutDraft = removeDraftAnnotation(item);
-  const pendingMetadata: ReviewAnnotationMetadata = {
-    kind: 'pending',
-    comments: [comment],
-    reviewId,
-  };
-  const line = getCommentAnchorLine(comment);
-  if (line == null) {
-    return withoutDraft;
-  }
-
-  const annotation = createAnnotationForMetadata(
-    withoutDraft,
-    line,
-    toAnnotationSide(comment.side),
-    pendingMetadata,
+function sortCommentsByCreatedAt(
+  comments: GitHubPullRequestReviewComment[],
+): GitHubPullRequestReviewComment[] {
+  return [...comments].toSorted(
+    (left, right) => Date.parse(left.created_at) - Date.parse(right.created_at),
   );
-
-  return withAnnotations(withoutDraft, [...getAnnotations(withoutDraft), annotation]);
 }
 
-export function removePendingAnnotationsForReview(
-  item: CodeViewItem<ReviewAnnotationMetadata>,
-  reviewId: number,
-): CodeViewItem<ReviewAnnotationMetadata> {
-  const annotations = getAnnotations(item).filter(
-    (annotation) =>
-      annotation.metadata?.kind !== 'pending' || annotation.metadata.reviewId !== reviewId,
-  );
+function annotationContainsReplyParent(
+  metadata: ReviewThreadMetadata,
+  reply: GitHubPullRequestReviewComment,
+): boolean {
+  if (reply.in_reply_to_id == null) {
+    return false;
+  }
 
-  if (annotations.length === getAnnotations(item).length) {
+  return metadata.comments.some((comment) => comment.id === reply.in_reply_to_id);
+}
+
+function updateAnnotationComments(
+  item: CodeViewItem<ReviewAnnotationMetadata>,
+  annotationIndex: number,
+  comments: GitHubPullRequestReviewComment[],
+): CodeViewItem<ReviewAnnotationMetadata> {
+  const annotations = [...getAnnotations(item)];
+  const annotation = annotations[annotationIndex];
+  const metadata = annotation.metadata;
+
+  if (!metadata || metadata.kind !== 'thread') {
     return item;
   }
+
+  annotations[annotationIndex] = {
+    ...annotation,
+    metadata: {
+      ...metadata,
+      comments,
+    },
+  };
 
   return withAnnotations(item, annotations);
 }
 
-export function promotePendingToThread(
+export function updateCommentInAnnotation(
   item: CodeViewItem<ReviewAnnotationMetadata>,
-  comment: GitHubPullRequestReviewComment,
-  reviewId: number,
+  updated: GitHubPullRequestReviewComment,
 ): CodeViewItem<ReviewAnnotationMetadata> {
-  const withoutPending = removePendingAnnotationsForReview(item, reviewId);
-  const line = getCommentAnchorLine(comment);
-  if (line == null) {
-    return withoutPending;
+  const annotations = getAnnotations(item);
+
+  for (let index = 0; index < annotations.length; index += 1) {
+    const metadata = annotations[index].metadata;
+    if (metadata?.kind !== 'thread') {
+      continue;
+    }
+
+    if (!metadata.comments.some((comment) => comment.id === updated.id)) {
+      continue;
+    }
+
+    const nextComments = metadata.comments.map((comment) =>
+      comment.id === updated.id ? updated : comment,
+    );
+
+    return updateAnnotationComments(item, index, nextComments);
   }
 
-  const threadMetadata: ReviewThreadMetadata = {
-    kind: 'thread',
-    comments: [comment],
-    orphaned: false,
-  };
-  const annotation = createAnnotationForMetadata(
-    withoutPending,
-    line,
-    toAnnotationSide(comment.side),
-    threadMetadata,
-  );
+  return item;
+}
 
-  return withAnnotations(withoutPending, [...getAnnotations(withoutPending), annotation]);
+export function removeCommentFromAnnotation(
+  item: CodeViewItem<ReviewAnnotationMetadata>,
+  commentId: number,
+): CodeViewItem<ReviewAnnotationMetadata> {
+  const annotations = getAnnotations(item);
+
+  for (let index = 0; index < annotations.length; index += 1) {
+    const metadata = annotations[index].metadata;
+    if (metadata?.kind !== 'thread') {
+      continue;
+    }
+
+    if (!metadata.comments.some((comment) => comment.id === commentId)) {
+      continue;
+    }
+
+    const nextComments = metadata.comments.filter((comment) => comment.id !== commentId);
+    if (nextComments.length === 0) {
+      return withAnnotations(
+        item,
+        annotations.filter((_, annotationIndex) => annotationIndex !== index),
+      );
+    }
+
+    return updateAnnotationComments(item, index, nextComments);
+  }
+
+  return item;
+}
+
+export function appendReplyToThreadAnnotation(
+  item: CodeViewItem<ReviewAnnotationMetadata>,
+  reply: GitHubPullRequestReviewComment,
+): CodeViewItem<ReviewAnnotationMetadata> {
+  const annotations = getAnnotations(item);
+
+  for (let index = 0; index < annotations.length; index += 1) {
+    const metadata = annotations[index].metadata;
+    if (metadata?.kind !== 'thread' || !annotationContainsReplyParent(metadata, reply)) {
+      continue;
+    }
+
+    if (metadata.comments.some((comment) => comment.id === reply.id)) {
+      return item;
+    }
+
+    return updateAnnotationComments(
+      item,
+      index,
+      sortCommentsByCreatedAt([...metadata.comments, reply]),
+    );
+  }
+
+  return item;
 }
 
 function getAnnotations(item: CodeViewItem<ReviewAnnotationMetadata>): ReviewAnnotation[] {
