@@ -5,7 +5,7 @@
 
   <h1>diffy</h1>
 
-  <p><strong>Fast, full-screen PR diffs on GitHub - file tree, syntax highlighting, split/unified layout.</strong></p>
+  <p><strong>Fast, full-screen PR diffs on GitHub - searchable file tree, inline review comments, split/unified layout, and 60+ themes.</strong></p>
 </div>
 
 > ⚠️ **Note:**
@@ -23,11 +23,15 @@
 
 - `View Diff` button injected into GitHub PR headers
 - Full-screen overlay with continuous scroll through the entire PR
-- File tree sidebar for navigating changed files in large PRs
+- Fast reopen: overlay stays warm between open/close and preserves scroll position
+- File tree sidebar with search for navigating changed files in large PRs
+- Review comment indicators on file tree rows (icon and count)
 - **Stacked** (unified) and **Switched** (split) diff layouts
+- Inline PR review comment threads rendered in the diff viewer
 - Syntax highlighting with sticky file headers
-- Matches GitHub light/dark theme automatically
+- Theme picker in the extension popup (60+ Shiki themes, including GitHub light/dark variants)
 - Prefetches PR diff data when you land on a PR page
+- Press `Escape` to close the overlay without conflicting with page shortcuts
 - Optional GitHub token via the extension popup (private repos and higher rate limits)
 
 ## Install
