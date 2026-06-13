@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 're
 import { formatSelectedLineRangeLabel } from '@/lib/format-line-range';
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github';
 import {
-  addPendingReviewComment,
   createImmediateReviewComment,
   GitHubReviewWriteError,
   type GitHubViewer,
@@ -15,12 +14,10 @@ type ReviewCommentComposerProps = {
   range: SelectedLineRange;
   pullRequestRef: GitHubPullRequestRef;
   commitId: string;
-  pendingReviewId: number | null;
   viewerUser: GitHubViewer | null;
   hasToken: boolean;
   onCancel: () => void;
-  onImmediateSuccess: (comment: GitHubPullRequestReviewComment) => void;
-  onPendingSuccess: (comment: GitHubPullRequestReviewComment) => void;
+  onSuccess: (comment: GitHubPullRequestReviewComment) => void;
 };
 
 export function ReviewCommentComposer({
@@ -28,20 +25,15 @@ export function ReviewCommentComposer({
   range,
   pullRequestRef,
   commitId,
-  pendingReviewId,
   viewerUser,
   hasToken,
   onCancel,
-  onImmediateSuccess,
-  onPendingSuccess,
+  onSuccess,
 }: ReviewCommentComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isReviewSession = pendingReviewId != null;
-  const submitLabel = isReviewSession ? 'Add review comment' : 'Comment';
 
   useEffect(() => {
     textareaRef.current?.focus({ preventScroll: true });
@@ -63,23 +55,13 @@ export function ReviewCommentComposer({
     setError(null);
 
     try {
-      const input = {
+      const comment = await createImmediateReviewComment(pullRequestRef, {
         body: trimmed,
         commitId,
         path,
         range,
-      };
-
-      if (isReviewSession) {
-        const comment = await addPendingReviewComment(pullRequestRef, {
-          ...input,
-          pullRequestReviewId: pendingReviewId,
-        });
-        onPendingSuccess(comment);
-      } else {
-        const comment = await createImmediateReviewComment(pullRequestRef, input);
-        onImmediateSuccess(comment);
-      }
+      });
+      onSuccess(comment);
     } catch (submitError: unknown) {
       if (submitError instanceof GitHubReviewWriteError) {
         setError(submitError.message);
@@ -89,18 +71,7 @@ export function ReviewCommentComposer({
     } finally {
       setIsSubmitting(false);
     }
-  }, [
-    body,
-    commitId,
-    hasToken,
-    isReviewSession,
-    onImmediateSuccess,
-    onPendingSuccess,
-    path,
-    pendingReviewId,
-    pullRequestRef,
-    range,
-  ]);
+  }, [body, commitId, hasToken, onSuccess, path, pullRequestRef, range]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -184,7 +155,7 @@ export function ReviewCommentComposer({
                 onClick={() => void handleSubmit()}
                 disabled={isSubmitting || !body.trim()}
               >
-                {isSubmitting ? 'Posting…' : submitLabel}
+                {isSubmitting ? 'Posting…' : 'Comment'}
               </button>
             </div>
           </div>
