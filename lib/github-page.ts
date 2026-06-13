@@ -1,8 +1,11 @@
+import { preloadDiffOverlayModule } from '@/lib/preload-diff-overlay';
+
 import { parseCurrentPullRequestUrl, parseGitHubPullRequestUrl } from './github';
 
 const BUTTON_ID = 'github-pr-viewer-button';
 const BUTTON_HOST_ID = 'github-pr-viewer-button-host';
 const ROOT_ID = 'github-pr-viewer-root';
+const ROOT_HIDDEN_CLASS = 'gprv-root-hidden';
 
 const PR_HEADER_SELECTORS = [
   '[data-testid="pull-request-header"]',
@@ -32,35 +35,60 @@ type ViewDiffButtonCallbacks = {
   onPrefetch: (pullRequestUrl: string) => void;
 };
 
-let buttonInstaller: { disconnect: () => void } | null = null;
 let buttonCallbacks: ViewDiffButtonCallbacks | null = null;
 let syncScheduled = false;
+let headerObserver: MutationObserver | null = null;
+let observedHeaderRoot: HTMLElement | null = null;
 
 export function installViewDiffButton(
   onOpen: (pullRequestUrl: string) => void,
   onPrefetch: (pullRequestUrl: string) => void,
-): { disconnect: () => void } {
-  if (buttonInstaller) {
-    return buttonInstaller;
+): void {
+  if (!isPullRequestPage(location.href)) {
+    return;
   }
 
   buttonCallbacks = { onOpen, onPrefetch };
-  const observer = new MutationObserver(() => {
+  syncViewDiffButton(onOpen, onPrefetch);
+  ensureHeaderObserver();
+}
+
+export function uninstallViewDiffButton(): void {
+  disconnectHeaderObserver();
+  removeViewDiffButton();
+  buttonCallbacks = null;
+  syncScheduled = false;
+}
+
+function ensureHeaderObserver(): void {
+  const headerRoot = findPrHeaderRoot();
+  if (!headerRoot || headerRoot === observedHeaderRoot) {
+    return;
+  }
+
+  disconnectHeaderObserver();
+  observedHeaderRoot = headerRoot;
+  headerObserver = new MutationObserver(() => {
     scheduleSyncViewDiffButton();
   });
-  observer.observe(document.body, { childList: true, subtree: true });
+  headerObserver.observe(headerRoot, { childList: true, subtree: true });
+}
 
-  const disconnect = () => {
-    observer.disconnect();
-    removeViewDiffButton();
-    buttonInstaller = null;
-    buttonCallbacks = null;
-    syncScheduled = false;
-  };
+function disconnectHeaderObserver(): void {
+  headerObserver?.disconnect();
+  headerObserver = null;
+  observedHeaderRoot = null;
+}
 
-  buttonInstaller = { disconnect };
-  syncViewDiffButton(onOpen, onPrefetch);
-  return buttonInstaller;
+function findPrHeaderRoot(): HTMLElement | null {
+  for (const selector of PR_HEADER_SELECTORS) {
+    const match = document.querySelector<HTMLElement>(selector);
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
 }
 
 function scheduleSyncViewDiffButton(): void {
@@ -75,6 +103,12 @@ function scheduleSyncViewDiffButton(): void {
       return;
     }
 
+    if (!isPullRequestPage(location.href)) {
+      uninstallViewDiffButton();
+      return;
+    }
+
+    ensureHeaderObserver();
     syncViewDiffButton(buttonCallbacks.onOpen, buttonCallbacks.onPrefetch);
   });
 }
@@ -99,6 +133,7 @@ export function removeViewDiffButton(): void {
 export function getOrCreateOverlayRoot(): HTMLElement {
   const existing = document.getElementById(ROOT_ID);
   if (existing) {
+    existing.classList.remove(ROOT_HIDDEN_CLASS);
     return existing;
   }
 
@@ -107,6 +142,13 @@ export function getOrCreateOverlayRoot(): HTMLElement {
   root.setAttribute('data-github-pr-viewer-root', '');
   document.body.append(root);
   return root;
+}
+
+export function hideOverlayRoot(): void {
+  const root = document.getElementById(ROOT_ID);
+  if (root) {
+    root.classList.add(ROOT_HIDDEN_CLASS);
+  }
 }
 
 export function removeOverlayRoot(): void {
@@ -134,7 +176,7 @@ function injectButton(
 
   const headerRoots = getPrHeaderRoots();
   const anchorControl = findAnchorControl(headerRoots);
-  const button = createButton(anchorControl, ref.url, onOpen);
+  const button = createButton(anchorControl, ref.url, onOpen, onPrefetch);
 
   if (anchorControl && insertButtonNearControl(button, anchorControl)) {
     return;
@@ -241,6 +283,7 @@ function createButton(
   anchorControl: HTMLAnchorElement | HTMLButtonElement | null,
   pullRequestUrl: string,
   onOpen: (pullRequestUrl: string) => void,
+  onPrefetch: (pullRequestUrl: string) => void,
 ): HTMLButtonElement {
   const button = document.createElement('button');
   button.id = BUTTON_ID;
@@ -255,6 +298,16 @@ function createButton(
       button.setAttribute('style', style);
     }
   }
+
+  button.addEventListener('mouseenter', () => {
+    onPrefetch(pullRequestUrl);
+    preloadDiffOverlayModule();
+  });
+
+  button.addEventListener('focusin', () => {
+    onPrefetch(pullRequestUrl);
+    preloadDiffOverlayModule();
+  });
 
   button.addEventListener('click', (event) => {
     event.preventDefault();

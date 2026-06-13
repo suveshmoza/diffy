@@ -1,7 +1,4 @@
-import type { DiffsThemeNames } from '@pierre/diffs';
-import { resolveTheme } from '@pierre/diffs';
 import type { FileTreeRowDecorationRenderer } from '@pierre/trees';
-import { themeToTreeStyles } from '@pierre/trees';
 import { FileTree, useFileTree, useFileTreeSearch } from '@pierre/trees/react';
 import {
   useCallback,
@@ -14,7 +11,6 @@ import {
   type RefObject,
 } from 'react';
 
-import { diffThemeType } from '@/lib/diff-themes';
 import {
   buildCommentBadgeCountCss,
   FILE_TREE_REVIEW_COMMENT_TITLE_MARKER,
@@ -22,6 +18,8 @@ import {
 import { FILE_TREE_COMMENT_ICON_MASK_URL } from '@/lib/file-tree-comment-icon';
 import { createFileTreeInput } from '@/lib/file-tree-input';
 import type { GitHubPullRequestFile } from '@/lib/github';
+import { getTreeThemeStyles } from '@/lib/resolve-diff-theme';
+import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 
 const TREE_INITIAL_VISIBLE_ROW_COUNT = 80;
 const TREE_OVERSCAN = 12;
@@ -29,7 +27,6 @@ const TREE_OVERSCAN = 12;
 type FileTreePanelProps = {
   files: GitHubPullRequestFile[];
   selectedPath: string | null;
-  theme: DiffsThemeNames;
   reviewCommentCountByPath?: ReadonlyMap<string, number>;
   onSelectPath: (path: string) => void;
 };
@@ -194,10 +191,10 @@ function FileTreeSearchHeader({
 export function FileTreePanel({
   files,
   selectedPath,
-  theme,
   reviewCommentCountByPath,
   onSelectPath,
 }: FileTreePanelProps) {
+  const { theme } = useDiffThemeContext();
   const treeInput = useMemo(
     () => createFileTreeInput(files, reviewCommentCountByPath),
     [files, reviewCommentCountByPath],
@@ -218,13 +215,10 @@ export function FileTreePanel({
   useEffect(() => {
     let isCancelled = false;
 
-    resolveTheme(theme)
-      .then((resolved) => {
+    void getTreeThemeStyles(theme)
+      .then((styles) => {
         if (!isCancelled) {
-          setTreeThemeStyles({
-            ...themeToTreeStyles(resolved),
-            colorScheme: diffThemeType(theme),
-          });
+          setTreeThemeStyles(styles);
         }
       })
       .catch(() => {});
@@ -233,6 +227,16 @@ export function FileTreePanel({
       isCancelled = true;
     };
   }, [theme]);
+
+  const handleSelectionChange = useCallback(
+    (selectedPaths: readonly string[]) => {
+      const nextPath = selectedPaths[0];
+      if (nextPath) {
+        onSelectPath(nextPath);
+      }
+    },
+    [onSelectPath],
+  );
 
   const handleSearchQueryChange = useCallback((query: string) => {
     keepSearchFocusRef.current = document.activeElement === searchInputRef.current;
@@ -244,9 +248,11 @@ export function FileTreePanel({
     return annotationsByPathRef.current.get(item.path) ?? null;
   }, []);
 
+  const initialExpansion = files.length > 150 ? ('closed' as const) : ('open' as const);
+
   const { model } = useFileTree({
     preparedInput: treeInput.preparedInput,
-    initialExpansion: 'open',
+    initialExpansion,
     initialSelectedPaths: selectedPath ? [selectedPath] : [],
     icons: 'complete',
     gitStatus: treeInput.gitStatus,
@@ -257,12 +263,7 @@ export function FileTreePanel({
     unsafeCSS: fileTreePanelCss,
     initialVisibleRowCount: TREE_INITIAL_VISIBLE_ROW_COUNT,
     overscan: TREE_OVERSCAN,
-    onSelectionChange: (selectedPaths) => {
-      const nextPath = selectedPaths[0];
-      if (nextPath) {
-        onSelectPath(nextPath);
-      }
-    },
+    onSelectionChange: handleSelectionChange,
   });
 
   const search = useFileTreeSearch(model);

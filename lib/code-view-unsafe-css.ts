@@ -4,13 +4,18 @@ import diffsBaseCSS from '@pierre/diffs/dist/style.js';
 
 import { diffThemeType } from '@/lib/diff-themes';
 
+const BASE_UNSAFE_CSS = diffsBaseCSS;
+
 const REVIEW_ANNOTATION_OVERFLOW_CSS = `
 [data-annotation-content] {
   align-self: stretch;
   box-sizing: border-box;
   max-width: 100%;
   min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
   width: 100%;
+  word-break: break-word;
 }
 `;
 
@@ -29,7 +34,7 @@ function themeSurfaceColors(resolved: Awaited<ReturnType<typeof resolveTheme>>) 
  */
 function themeHostOverride(theme: DiffsThemeNames, bg: string, fg: string) {
   const scheme = diffThemeType(theme);
-  const border = `color-mix(in srgb, ${fg} 22%, ${bg})`;
+  // const border = `color-mix(in srgb, ${fg} 22%, ${bg})`;
 
   return `
 :host {
@@ -42,7 +47,6 @@ function themeHostOverride(theme: DiffsThemeNames, bg: string, fg: string) {
   --diffs-light-bg: ${bg} !important;
   --diffs-dark-bg: ${bg} !important;
   background-color: ${bg} !important;
-  border-top: 1px solid ${border} !important;
   color: ${fg} !important;
 }
 `;
@@ -53,7 +57,7 @@ export function buildFallbackCodeViewUnsafeCss(theme: DiffsThemeNames): string {
   const bg = scheme === 'light' ? '#ffffff' : '#0d1117';
   const fg = scheme === 'light' ? '#1f2328' : '#e6edf3';
 
-  return diffsBaseCSS + REVIEW_ANNOTATION_OVERFLOW_CSS + themeHostOverride(theme, bg, fg);
+  return BASE_UNSAFE_CSS + REVIEW_ANNOTATION_OVERFLOW_CSS + themeHostOverride(theme, bg, fg);
 }
 
 export async function buildCodeViewUnsafeCss(theme: DiffsThemeNames): Promise<string> {
@@ -61,7 +65,7 @@ export async function buildCodeViewUnsafeCss(theme: DiffsThemeNames): Promise<st
     const resolved = await resolveTheme(theme);
     const { bg, fg } = themeSurfaceColors(resolved);
 
-    return diffsBaseCSS + REVIEW_ANNOTATION_OVERFLOW_CSS + themeHostOverride(theme, bg, fg);
+    return BASE_UNSAFE_CSS + REVIEW_ANNOTATION_OVERFLOW_CSS + themeHostOverride(theme, bg, fg);
   } catch {
     return buildFallbackCodeViewUnsafeCss(theme);
   }

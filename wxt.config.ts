@@ -65,7 +65,7 @@ function tolerateNullCustomElements(): Plugin {
 }
 
 export default defineConfig({
-  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
+  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './modules/esm-builder.ts'],
   autoIcons: {
     baseIconPath: 'assets/logo.jpg',
     sizes: [128, 96, 48, 32, 24, 16],
@@ -83,7 +83,7 @@ export default defineConfig({
     host_permissions: ['https://api.github.com/*', 'https://github.com/*'],
     web_accessible_resources: [
       {
-        resources: ['assets/*.js'],
+        resources: ['assets/*.js', 'content-scripts/esm/*'],
         matches: ['https://github.com/*'],
       },
     ],

@@ -28,12 +28,13 @@ function refreshCodeViewInstance<T>(viewerRef: RefObject<CodeViewHandle<T> | nul
   Object.assign(instance.config, CODE_VIEW_VIRTUALIZER_CONFIG);
 
   const internals = instance as unknown as CodeViewInternals;
+  const scrollPosition = scrollRoot.scrollTop;
   internals.heightDirty = true;
   // Force CodeView through its initial-layout path again with a real viewport.
   internals.renderState.scrollTop = -1;
 
   instance.render(true);
-  instance.scrollTo({ type: 'position', position: 0, behavior: 'instant' });
+  instance.scrollTo({ type: 'position', position: scrollPosition, behavior: 'instant' });
   instance.render(true);
   return true;
 }

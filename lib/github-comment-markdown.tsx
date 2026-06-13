@@ -1,10 +1,28 @@
 import type { ReactNode } from 'react';
 
+const INLINE_MARKDOWN_PATTERN =
+  /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s<>)]+)/g;
+const FENCED_BLOCK_PATTERN = /```([^\n]*)\n([\s\S]*?)```/g;
+const LINK_PATTERN = /^\[([^\]]+)\]\(([^)]+)\)$/;
+
+const commentBodyCache = new Map<string, ReactNode>();
+
 type MarkdownSegment =
   | { type: 'text'; content: string }
   | { type: 'code'; language: string; content: string };
 
 export function renderGitHubCommentBody(body: string): ReactNode {
+  const cached = commentBodyCache.get(body);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const rendered = renderGitHubCommentBodyUncached(body);
+  commentBodyCache.set(body, rendered);
+  return rendered;
+}
+
+function renderGitHubCommentBodyUncached(body: string): ReactNode {
   const segments = splitFencedBlocks(body);
   if (segments.length === 0) {
     return null;
@@ -103,7 +121,7 @@ function CommentTextBlock({ content }: { content: string }) {
 
 function renderInlineMarkdown(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const pattern = /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s<>)]+)/g;
+  const pattern = new RegExp(INLINE_MARKDOWN_PATTERN.source, INLINE_MARKDOWN_PATTERN.flags);
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -128,7 +146,7 @@ function renderInlineMarkdown(text: string): ReactNode[] {
     } else if (token.startsWith('**') && token.endsWith('**')) {
       nodes.push(<strong key={`strong-${key}`}>{token.slice(2, -2)}</strong>);
     } else if (token.startsWith('[')) {
-      const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+      const linkMatch = token.match(LINK_PATTERN);
       if (linkMatch && isSafeLinkUrl(linkMatch[2])) {
         nodes.push(
           <a
@@ -203,7 +221,7 @@ function isSafeLinkUrl(url: string): boolean {
 
 function splitFencedBlocks(body: string): MarkdownSegment[] {
   const segments: MarkdownSegment[] = [];
-  const pattern = /```([^\n]*)\n([\s\S]*?)```/g;
+  const pattern = new RegExp(FENCED_BLOCK_PATTERN.source, FENCED_BLOCK_PATTERN.flags);
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 

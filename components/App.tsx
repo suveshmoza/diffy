@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
-import { useDiffTheme } from '@/hooks/useDiffTheme';
+import { invalidateCodeViewItemsCache } from '@/lib/build-code-view-items';
 import { diffThemeType } from '@/lib/diff-themes';
 import {
   fetchCachedPullRequestDiffData,
@@ -8,6 +8,7 @@ import {
   parseGitHubPullRequestUrl,
   type PullRequestDiffData,
 } from '@/lib/github';
+import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 
 import { DiffOverlay } from './DiffOverlay';
 import { ErrorOverlay } from './ErrorOverlay';
@@ -26,13 +27,14 @@ type AppProps = {
 export function App({ pullRequestUrl, onClose }: AppProps) {
   const [state, setState] = useState<OverlayState>({ status: 'loading' });
   const [retryCount, setRetryCount] = useState(0);
-  const { theme } = useDiffTheme();
+  const { theme, isReady: isThemeReady } = useDiffThemeContext();
   const chromeTheme = diffThemeType(theme);
 
   const retry = useCallback(() => {
     const ref = parseGitHubPullRequestUrl(pullRequestUrl);
     if (ref) {
       invalidatePullRequestDiffCache(ref);
+      invalidateCodeViewItemsCache(ref);
     }
     setRetryCount((count) => count + 1);
   }, [pullRequestUrl]);
@@ -44,9 +46,12 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
       }
 
       const root = document.getElementById('github-pr-viewer-root');
+      if (!root || root.classList.contains('gprv-root-hidden')) {
+        return;
+      }
+
       const active = document.activeElement;
       if (
-        root &&
         active instanceof HTMLElement &&
         root.contains(active) &&
         (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
@@ -117,6 +122,15 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
     );
   } else {
     content = (
+      <LoadingOverlay
+        onClose={onClose}
+        theme={chromeTheme}
+      />
+    );
+  }
+
+  if (!isThemeReady && state.status !== 'loaded') {
+    return (
       <LoadingOverlay
         onClose={onClose}
         theme={chromeTheme}
