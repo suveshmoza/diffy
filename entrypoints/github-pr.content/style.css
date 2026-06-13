@@ -70,7 +70,7 @@
   color: var(--gprv-text);
   color-scheme: dark;
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto 1fr;
   inset: 0;
   overflow: hidden;
   position: fixed;
@@ -726,6 +726,66 @@
   min-width: 0;
 }
 
+.gprv-review-reply-trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--gprv-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 6px;
+  justify-content: flex-start;
+  line-height: 1;
+  margin-top: 8px;
+  padding: 2px 4px;
+  text-align: left;
+  width: auto;
+}
+
+.gprv-review-reply-trigger-label {
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.gprv-review-reply-trigger:hover {
+  background: var(--gprv-control-active-bg);
+  color: var(--gprv-text);
+}
+
+.gprv-review-reply-trigger:hover .gprv-review-reply-trigger-label {
+  text-decoration: underline;
+}
+
+[data-reply-key][data-reply-open] .gprv-review-reply-trigger {
+  display: none;
+}
+
+.gprv-review-comment-block {
+  display: grid;
+  gap: 0;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.gprv-review-reply-composer {
+  margin-left: 32px;
+  margin-top: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.gprv-review-comment-block--nested .gprv-review-reply-composer {
+  margin-left: 0;
+}
+
+[data-reply-composer][hidden] {
+  display: none !important;
+}
+
 .gprv-review-comment-avatar {
   align-items: center;
   background: var(--gprv-accent-subtle);
@@ -776,6 +836,55 @@
   line-height: 1.3;
 }
 
+.gprv-review-comment-actions {
+  align-items: center;
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.gprv-review-comment-action {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--gprv-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.gprv-review-comment-action:hover:not(:disabled) {
+  background: var(--gprv-control-active-bg);
+  color: var(--gprv-text);
+}
+
+.gprv-review-comment-action:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.gprv-review-comment-hidden {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.gprv-review-comment-hidden-note {
+  color: var(--gprv-muted);
+  font-size: 12px;
+  font-style: italic;
+  margin: 4px 0 0;
+}
+
+.gprv-review-edit-composer {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .gprv-review-comment-link {
   align-items: center;
   border-radius: 6px;
@@ -784,7 +893,6 @@
   font-size: 12px;
   height: 20px;
   justify-content: center;
-  margin-left: auto;
   text-decoration: none;
   width: 20px;
 }
@@ -974,8 +1082,7 @@
   width: 1px;
 }
 
-.gprv-review-composer-input,
-.gprv-review-session-summary-input {
+.gprv-review-composer-input {
   background: var(--gprv-control-bg);
   border: 1px solid var(--gprv-border);
   border-radius: 8px;
@@ -990,15 +1097,13 @@
   width: 100%;
 }
 
-.gprv-review-composer-input:focus,
-.gprv-review-session-summary-input:focus {
+.gprv-review-composer-input:focus {
   border-color: var(--gprv-accent);
   outline: 2px solid color-mix(in srgb, var(--gprv-accent) 30%, transparent);
   outline-offset: 1px;
 }
 
-.gprv-review-composer-field,
-.gprv-review-session-summary-field {
+.gprv-review-composer-field {
   display: block;
   margin-top: 8px;
   width: 100%;
@@ -1013,8 +1118,7 @@
 }
 
 .gprv-review-composer-hint,
-.gprv-review-composer-error,
-.gprv-review-session-error {
+.gprv-review-composer-error {
   font-size: 12px;
   line-height: 1.4;
   margin: 8px 0 0;
@@ -1024,13 +1128,11 @@
   color: var(--gprv-muted);
 }
 
-.gprv-review-composer-error,
-.gprv-review-session-error {
+.gprv-review-composer-error {
   color: var(--gprv-error);
 }
 
-.gprv-review-composer-actions,
-.gprv-review-session-actions {
+.gprv-review-composer-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -1038,8 +1140,7 @@
   margin-top: 10px;
 }
 
-.gprv-review-composer-button,
-.gprv-review-session-action {
+.gprv-review-composer-button {
   background: var(--gprv-control-bg);
   border: 1px solid var(--gprv-border);
   border-radius: 8px;
@@ -1053,94 +1154,17 @@
   width: auto;
 }
 
-.gprv-review-session-start {
-  background: var(--gprv-control-bg);
-  border: 1px solid var(--gprv-border);
-  border-radius: 8px;
-  color: var(--gprv-text);
-  cursor: pointer;
-  flex: 0 0 auto;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
-  padding: 8px 12px;
-  width: auto;
-}
-
-.gprv-review-composer-button:disabled,
-.gprv-review-session-action:disabled,
-.gprv-review-session-start:disabled {
+.gprv-review-composer-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-.gprv-review-composer-button-primary,
-.gprv-review-session-action-primary {
+.gprv-review-composer-button-primary {
   background: var(--gprv-accent);
   border-color: var(--gprv-accent);
   color: #fff;
 }
 
-.gprv-review-composer-button-secondary,
-.gprv-review-session-action-secondary {
+.gprv-review-composer-button-secondary {
   background: transparent;
-}
-
-.gprv-review-session-action-warning {
-  border-color: color-mix(in srgb, var(--gprv-warning, #d29922) 55%, var(--gprv-border));
-  color: var(--gprv-warning, #d29922);
-}
-
-.gprv-review-session-bar {
-  align-self: start;
-  background: var(--gprv-panel-bg);
-  border-bottom: 1px solid var(--gprv-border);
-  box-sizing: border-box;
-  display: grid;
-  gap: 10px;
-  height: auto;
-  min-height: 0;
-  padding: 10px 16px;
-  width: 100%;
-}
-
-.gprv-review-session-bar-idle {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-start;
-}
-
-.gprv-review-session-bar-active {
-  gap: 12px;
-}
-
-.gprv-review-session-summary {
-  display: grid;
-  gap: 8px;
-}
-
-.gprv-review-session-pending-count {
-  color: var(--gprv-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.gprv-review-thread--pending {
-  position: relative;
-}
-
-.gprv-review-pending-badge {
-  background: color-mix(in srgb, var(--gprv-warning, #d29922) 14%, var(--gprv-control-bg));
-  border: 1px solid color-mix(in srgb, var(--gprv-warning, #d29922) 35%, var(--gprv-border));
-  border-radius: 999px;
-  color: var(--gprv-warning, #d29922);
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  margin-bottom: 10px;
-  padding: 4px 8px;
 }

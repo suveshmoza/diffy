@@ -1,6 +1,8 @@
 import type { CodeViewLineSelection, LineAnnotation } from '@pierre/diffs';
 import { memo, useMemo } from 'react';
 
+import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github';
+import type { GitHubViewer } from '@/lib/github-review-write';
 import type { ReviewThreadMetadata } from '@/lib/review-comments';
 
 import { ReviewCommentThread } from './ReviewCommentThread';
@@ -8,6 +10,14 @@ import { ReviewCommentThread } from './ReviewCommentThread';
 type OrphanedReviewCommentsBadgeProps = {
   threads: ReviewThreadMetadata[];
   itemId: string;
+  pullRequestRef: GitHubPullRequestRef;
+  viewerUser: GitHubViewer | null;
+  hasToken: boolean;
+  onReplyOpen: (replyKey: string) => void;
+  onReplyClose: (replyKey: string) => void;
+  onReplySuccess: (comment: GitHubPullRequestReviewComment, replyKey: string) => void;
+  onDelete: (comment: GitHubPullRequestReviewComment) => void | Promise<void>;
+  onEdit: (comment: GitHubPullRequestReviewComment, body: string) => void | Promise<void>;
   onHighlightRange: (selection: CodeViewLineSelection) => void;
   onClearHighlight: () => void;
 };
@@ -15,6 +25,14 @@ type OrphanedReviewCommentsBadgeProps = {
 export const OrphanedReviewCommentsBadge = memo(function OrphanedReviewCommentsBadge({
   threads,
   itemId,
+  pullRequestRef,
+  viewerUser,
+  hasToken,
+  onReplyOpen,
+  onReplyClose,
+  onReplySuccess,
+  onDelete,
+  onEdit,
   onHighlightRange,
   onClearHighlight,
 }: OrphanedReviewCommentsBadgeProps) {
@@ -51,6 +69,14 @@ export const OrphanedReviewCommentsBadge = memo(function OrphanedReviewCommentsB
           annotation={annotation}
           itemId={itemId}
           variant='header'
+          pullRequestRef={pullRequestRef}
+          viewerUser={viewerUser}
+          hasToken={hasToken}
+          onReplyOpen={onReplyOpen}
+          onReplyClose={onReplyClose}
+          onReplySuccess={onReplySuccess}
+          onDelete={onDelete}
+          onEdit={onEdit}
           onHighlightRange={onHighlightRange}
           onClearHighlight={onClearHighlight}
         />
