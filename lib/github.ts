@@ -32,6 +32,7 @@ export type GitHubPullRequestReviewComment = {
   original_start_line: number | null;
   side: 'LEFT' | 'RIGHT' | null;
   in_reply_to_id: number | null;
+  pull_request_review_id?: number | null;
 };
 
 type ReviewCommentsFetchResult = {
