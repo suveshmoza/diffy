@@ -13,6 +13,11 @@ type CodeViewInternals = {
   renderState: { scrollTop: number };
 };
 
+type CodeViewScrollAnchorInstance = {
+  capturePendingLayoutAnchor?: () => void;
+  scrollTo: (target: { type: 'position'; position: number; behavior: 'instant' }) => void;
+};
+
 function refreshCodeViewInstance<T>(viewerRef: RefObject<CodeViewHandle<T> | null>): boolean {
   const instance = viewerRef.current?.getInstance();
   const scrollRoot = instance?.getContainerElement();
@@ -27,15 +32,21 @@ function refreshCodeViewInstance<T>(viewerRef: RefObject<CodeViewHandle<T> | nul
 
   Object.assign(instance.config, CODE_VIEW_VIRTUALIZER_CONFIG);
 
-  const internals = instance as unknown as CodeViewInternals;
   const scrollPosition = scrollRoot.scrollTop;
+  (instance as unknown as CodeViewScrollAnchorInstance).capturePendingLayoutAnchor?.();
+
+  const internals = instance as unknown as CodeViewInternals;
   internals.heightDirty = true;
   // Force CodeView through its initial-layout path again with a real viewport.
   internals.renderState.scrollTop = -1;
 
   instance.render(true);
-  instance.scrollTo({ type: 'position', position: scrollPosition, behavior: 'instant' });
-  instance.render(true);
+
+  if (Math.abs(scrollRoot.scrollTop - scrollPosition) > 2) {
+    instance.scrollTo({ type: 'position', position: scrollPosition, behavior: 'instant' });
+    instance.render(true);
+  }
+
   return true;
 }
 

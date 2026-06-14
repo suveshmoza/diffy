@@ -1,6 +1,6 @@
 import type { DiffsThemeNames } from '@pierre/diffs';
 import { WorkerPoolContextProvider } from '@pierre/diffs/react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 
 import { workerFactory } from '@/lib/diff-worker';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
@@ -58,10 +58,6 @@ function WorkerPoolShellInner({
   children: ReactNode;
 }) {
   const [syncedTheme, setSyncedTheme] = useState<DiffsThemeNames | null>(null);
-
-  useEffect(() => {
-    setSyncedTheme(null);
-  }, [theme]);
 
   return (
     <WorkerPoolSyncedThemeProvider value={syncedTheme}>

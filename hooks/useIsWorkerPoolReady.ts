@@ -1,9 +1,17 @@
+import { useRef } from 'react';
+
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 import { useWorkerPoolSyncedTheme } from '@/providers/WorkerPoolSyncedThemeContext';
 
-/** True once worker pool render options match the active diff theme. */
+/** True after worker pool has synced at least once; stays true across theme changes. */
 export function useIsWorkerPoolReady(): boolean {
   const { theme } = useDiffThemeContext();
   const syncedTheme = useWorkerPoolSyncedTheme();
-  return syncedTheme === theme;
+  const hasSyncedOnceRef = useRef(false);
+
+  if (syncedTheme === theme) {
+    hasSyncedOnceRef.current = true;
+  }
+
+  return hasSyncedOnceRef.current;
 }
