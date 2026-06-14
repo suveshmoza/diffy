@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { App } from '@/components/App';
 import { PersistentWorkerPoolShell } from '@/components/PersistentWorkerPoolShell';
 import { DiffThemeProvider } from '@/providers/DiffThemeProvider';
+import { ResolvedThemeProvider } from '@/providers/ResolvedThemeProvider';
 
 export type MountOverlayOptions = {
   container: HTMLElement;
@@ -18,15 +19,17 @@ type OverlayRuntimeProps = {
 function OverlayRuntime({ pullRequestUrl, onClose }: OverlayRuntimeProps) {
   return (
     <DiffThemeProvider>
-      <PersistentWorkerPoolShell>
-        {pullRequestUrl ? (
-          <App
-            key={pullRequestUrl}
-            pullRequestUrl={pullRequestUrl}
-            onClose={onClose}
-          />
-        ) : null}
-      </PersistentWorkerPoolShell>
+      <ResolvedThemeProvider>
+        <PersistentWorkerPoolShell>
+          {pullRequestUrl ? (
+            <App
+              key={pullRequestUrl}
+              pullRequestUrl={pullRequestUrl}
+              onClose={onClose}
+            />
+          ) : null}
+        </PersistentWorkerPoolShell>
+      </ResolvedThemeProvider>
     </DiffThemeProvider>
   );
 }

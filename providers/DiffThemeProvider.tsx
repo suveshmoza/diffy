@@ -11,15 +11,18 @@ import {
 
 import {
   DEFAULT_DIFF_THEME,
+  diffThemeType,
   normalizeDiffTheme,
   readDiffTheme,
   writeDiffTheme,
 } from '@/lib/diff-themes';
+import type { ThemeColorScheme } from '@/lib/theming/activeThemeSnapshot';
 
 const STORAGE_KEY = 'diffTheme';
 
 type DiffThemeContextValue = {
   theme: DiffsThemeNames;
+  colorScheme: ThemeColorScheme;
   isReady: boolean;
   setTheme: (next: DiffsThemeNames) => Promise<void>;
 };
@@ -63,13 +66,16 @@ export function DiffThemeProvider({ children }: { children: ReactNode }) {
     await writeDiffTheme(next);
   }, []);
 
+  const colorScheme = diffThemeType(theme);
+
   const value = useMemo(
     () => ({
       theme,
+      colorScheme,
       isReady,
       setTheme,
     }),
-    [theme, isReady, setTheme],
+    [theme, colorScheme, isReady, setTheme],
   );
 
   return <DiffThemeContext.Provider value={value}>{children}</DiffThemeContext.Provider>;
