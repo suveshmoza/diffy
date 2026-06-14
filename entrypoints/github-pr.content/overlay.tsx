@@ -2,6 +2,7 @@ import { createRoot, type Root } from 'react-dom/client';
 
 import { App } from '@/components/App';
 import { PersistentWorkerPoolShell } from '@/components/PersistentWorkerPoolShell';
+import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github';
 import { DiffThemeProvider } from '@/providers/DiffThemeProvider';
 import { ResolvedThemeProvider } from '@/providers/ResolvedThemeProvider';
 
@@ -60,4 +61,10 @@ export function destroyOverlayRuntime(): void {
   overlayRoot?.unmount();
   overlayRoot = null;
   runtimeProps = { pullRequestUrl: null, onClose: () => undefined };
+}
+
+/** Warm the GitHub token + diff data caches in this (extension-origin) realm before mount. */
+export function prefetchOverlayData(pullRequestUrl: string): void {
+  warmGitHubTokenCache();
+  prefetchPullRequestDiffData(pullRequestUrl);
 }

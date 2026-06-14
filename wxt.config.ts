@@ -81,9 +81,13 @@ export default defineConfig({
     description: 'Better PR diffs on GitHub',
     permissions: ['storage'],
     host_permissions: ['https://api.github.com/*', 'https://github.com/*'],
+    content_security_policy: {
+      // The overlay iframe runs Shiki's oniguruma WASM in the extension page + its worker.
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    },
     web_accessible_resources: [
       {
-        resources: ['assets/*.js', 'content-scripts/esm/*'],
+        resources: ['assets/*.js', 'overlay.html'],
         matches: ['https://github.com/*'],
       },
     ],
