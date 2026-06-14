@@ -14,16 +14,19 @@ export function WorkerPoolRenderOptionsSync({ theme, onSynced }: WorkerPoolRende
 
   useEffect(() => {
     if (!workerPool) {
+      onSyncedRef.current?.(theme);
       return;
     }
 
     let isCancelled = false;
 
-    void workerPool.setRenderOptions({ theme }).then(() => {
+    const markSynced = () => {
       if (!isCancelled) {
         onSyncedRef.current?.(theme);
       }
-    });
+    };
+
+    void workerPool.setRenderOptions({ theme }).then(markSynced).catch(markSynced);
 
     return () => {
       isCancelled = true;
