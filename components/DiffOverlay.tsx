@@ -615,7 +615,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     event.stopPropagation();
   }, []);
 
-  const renderReviewAnnotation = useStableCallback(
+  const renderReviewAnnotation = useCallback(
     (
       annotation:
         | LineAnnotation<ReviewAnnotationMetadata>
@@ -662,9 +662,24 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         />
       );
     },
+    [
+      data.pullRequest.head.sha,
+      data.ref,
+      handleCancelDraft,
+      handleCommentDelete,
+      handleCommentEdit,
+      handleImmediateCommentSuccess,
+      handleReplyClose,
+      handleReplyOpen,
+      handleReplySuccess,
+      handleThreadHighlight,
+      handleThreadHighlightClear,
+      hasToken,
+      viewerUser,
+    ],
   );
 
-  const renderReviewHeaderMetadata = useStableCallback(
+  const renderReviewHeaderMetadata = useCallback(
     (item: NonNullable<typeof codeViewItems>['items'][number]) => {
       const orphanedThreads = orphanedThreadsByItemIdRef.current?.get(item.id);
       if (!orphanedThreads?.length) {
@@ -690,6 +705,18 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         />
       );
     },
+    [
+      data.ref,
+      handleCommentDelete,
+      handleCommentEdit,
+      handleReplyClose,
+      handleReplyOpen,
+      handleReplySuccess,
+      handleThreadHighlight,
+      handleThreadHighlightClear,
+      hasToken,
+      viewerUser,
+    ],
   );
 
   return (
