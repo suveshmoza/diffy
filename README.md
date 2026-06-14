@@ -5,37 +5,83 @@
 
   <h1>diffy</h1>
 
-  <p><strong>Fast, full-screen PR diffs on GitHub - searchable file tree, inline review comments, split/unified layout, and 60+ themes.</strong></p>
+  <strong>The missing PR review experience on GitHub</strong>
+    
+<p>Full-screen diffs searchable file tree, inline comments, split/unified layout, and 50+ themes.</p>
 </div>
 
-> ⚠️ **Note:**
-> Not yet published on the Chrome Web Store or Firefox Add-ons, install from source below.
+**diffy** adds a **View Diff** button to GitHub pull requests so you can review the entire change set in one fast, full-screen view - with a searchable file tree, inline review comments, split or unified layout, and 50+ themes. Powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com).
 
-**diffy** adds a `View Diff` button to GitHub pull request pages and opens the full change set in a fast, full-screen overlay powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com) `CodeView`.
+https://github.com/user-attachments/assets/0a37798f-da98-46e1-a200-187290414452
 
-<https://github.com/user-attachments/assets/b1bd5acb-7538-4279-8a14-e03183198c3c>
+> **Launching soon** on the Chrome Web Store and Firefox Add-ons. Install from source below in the meantime.
 
-<https://github.com/user-attachments/assets/711071dc-7127-47e7-823d-2c174d6eb187>
-
-> This project was rebuilt after seeing [Linear View Diff](https://github.com/CarterMcAlister/linear-code-review) by [Carter McAlister](https://github.com/CarterMcAlister) — a Chrome extension that adds a **View Diff** button on Linear review pages and renders linked GitHub PRs with Pierre Trees and Pierre Diffs.
+> Inspired by [Linear View Diff](https://github.com/CarterMcAlister/linear-code-review) by [Carter McAlister](https://github.com/CarterMcAlister) - a Chrome extension that adds a **View Diff** button on Linear review pages and renders linked GitHub PRs with Pierre Trees and Pierre Diffs.
 
 ## Features
 
-- `View Diff` button injected into GitHub PR headers
-- Full-screen overlay with continuous scroll through the entire PR
-- Fast reopen: overlay stays warm between open/close and preserves scroll position
-- File tree sidebar with search for navigating changed files in large PRs
-- Review comment indicators on file tree rows (icon and count)
-- **Stacked** (unified) and **Switched** (split) diff layouts
-- Inline PR review comment threads rendered in the diff viewer
-- Select and highlight diff lines (click/drag line numbers, gutter `+` on hover)
-- Post inline review comments immediately
-- Reply to inline review comment threads
-- Syntax highlighting with sticky file headers
-- Theme picker in the extension popup (60+ Shiki themes, including GitHub light/dark variants)
-- Prefetches PR diff data when you land on a PR page
-- Press `Escape` to close the overlay without conflicting with page shortcuts
-- Optional GitHub token via the extension popup (private repos and higher rate limits)
+- **One-click access** - a **View Diff** button on every GitHub pull request
+- **Full-screen diffs** - scroll through the entire PR in one continuous view
+- **Fast and smooth** - opens quickly and remembers where you left off
+- **File tree with search** - jump to any changed file, even in huge PRs
+- **Review comments inline** - read existing threads right in the diff
+- **Comment from the diff** - leave inline comments and reply without leaving the viewer
+- **Split or unified layout** - switch between side-by-side and stacked views
+- **Syntax highlighting** - clear, colorized diffs with sticky file headers
+- **50+ themes** - pick a look you like, including GitHub light and dark
+- **Private repo support** - add a GitHub token in the extension popup when needed
+
+## Why diffy?
+
+GitHub's **Files changed** tab works well for most pull requests. It starts to break down on PRs with large code changes — hundreds of files, big diffs, or heavy review threads - where you hit documented diff limits and long-standing UX friction.
+
+| The GitHub problem | How diffy helps |
+| --- | --- |
+| **"Diff too large to display"** - GitHub caps total PR diffs at 20,000 lines / 1 MB and refuses to render beyond that | Fetches changes through the GitHub API and renders them in a dedicated viewer, bypassing the web UI diff renderer |
+| **300+ changed files** — the unified diff endpoint returns a 406 error; GitHub tells you to use the files API instead | Uses the paginated files API to load every changed file, then assembles the full diff |
+| **"Load diff" on every large file** - GitHub only auto-loads the first 400 lines / 20 KB per file; you click to load the rest one file at a time | Shows full file patches in one continuous scroll - no per-file load buttons |
+| **File-by-file review** - expand, collapse, and jump between files; easy to lose context across a big PR | One continuous full-PR view with a searchable file tree to jump anywhere instantly |
+| **Slow, freezing Files changed tab** - reviewers report UI lag, high memory use, and multi-second freezes even on medium PRs | A lightweight overlay with fast rendering - stays responsive where GitHub's tab struggles |
+| **Comments scattered across tabs** - unresolved threads are hard to track in Conversation vs Files changed | Inline review comment threads rendered directly on the lines you're reading |
+
+## How it works
+
+1. Open any pull request on GitHub - diffy adds a **View Diff** button to the page.
+2. Click it to open a full-screen diff viewer with every changed file in one scrollable view.
+3. Use the file tree on the left to search and jump between files.
+4. Read and leave review comments directly on the lines you're looking at.
+
+## Project structure
+
+```
+diffy/
+├── assets/                      # Extension icon source (logo.jpg)
+├── components/                  # React UI for the diff overlay
+│   ├── App.tsx                  # Overlay shell: loading, error, and diff states
+│   ├── DiffOverlay.tsx          # Main viewer: CodeView, file tree, review threads
+│   ├── DiffOverlayHeader.tsx    # PR title, layout toggle, theme picker, close
+│   ├── FileTreePanel.tsx        # Searchable file tree with comment badges
+│   └── ReviewComment*.tsx       # Inline comment, reply, and edit composers
+├── entrypoints/
+│   ├── github-pr.content/       # Content script entry (button injection, prefetch)
+│   │   ├── index.tsx            # Page lifecycle, overlay mount/unmount
+│   │   └── overlay.tsx          # React root for the overlay (ESM bundle target)
+│   └── popup/                   # Extension popup (GitHub token settings)
+├── hooks/                       # React hooks (CodeView, themes, worker pool readiness)
+├── lib/                         # Core logic
+│   ├── github.ts                # GitHub API client, caching, prefetch
+│   ├── github-review-write.ts   # Post, reply, edit, and delete review comments
+│   ├── build-code-view-items.ts # PR patches → Pierre CodeView items
+│   ├── diff-worker.ts           # Web worker pool for diff rendering
+│   ├── review-comments.ts       # Review thread grouping and annotations
+│   ├── diff-themes.ts           # Theme list and storage
+│   └── theming/                 # Tree and CodeView theme resolution
+├── modules/
+│   └── esm-builder.ts           # Custom WXT module: bundles overlay as ESM
+├── providers/                   # React context (diff theme, resolved theme, worker sync)
+├── types/                       # Ambient type declarations
+└── wxt.config.ts                # Manifest, permissions, Vite plugins
+```
 
 ## Install
 
@@ -53,23 +99,64 @@ pnpm install
 pnpm dev
 ```
 
+`pnpm dev` watches for changes and rebuilds the extension. Reload the unpacked extension in your browser after each rebuild.
+
 ### Build
 
 ```bash
-pnpm build
+pnpm build              # Chrome
+pnpm build:firefox      # Firefox 
+pnpm zip                # Packaged Chrome zip
+pnpm zip:firefox        # Packaged Firefox zip
 ```
 
-### Load in Chrome (manual)
+### Load in Chrome
 
-1. Build the extension (or keep `pnpm dev` running for development):
+1. Build the extension (or keep `pnpm dev` running):
 
    ```bash
    pnpm build
    ```
 
-2. Open Chrome and go to `chrome://extensions`.
-3. Turn on **Developer mode** (top-right toggle).
+2. Open `chrome://extensions`.
+3. Enable **Developer mode**.
 4. Click **Load unpacked**.
-5. Select the `.output/chrome-mv3` folder inside this repo.
+5. Select the `.output/chrome-mv3` folder.
 
-To remove it, click **Remove** on the extension card.
+### Load in Firefox
+
+1. Build for Firefox:
+
+   ```bash
+   pnpm build:firefox
+   ```
+
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on…**.
+4. Select any file inside `.output/firefox-mv2` (for example `manifest.json`).
+
+To remove the extension, use **Remove** on the extension card (Chrome) or reload the temporary add-on page (Firefox).
+
+## GitHub token
+
+The extension popup lets you save an optional personal access token. A token is required for:
+
+- **Private repositories**.
+- **Higher API rate limits**.
+- **Posting review comments**.
+
+After saving a token, reload any open PR tabs for it to take effect.
+
+## Development scripts
+
+| Script | Description |
+| --- | --- |
+| `pnpm dev` | Watch mode - rebuild on file changes |
+| `pnpm build` | Production build for Chrome |
+| `pnpm build:firefox` | Production build for Firefox |
+| `pnpm compile` | Type-check with `tsc --noEmit` |
+| `pnpm lint` | Lint with Oxlint |
+| `pnpm lint:fix` | Lint and auto-fix |
+| `pnpm fmt` | Format with Oxfmt |
+| `pnpm fmt:check` | Check formatting |
+
