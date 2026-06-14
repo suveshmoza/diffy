@@ -65,7 +65,7 @@ function tolerateNullCustomElements(): Plugin {
 }
 
 export default defineConfig({
-  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './modules/esm-builder.ts'],
+  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './modules/shiki-pruner.ts'],
   autoIcons: {
     baseIconPath: 'assets/logo.jpg',
     sizes: [128, 96, 48, 32, 24, 16],
