@@ -5,14 +5,14 @@
 
   <h1>diffy</h1>
 
-  <strong>The missing PR review experience on GitHub</strong>
-    
-<p>Full-screen diffs searchable file tree, inline comments, split/unified layout, and 50+ themes.</p>
+<strong>The missing PR review experience on GitHub</strong>
+
+<p>Full-screen diffs, searchable file tree, inline comments, split/unified layout, 100+ languages, and 12 themes.</p>
 </div>
 
-**diffy** adds a **View Diff** button to GitHub pull requests so you can review the entire change set in one fast, full-screen view - with a searchable file tree, inline review comments, split or unified layout, and 50+ themes. Powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com).
+**diffy** adds a **View Diff** button to GitHub pull requests so you can review the entire change set in one fast, full-screen view - with a searchable file tree, inline review comments, split or unified layout, syntax highlighting for 100+ languages, and 12 themes. Powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com).
 
-https://github.com/user-attachments/assets/0a37798f-da98-46e1-a200-187290414452
+<https://github.com/user-attachments/assets/0a37798f-da98-46e1-a200-187290414452>
 
 > **Launching soon** on the Chrome Web Store and Firefox Add-ons. Install from source below in the meantime.
 
@@ -27,22 +27,22 @@ https://github.com/user-attachments/assets/0a37798f-da98-46e1-a200-187290414452
 - **Review comments inline** - read existing threads right in the diff
 - **Comment from the diff** - leave inline comments and reply without leaving the viewer
 - **Split or unified layout** - switch between side-by-side and stacked views
-- **Syntax highlighting** - clear, colorized diffs with sticky file headers
-- **50+ themes** - pick a look you like, including GitHub light and dark
+- **Syntax highlighting** - 100+ languages with clear, colorized diffs and sticky file headers
+- **12 themes** - Pierre dark/light, GitHub, Catppuccin, Dracula, Nord, Tokyo Night, and more
 - **Private repo support** - add a GitHub token in the extension popup when needed
 
 ## Why diffy?
 
 GitHub's **Files changed** tab works well for most pull requests. It starts to break down on PRs with large code changes — hundreds of files, big diffs, or heavy review threads - where you hit documented diff limits and long-standing UX friction.
 
-| The GitHub problem | How diffy helps |
-| --- | --- |
-| **"Diff too large to display"** - GitHub caps total PR diffs at 20,000 lines / 1 MB and refuses to render beyond that | Fetches changes through the GitHub API and renders them in a dedicated viewer, bypassing the web UI diff renderer |
-| **300+ changed files** — the unified diff endpoint returns a 406 error; GitHub tells you to use the files API instead | Uses the paginated files API to load every changed file, then assembles the full diff |
-| **"Load diff" on every large file** - GitHub only auto-loads the first 400 lines / 20 KB per file; you click to load the rest one file at a time | Shows full file patches in one continuous scroll - no per-file load buttons |
-| **File-by-file review** - expand, collapse, and jump between files; easy to lose context across a big PR | One continuous full-PR view with a searchable file tree to jump anywhere instantly |
-| **Slow, freezing Files changed tab** - reviewers report UI lag, high memory use, and multi-second freezes even on medium PRs | A lightweight overlay with fast rendering - stays responsive where GitHub's tab struggles |
-| **Comments scattered across tabs** - unresolved threads are hard to track in Conversation vs Files changed | Inline review comment threads rendered directly on the lines you're reading |
+| The GitHub problem                                                                                                                               | How diffy helps                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| **"Diff too large to display"** - GitHub caps total PR diffs at 20,000 lines / 1 MB and refuses to render beyond that                            | Fetches changes through the GitHub API and renders them in a dedicated viewer, bypassing the web UI diff renderer |
+| **300+ changed files** — the unified diff endpoint returns a 406 error; GitHub tells you to use the files API instead                            | Uses the paginated files API to load every changed file, then assembles the full diff                             |
+| **"Load diff" on every large file** - GitHub only auto-loads the first 400 lines / 20 KB per file; you click to load the rest one file at a time | Shows full file patches in one continuous scroll - no per-file load buttons                                       |
+| **File-by-file review** - expand, collapse, and jump between files; easy to lose context across a big PR                                         | One continuous full-PR view with a searchable file tree to jump anywhere instantly                                |
+| **Slow, freezing Files changed tab** - reviewers report UI lag, high memory use, and multi-second freezes even on medium PRs                     | A lightweight overlay with fast rendering - stays responsive where GitHub's tab struggles                         |
+| **Comments scattered across tabs** - unresolved threads are hard to track in Conversation vs Files changed                                       | Inline review comment threads rendered directly on the lines you're reading                                       |
 
 ## How it works
 
@@ -75,9 +75,12 @@ diffy/
 │   ├── diff-worker.ts           # Web worker pool for diff rendering
 │   ├── review-comments.ts       # Review thread grouping and annotations
 │   ├── diff-themes.ts           # Theme list and storage
+│   ├── diff-theme-ids.json      # Theme picker allowlist (12 themes)
+│   ├── diff-blocked-lang-ids.json # Syntax langs to exclude from the bundle
+│   ├── diff-lang-ids.json       # Auto-generated worker lang list (do not edit)
 │   └── theming/                 # Tree and CodeView theme resolution
 ├── modules/
-│   └── esm-builder.ts           # Custom WXT module: bundles overlay as ESM
+│   └── shiki-pruner.ts          # Prunes unused Shiki chunks after production builds
 ├── providers/                   # React context (diff theme, resolved theme, worker sync)
 ├── types/                       # Ambient type declarations
 └── wxt.config.ts                # Manifest, permissions, Vite plugins
@@ -105,7 +108,7 @@ pnpm dev
 
 ```bash
 pnpm build              # Chrome
-pnpm build:firefox      # Firefox 
+pnpm build:firefox      # Firefox
 pnpm zip                # Packaged Chrome zip
 pnpm zip:firefox        # Packaged Firefox zip
 ```
@@ -147,16 +150,64 @@ The extension popup lets you save an optional personal access token. A token is 
 
 After saving a token, reload any open PR tabs for it to take effect.
 
+## Syntax highlighting languages
+
+Syntax highlighting is powered by [Shiki](https://shiki.style/) via Pierre Diffs. The extension currently ships **107 Shiki grammars** (100+ languages, including common aliases like `js`/`javascript` and `py`/`python`). Which languages are included is controlled by a **blocklist**, every Shiki bundled language is enabled except those listed in **blocklist**.
+
+### Files
+
+| File                             | Editable?               | Role                                                                            |
+| -------------------------------- | ----------------------- | ------------------------------------------------------------------------------- |
+| `lib/diff-blocked-lang-ids.json` | **Yes**                 | Language ids to **exclude** from the worker and production bundle               |
+| `lib/diff-lang-ids.json`         | **No — auto-generated** | Language ids the diff worker loads at runtime                                   |
+| `lib/diff-lang-ids.ts`           | No                      | Typed re-export of `diff-lang-ids.json` for app code                            |
+| `modules/shiki-pruner.ts`        | No                      | Regenerates `diff-lang-ids.json` and prunes unused Shiki chunks on `pnpm build` |
+
+On every production build, `shiki-pruner` reads the blocklist, computes **all Shiki bundled languages minus blocked**, writes the result to `lib/diff-lang-ids.json`, and removes unneeded grammar chunks from the output zip.
+
+**Do not edit `lib/diff-lang-ids.json` by hand** — changes will be overwritten on the next build.
+
+Language ids are [Shiki language ids](https://shiki.style/languages) (e.g. `python`, `typescript`, `shell`, `dockerfile`).
+
+### Add a language
+
+1. Open `lib/diff-blocked-lang-ids.json`.
+2. **Remove** the language id you want to support (keep the JSON array valid and sorted if you like).
+3. Rebuild:
+
+   ```bash
+   pnpm build
+   ```
+
+4. Reload the unpacked extension.
+
+The new language is included in `diff-lang-ids.json`, loaded by the diff worker, and its grammar chunk is kept in the bundle.
+
+### Remove a language
+
+1. Open `lib/diff-blocked-lang-ids.json`.
+2. **Add** the language id to the array.
+3. Rebuild with `pnpm build` and reload the extension.
+
+Removing a language shrinks the zip; keeping the blocklist lean helps stay under the Chrome Web Store size limit (2MB).
+
+### Themes
+
+Syntax **themes** are configured separately in `lib/diff-theme-ids.json`. The theme picker currently exposes **12 themes**:
+
+`pierre-dark`, `pierre-light`, `github-dark`, `github-light`, `catppuccin-mocha`, `catppuccin-latte`, `dracula`, `one-dark-pro`, `nord`, `tokyo-night`, `everforest-dark`, `everforest-light`
+
+To add or remove a theme, edit `lib/diff-theme-ids.json` and rebuild. Theme changes do not go through the language blocklist.
+
 ## Development scripts
 
-| Script | Description |
-| --- | --- |
-| `pnpm dev` | Watch mode - rebuild on file changes |
-| `pnpm build` | Production build for Chrome |
-| `pnpm build:firefox` | Production build for Firefox |
-| `pnpm compile` | Type-check with `tsc --noEmit` |
-| `pnpm lint` | Lint with Oxlint |
-| `pnpm lint:fix` | Lint and auto-fix |
-| `pnpm fmt` | Format with Oxfmt |
-| `pnpm fmt:check` | Check formatting |
-
+| Script               | Description                          |
+| -------------------- | ------------------------------------ |
+| `pnpm dev`           | Watch mode - rebuild on file changes |
+| `pnpm build`         | Production build for Chrome          |
+| `pnpm build:firefox` | Production build for Firefox         |
+| `pnpm compile`       | Type-check with `tsc --noEmit`       |
+| `pnpm lint`          | Lint with Oxlint                     |
+| `pnpm lint:fix`      | Lint and auto-fix                    |
+| `pnpm fmt`           | Format with Oxfmt                    |
+| `pnpm fmt:check`     | Check formatting                     |

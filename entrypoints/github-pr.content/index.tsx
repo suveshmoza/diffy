@@ -1,12 +1,17 @@
-import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github';
 import {
-  getOrCreateOverlayRoot,
   hideOverlayRoot,
   installViewDiffButton,
   isPullRequestPage,
   uninstallViewDiffButton,
 } from '@/lib/github-page';
-import { loadDiffOverlayModule, preloadDiffOverlayModule } from '@/lib/preload-diff-overlay';
+import {
+  destroyOverlayFrame,
+  hideOverlayFrame,
+  openOverlayFrame,
+  preloadOverlayFrame,
+  prefetchOverlayFrame,
+  setOverlayCloseHandler,
+} from '@/lib/overlay-frame';
 
 import './style.css';
 
@@ -17,45 +22,31 @@ export default defineContentScript({
     let openPullRequestUrl: string | null = null;
 
     const hideOverlay = () => {
-      hideOverlayRoot();
+      openPullRequestUrl = null;
+      hideOverlayFrame();
     };
+
+    setOverlayCloseHandler(hideOverlay);
 
     const destroyOverlay = () => {
       openPullRequestUrl = null;
-      void loadDiffOverlayModule()
-        .then((mod) => {
-          mod.unmountOverlayApp();
-        })
-        .catch(() => undefined);
+      hideOverlayFrame();
       hideOverlayRoot();
     };
 
-    const openOverlay = async (pullRequestUrl?: string) => {
+    const openOverlay = (pullRequestUrl?: string) => {
       const url = pullRequestUrl ?? location.href;
-
-      if (openPullRequestUrl === url) {
-        getOrCreateOverlayRoot();
-        return;
-      }
-
       openPullRequestUrl = url;
-      const container = getOrCreateOverlayRoot();
-      const mod = await loadDiffOverlayModule();
-      mod.mountOverlay({
-        container,
-        pullRequestUrl: openPullRequestUrl,
-        onClose: hideOverlay,
-      });
+      openOverlayFrame(url);
     };
 
     const onOpen = (pullRequestUrl: string) => {
-      void openOverlay(pullRequestUrl);
+      openOverlay(pullRequestUrl);
     };
 
     const onPrefetch = (url: string) => {
-      warmGitHubTokenCache();
-      prefetchPullRequestDiffData(url);
-      preloadDiffOverlayModule();
+      preloadOverlayFrame();
+      prefetchOverlayFrame(url);
     };
 
     const syncPage = () => {
@@ -77,11 +68,7 @@ export default defineContentScript({
 
     ctx.onInvalidated(() => {
       uninstallViewDiffButton();
-      void loadDiffOverlayModule()
-        .then((mod) => {
-          mod.destroyOverlayRuntime();
-        })
-        .catch(() => undefined);
+      destroyOverlayFrame();
     });
 
     ctx.addEventListener(window, 'wxt:locationchange', () => {

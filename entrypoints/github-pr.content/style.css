@@ -657,9 +657,20 @@
 
 .gprv-code-view {
   background: var(--gprv-panel-bg);
+  contain: strict;
   inset: 0;
-  overflow: auto;
+  overflow-anchor: none;
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   position: absolute;
+  scrollbar-gutter: stable;
+  will-change: scroll-position;
+}
+
+.gprv-code-view diffs-container {
+  contain: layout paint style;
+  overflow: clip;
 }
 
 .gprv-modal-body {

@@ -1,5 +1,3 @@
-import { preloadDiffOverlayModule } from '@/lib/preload-diff-overlay';
-
 import { parseCurrentPullRequestUrl, parseGitHubPullRequestUrl } from './github';
 
 const BUTTON_ID = 'github-pr-viewer-button';
@@ -301,12 +299,10 @@ function createButton(
 
   button.addEventListener('mouseenter', () => {
     onPrefetch(pullRequestUrl);
-    preloadDiffOverlayModule();
   });
 
   button.addEventListener('focusin', () => {
     onPrefetch(pullRequestUrl);
-    preloadDiffOverlayModule();
   });
 
   button.addEventListener('click', (event) => {

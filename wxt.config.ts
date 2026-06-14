@@ -65,7 +65,7 @@ function tolerateNullCustomElements(): Plugin {
 }
 
 export default defineConfig({
-  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './modules/esm-builder.ts'],
+  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './modules/shiki-pruner.ts'],
   autoIcons: {
     baseIconPath: 'assets/logo.jpg',
     sizes: [128, 96, 48, 32, 24, 16],
@@ -81,9 +81,13 @@ export default defineConfig({
     description: 'Better PR diffs on GitHub',
     permissions: ['storage'],
     host_permissions: ['https://api.github.com/*', 'https://github.com/*'],
+    content_security_policy: {
+      // The overlay iframe runs Shiki's oniguruma WASM in the extension page + its worker.
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    },
     web_accessible_resources: [
       {
-        resources: ['assets/*.js', 'content-scripts/esm/*'],
+        resources: ['assets/*.js', 'overlay.html'],
         matches: ['https://github.com/*'],
       },
     ],
