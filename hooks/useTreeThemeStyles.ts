@@ -1,29 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
-import { getTreeThemeStyles } from '@/lib/resolve-diff-theme';
-import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
+import { buildTreeThemeStylesFromResolved } from '@/lib/theming/buildTreeThemeStyles';
+import { useResolvedThemeContext } from '@/providers/ResolvedThemeProvider';
 
 export function useTreeThemeStyles(): Record<string, string> {
-  const { theme } = useDiffThemeContext();
-  const [treeThemeStyles, setTreeThemeStyles] = useState<Record<string, string>>({});
+  const { resolvedThemeDisplay } = useResolvedThemeContext();
 
-  useEffect(() => {
-    let isCancelled = false;
+  return useMemo(() => {
+    if (resolvedThemeDisplay == null) {
+      return {};
+    }
 
-    void getTreeThemeStyles(theme)
-      .then((styles) => {
-        if (!isCancelled) {
-          setTreeThemeStyles(styles);
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [theme]);
-
-  return treeThemeStyles;
+    const { resolved, colorScheme } = resolvedThemeDisplay;
+    return buildTreeThemeStylesFromResolved(resolved, colorScheme);
+  }, [resolvedThemeDisplay]);
 }
 
 /** CSS custom properties only — safe to apply on a parent without overriding surface bg/color. */

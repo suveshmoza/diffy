@@ -9,6 +9,7 @@ import {
   type PullRequestDiffData,
 } from '@/lib/github';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
+import { useResolvedThemeContext } from '@/providers/ResolvedThemeProvider';
 
 import { DiffOverlay } from './DiffOverlay';
 import { ErrorOverlay } from './ErrorOverlay';
@@ -28,6 +29,7 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
   const [state, setState] = useState<OverlayState>({ status: 'loading' });
   const [retryCount, setRetryCount] = useState(0);
   const { theme, isReady: isThemeReady } = useDiffThemeContext();
+  const { isResolvedThemeReady } = useResolvedThemeContext();
   const chromeTheme = diffThemeType(theme);
 
   const retry = useCallback(() => {
@@ -104,11 +106,18 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
 
   let content: ReactNode;
 
-  if (state.status === 'loaded') {
+  if (state.status === 'loaded' && isResolvedThemeReady) {
     content = (
       <DiffOverlay
         data={state.data}
         onClose={onClose}
+      />
+    );
+  } else if (state.status === 'loaded') {
+    content = (
+      <LoadingOverlay
+        onClose={onClose}
+        theme={chromeTheme}
       />
     );
   } else if (state.status === 'error') {
