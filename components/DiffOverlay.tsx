@@ -6,11 +6,13 @@ import type {
   SelectedLineRange,
 } from '@pierre/diffs';
 import { CodeView, type CodeViewHandle, useStableCallback } from '@pierre/diffs/react';
+import { IconLoader } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
+import { useIsWorkerPoolReady } from '@/hooks/useIsWorkerPoolReady';
 import { useTreeThemeStyles, pickTreeThemeCustomProperties } from '@/hooks/useTreeThemeStyles';
 import {
   getCodeViewItemIdForFile,
@@ -171,7 +173,9 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     error: codeViewBuildError,
   } = useCodeViewItems(augmentedData);
   const isCodeViewHostReady = useCodeViewHostReady(codeViewHostRef);
-  const isCodeViewMounted = isCodeViewHostReady && isThemeReady && codeViewItems != null;
+  const isWorkerPoolReady = useIsWorkerPoolReady();
+  const isCodeViewMounted =
+    isCodeViewHostReady && isThemeReady && codeViewItems != null && isWorkerPoolReady;
 
   const itemById = useMemo(() => {
     if (!codeViewItems) {
@@ -760,7 +764,23 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
               />
             ) : (
               <div className='gprv-state'>
-                {isBuilding ? 'Building diff…' : 'Preparing diff viewer…'}
+                {isBuilding ? (
+                  'Building diff…'
+                ) : (
+                  <div
+                    className='gprv-loading-panel'
+                    role='status'
+                    aria-live='polite'
+                    aria-label='Preparing diff viewer'
+                  >
+                    <IconLoader
+                      size={48}
+                      stroke={2}
+                      className='gprv-loading-spinner'
+                    />
+                    <p className='gprv-loading-summary'>Preparing diff viewer…</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

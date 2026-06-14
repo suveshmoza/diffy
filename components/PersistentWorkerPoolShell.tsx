@@ -1,8 +1,10 @@
+import type { DiffsThemeNames } from '@pierre/diffs';
 import { WorkerPoolContextProvider } from '@pierre/diffs/react';
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { workerFactory } from '@/lib/diff-worker';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
+import { WorkerPoolSyncedThemeProvider } from '@/providers/WorkerPoolSyncedThemeContext';
 
 import { WorkerPoolRenderOptionsSync } from './WorkerPoolRenderOptionsSync';
 
@@ -48,6 +50,30 @@ type PersistentWorkerPoolShellProps = {
   children: ReactNode;
 };
 
+function WorkerPoolShellInner({
+  theme,
+  children,
+}: {
+  theme: DiffsThemeNames;
+  children: ReactNode;
+}) {
+  const [syncedTheme, setSyncedTheme] = useState<DiffsThemeNames | null>(null);
+
+  useEffect(() => {
+    setSyncedTheme(null);
+  }, [theme]);
+
+  return (
+    <WorkerPoolSyncedThemeProvider value={syncedTheme}>
+      <WorkerPoolRenderOptionsSync
+        theme={theme}
+        onSynced={setSyncedTheme}
+      />
+      {children}
+    </WorkerPoolSyncedThemeProvider>
+  );
+}
+
 export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShellProps) {
   const { theme } = useDiffThemeContext();
 
@@ -73,8 +99,7 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
       poolOptions={poolOptions}
       highlighterOptions={highlighterOptions}
     >
-      <WorkerPoolRenderOptionsSync theme={theme} />
-      {children}
+      <WorkerPoolShellInner theme={theme}>{children}</WorkerPoolShellInner>
     </WorkerPoolContextProvider>
   );
 }
