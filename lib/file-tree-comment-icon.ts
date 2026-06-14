@@ -1,16 +1,17 @@
-const COMMENT_ICON_PATH =
-  'M203.7 512.9s0 0 0 0l-37.8 26.7c-7.3 5.2-16.9 5.8-24.9 1.7S128 529 128 520l0-72-32 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l320 0c53 0 96 43 96 96l0 224c0 53-43 96-96 96l-120.4 0-91.9 64.9zm64.3-104.1c8.1-5.7 17.8-8.8 27.7-8.8L416 400c26.5 0 48-21.5 48-48l0-224c0-26.5-21.5-48-48-48L96 80c-26.5 0-48 21.5-48 48l0 224c0 26.5 21.5 48 48 48l56 0c10.4 0 19.3 6.6 22.6 15.9 .9 2.5 1.4 5.2 1.4 8.1l0 49.7c32.7-23.1 63.3-44.7 91.9-64.9z';
+const COMMENT_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 9h8"/><path d="M8 13h6"/><path d="M9 18h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-3l-3 3l-3 -3"/></svg>`;
 
 export const FILE_TREE_COMMENT_ICON_MASK_URL = `url("data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="black" d="${COMMENT_ICON_PATH}"/></svg>`,
+  COMMENT_ICON_SVG,
 )}")`;
+
+export const FILE_TREE_COMMENT_ICON_SIZE = '16px';
 
 export const COMMENT_ICON_MASK_STYLE = {
   backgroundColor: 'currentColor',
   display: 'block',
   flexShrink: 0,
-  height: '1rem',
-  width: '1rem',
+  height: FILE_TREE_COMMENT_ICON_SIZE,
+  width: FILE_TREE_COMMENT_ICON_SIZE,
   WebkitMaskImage: FILE_TREE_COMMENT_ICON_MASK_URL,
   maskImage: FILE_TREE_COMMENT_ICON_MASK_URL,
   WebkitMaskPosition: 'center',

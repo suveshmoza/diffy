@@ -1,5 +1,6 @@
 import type { FileTreeRowDecorationRenderer } from '@pierre/trees';
 import { FileTree, useFileTree, useFileTreeSearch } from '@pierre/trees/react';
+import { IconSearch, IconX } from '@tabler/icons-react';
 import {
   useCallback,
   useEffect,
@@ -15,7 +16,10 @@ import {
   buildCommentBadgeCountCss,
   FILE_TREE_REVIEW_COMMENT_TITLE_MARKER,
 } from '@/lib/file-tree-comment-badge';
-import { FILE_TREE_COMMENT_ICON_MASK_URL } from '@/lib/file-tree-comment-icon';
+import {
+  FILE_TREE_COMMENT_ICON_MASK_URL,
+  FILE_TREE_COMMENT_ICON_SIZE,
+} from '@/lib/file-tree-comment-icon';
 import { createFileTreeInput } from '@/lib/file-tree-input';
 import type { GitHubPullRequestFile } from '@/lib/github';
 import { getTreeThemeStyles } from '@/lib/resolve-diff-theme';
@@ -49,14 +53,14 @@ const FILE_TREE_COMMENT_BADGE_CSS = `
     content: '';
     display: block;
     flex-shrink: 0;
-    height: 11px;
+    height: ${FILE_TREE_COMMENT_ICON_SIZE};
     -webkit-mask-image: ${FILE_TREE_COMMENT_ICON_MASK_URL};
     mask-image: ${FILE_TREE_COMMENT_ICON_MASK_URL};
     mask-position: center;
     mask-repeat: no-repeat;
     mask-size: contain;
     order: 2;
-    width: 11px;
+    width: ${FILE_TREE_COMMENT_ICON_SIZE};
   }
 
   [data-item-section="decoration"] > span[title*="${FILE_TREE_REVIEW_COMMENT_TITLE_MARKER}"]::after {
@@ -129,19 +133,11 @@ function FileTreeSearchHeader({
       onKeyUpCapture={stopGitHubKeybindings}
     >
       <label className='gprv-tree-search-field'>
-        <span
+        <IconSearch
+          size={14}
+          stroke={2}
           className='gprv-tree-search-icon'
-          aria-hidden='true'
-        >
-          <svg
-            viewBox='0 0 16 16'
-            width='14'
-            height='14'
-            fill='currentColor'
-          >
-            <path d='M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04ZM11 7a4 4 0 1 0-8 0 4 4 0 0 0 8 0Z' />
-          </svg>
-        </span>
+        />
         <input
           ref={inputRef}
           className='gprv-tree-search'
@@ -163,15 +159,7 @@ function FileTreeSearchHeader({
             aria-label='Clear filter'
             onClick={() => onSearchQueryChange('')}
           >
-            <svg
-              viewBox='0 0 16 16'
-              width='12'
-              height='12'
-              fill='currentColor'
-              aria-hidden='true'
-            >
-              <path d='M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z' />
-            </svg>
+            <IconX size={12} />
           </button>
         ) : null}
       </label>

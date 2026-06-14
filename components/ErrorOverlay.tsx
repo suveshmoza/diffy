@@ -1,3 +1,5 @@
+import { IconGhost2 } from '@tabler/icons-react';
+
 import { ChromeModal } from './ChromeModal';
 
 type ErrorOverlayProps = {
@@ -16,12 +18,11 @@ export function ErrorOverlay({ message, onRetry, onClose, theme }: ErrorOverlayP
     >
       <div className='gprv-modal-body'>
         <div className='gprv-error-panel'>
-          <div
-            className='gprv-error-icon'
-            aria-hidden='true'
-          >
-            !
-          </div>
+          <IconGhost2
+            size={128}
+            stroke={2}
+            color='var(--gprv-error)'
+          />
           <p className='gprv-error-summary'>
             Something went wrong while loading this pull request.
           </p>

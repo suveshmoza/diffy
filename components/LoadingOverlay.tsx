@@ -1,3 +1,5 @@
+import { IconLoader } from '@tabler/icons-react';
+
 import { ChromeModal } from './ChromeModal';
 
 type LoadingOverlayProps = {
@@ -19,9 +21,10 @@ export function LoadingOverlay({ onClose, theme }: LoadingOverlayProps) {
           aria-live='polite'
           aria-label='Loading pull request diff'
         >
-          <div
+          <IconLoader
+            size={48}
+            stroke={2}
             className='gprv-loading-spinner'
-            aria-hidden='true'
           />
           <p className='gprv-loading-summary'>Fetching pull request metadata and changed files…</p>
           <p className='gprv-loading-hint'>Large pull requests may take a few seconds.</p>

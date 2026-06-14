@@ -1,4 +1,5 @@
 import type { CodeViewLineSelection, DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
+import { IconMessageCircle } from '@tabler/icons-react';
 import { memo, useCallback, useState } from 'react';
 
 import {
@@ -15,7 +16,6 @@ import {
   type ReviewAnnotationMetadata,
 } from '@/lib/review-comments';
 
-import { CommentIcon } from './CommentIcon';
 import { ReviewCommentEditComposer } from './ReviewCommentEditComposer';
 import { ReviewReplyComposer } from './ReviewReplyComposer';
 
@@ -319,7 +319,10 @@ const CommentReplySlot = memo(function CommentReplySlot({
               aria-label={replyLabel}
               title={replyLabel}
             >
-              <CommentIcon />
+              <IconMessageCircle
+                size={20}
+                stroke={2}
+              />
               <span className='gprv-review-reply-trigger-label'>{replyLabel}</span>
             </button>
           ) : null}
