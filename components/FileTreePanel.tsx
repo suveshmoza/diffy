@@ -195,10 +195,15 @@ export function FileTreePanel({
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const keepSearchFocusRef = useRef(false);
+  const isProgrammaticSelectionRef = useRef(false);
   const searchQueryRef = useRef(searchQuery);
   searchQueryRef.current = searchQuery;
   const handleSelectionChange = useCallback(
     (selectedPaths: readonly string[]) => {
+      if (isProgrammaticSelectionRef.current) {
+        return;
+      }
+
       const nextPath = selectedPaths[0];
       if (nextPath) {
         onSelectPath(nextPath);
@@ -271,13 +276,35 @@ export function FileTreePanel({
   }, [model, treeInput]);
 
   useEffect(() => {
-    if (selectedPath && treeInput.annotationsByPath.has(selectedPath)) {
-      model.getItem(selectedPath)?.select();
-      return;
-    }
+    isProgrammaticSelectionRef.current = true;
+    try {
+      if (!selectedPath) {
+        for (const path of model.getSelectedPaths()) {
+          model.getItem(path)?.deselect();
+        }
+        return;
+      }
 
-    for (const path of model.getSelectedPaths()) {
-      model.getItem(path)?.deselect();
+      if (!treeInput.annotationsByPath.has(selectedPath)) {
+        return;
+      }
+
+      const selectedPaths = model.getSelectedPaths();
+      if (selectedPaths.length === 1 && selectedPaths[0] === selectedPath) {
+        return;
+      }
+
+      for (const path of selectedPaths) {
+        if (path !== selectedPath) {
+          model.getItem(path)?.deselect();
+        }
+      }
+
+      if (!selectedPaths.includes(selectedPath)) {
+        model.getItem(selectedPath)?.select();
+      }
+    } finally {
+      isProgrammaticSelectionRef.current = false;
     }
   }, [model, selectedPath, treeInput.annotationsByPath]);
 

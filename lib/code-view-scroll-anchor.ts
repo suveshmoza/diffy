@@ -70,3 +70,16 @@ export function runCodeViewMutationPreservingScroll<TMetadata>(
     after?.();
   }
 }
+
+/** Defer controlled React state that syncs back into CodeView until scroll is restored. */
+export function deferCodeViewControlledSync<TMetadata>(
+  viewer: CodeViewHandle<TMetadata> | null | undefined,
+  sync: () => void,
+): void {
+  if (!viewer) {
+    sync();
+    return;
+  }
+
+  runCodeViewMutationPreservingScroll(viewer, () => {}, sync);
+}

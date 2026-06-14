@@ -5,7 +5,7 @@ import type {
   LineAnnotation,
   SelectedLineRange,
 } from '@pierre/diffs';
-import { CodeView, type CodeViewHandle } from '@pierre/diffs/react';
+import { CodeView, type CodeViewHandle, useStableCallback } from '@pierre/diffs/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
@@ -26,7 +26,10 @@ import {
   replaceDraftWithThreadAnnotation,
   updateCommentInAnnotation,
 } from '@/lib/code-view-review-mutations';
-import { runCodeViewMutationPreservingScroll } from '@/lib/code-view-scroll-anchor';
+import {
+  runCodeViewMutationPreservingScroll,
+  deferCodeViewControlledSync,
+} from '@/lib/code-view-scroll-anchor';
 import {
   DEFAULT_DIFF_LAYOUT,
   readDiffLayoutPreference,
@@ -75,6 +78,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const modalRef = useRef<HTMLElement>(null);
   const selectedLinesRef = useRef<CodeViewLineSelection | null>(null);
   const hoveredThreadSelectionRef = useRef<CodeViewLineSelection | null>(null);
+  const isOpeningDraftRef = useRef(false);
   const orphanedThreadsByItemIdRef = useRef<
     ReadonlyMap<string, ReviewThreadMetadata[]> | undefined
   >(undefined);
@@ -214,11 +218,14 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         closeAllReplyComposers(modalRef.current);
       }
 
+      isOpeningDraftRef.current = true;
+
       runCodeViewMutationPreservingScroll(
         viewer,
         () => {
           const targetItem = viewer.getItem(selection.id);
           if (!targetItem) {
+            isOpeningDraftRef.current = false;
             return;
           }
 
@@ -233,17 +240,18 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
             const path = getItemPath(item);
             setSelectedPath((current) => (current === path ? current : path));
           }
+
+          isOpeningDraftRef.current = false;
         },
       );
     },
     [codeViewItems, itemById],
   );
 
-  const handleGutterUtilityClick = useCallback(
+  const handleGutterUtilityClick = useStableCallback(
     (range: SelectedLineRange, context: { item: { id: string } }) => {
       openDraftComposer({ id: context.item.id, range });
     },
-    [openDraftComposer],
   );
 
   const codeViewOptionsWithInteractions =
@@ -299,13 +307,13 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     refreshCodeViewLayout();
   }, [isCodeViewMounted, codeViewItems, refreshCodeViewLayout]);
 
-  const handleThreadHighlight = useCallback((selection: CodeViewLineSelection) => {
+  const handleThreadHighlight = useStableCallback((selection: CodeViewLineSelection) => {
     setHoveredThreadSelection(selection);
-  }, []);
+  });
 
-  const handleThreadHighlightClear = useCallback(() => {
+  const handleThreadHighlightClear = useStableCallback(() => {
     setHoveredThreadSelection(null);
-  }, []);
+  });
 
   const handleReplyOpen = useCallback(
     (replyKey: string) => {
@@ -552,22 +560,27 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     [codeViewItems],
   );
 
-  const handleSelectedLinesChange = useCallback(
-    (selection: CodeViewLineSelection | null) => {
-      const viewer = viewerRef.current;
-      if (
-        selection == null &&
-        viewer &&
-        codeViewItems &&
-        hasAnyDraftAnnotation(viewer, codeViewItems.items)
-      ) {
-        return;
-      }
+  const handleSelectedLinesChange = useStableCallback((selection: CodeViewLineSelection | null) => {
+    const viewer = viewerRef.current;
+    if (
+      selection == null &&
+      viewer &&
+      codeViewItems &&
+      hasAnyDraftAnnotation(viewer, codeViewItems.items)
+    ) {
+      return;
+    }
 
-      if (selection == null && hoveredThreadSelectionRef.current != null) {
-        return;
-      }
+    if (selection == null && hoveredThreadSelectionRef.current != null) {
+      return;
+    }
 
+    // openDraftComposer runs first on gutter + clicks and defers selection sync itself.
+    if (selection != null && isOpeningDraftRef.current) {
+      return;
+    }
+
+    const applySelectionState = () => {
       if (selection != null) {
         setHoveredThreadSelection(null);
       }
@@ -584,15 +597,21 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
 
       const path = getItemPath(item);
       setSelectedPath((current) => (current === path ? current : path));
-    },
-    [codeViewItems, itemById],
-  );
+    };
+
+    if (selection != null && viewer) {
+      deferCodeViewControlledSync(viewer, applySelectionState);
+      return;
+    }
+
+    applySelectionState();
+  });
 
   const stopGitHubKeybindings = useCallback((event: React.KeyboardEvent) => {
     event.stopPropagation();
   }, []);
 
-  const renderReviewAnnotation = useCallback(
+  const renderReviewAnnotation = useStableCallback(
     (
       annotation:
         | LineAnnotation<ReviewAnnotationMetadata>
@@ -639,24 +658,9 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         />
       );
     },
-    [
-      data.pullRequest.head.sha,
-      data.ref,
-      handleCancelDraft,
-      handleCommentDelete,
-      handleCommentEdit,
-      handleImmediateCommentSuccess,
-      handleReplyClose,
-      handleReplyOpen,
-      handleReplySuccess,
-      handleThreadHighlight,
-      handleThreadHighlightClear,
-      hasToken,
-      viewerUser,
-    ],
   );
 
-  const renderReviewHeaderMetadata = useCallback(
+  const renderReviewHeaderMetadata = useStableCallback(
     (item: NonNullable<typeof codeViewItems>['items'][number]) => {
       const orphanedThreads = orphanedThreadsByItemIdRef.current?.get(item.id);
       if (!orphanedThreads?.length) {
@@ -682,18 +686,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         />
       );
     },
-    [
-      data.ref,
-      handleCommentDelete,
-      handleCommentEdit,
-      handleReplyClose,
-      handleReplyOpen,
-      handleReplySuccess,
-      handleThreadHighlight,
-      handleThreadHighlightClear,
-      hasToken,
-      viewerUser,
-    ],
   );
 
   return (
