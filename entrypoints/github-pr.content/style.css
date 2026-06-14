@@ -347,6 +347,93 @@
   color: var(--trees-theme-sidebar-fg, var(--gprv-text));
 }
 
+.gprv-theme-picker {
+  min-width: 0;
+  position: relative;
+}
+
+.gprv-theme-picker-trigger[aria-expanded='true'] {
+  background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
+}
+
+.gprv-theme-picker-trigger:focus-visible {
+  border-color: var(--trees-theme-focus-ring, var(--gprv-accent));
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--trees-theme-focus-ring, var(--gprv-accent)) 30%, transparent);
+  outline: none;
+}
+
+.gprv-theme-picker-menu {
+  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
+  border: 1px solid
+    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  border-radius: 8px;
+  box-shadow: var(--gprv-shadow, 0 10px 30px rgb(0 0 0 / 0.18));
+  box-sizing: border-box;
+  list-style: none;
+  margin: 6px 0 0;
+  max-height: 280px;
+  min-width: 14rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 2;
+}
+
+.gprv-theme-picker-menu li {
+  margin: 0;
+}
+
+.gprv-theme-picker-option {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  box-sizing: border-box;
+  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.3;
+  padding: 8px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.gprv-theme-picker-option:hover {
+  background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
+}
+
+.gprv-theme-picker-option[data-selected] {
+  background: color-mix(
+    in srgb,
+    var(--trees-theme-focus-ring, var(--gprv-accent)) 16%,
+    transparent
+  );
+  color: var(--trees-theme-focus-ring, var(--gprv-accent));
+  font-weight: 600;
+}
+
+.gprv-theme-picker-option:focus-visible {
+  outline: 2px solid var(--trees-theme-focus-ring, var(--gprv-accent));
+  outline-offset: -2px;
+}
+
+.gprv-sr-only {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 .gprv-diff-header .gprv-header-icon-button,
 .gprv-diff-header .gprv-close {
   background: var(--trees-theme-input-bg, var(--gprv-control-bg));

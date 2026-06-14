@@ -1,8 +1,17 @@
-import { IconColumns, IconLayoutRows, IconLayoutSidebar, IconX } from '@tabler/icons-react';
-import { memo, type CSSProperties } from 'react';
+import type { DiffsThemeNames } from '@pierre/diffs';
+import {
+  IconColumns,
+  IconLayoutRows,
+  IconLayoutSidebar,
+  IconPaint,
+  IconX,
+} from '@tabler/icons-react';
+import { memo, useCallback, useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 
 import type { DiffLayout } from '@/lib/diff-layout-prefs';
+import { DIFF_THEMES } from '@/lib/diff-themes';
 import type { GitHubPullRequest } from '@/lib/github';
+import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 
 type DiffOverlayHeaderProps = {
   pullRequest: GitHubPullRequest;
@@ -116,6 +125,8 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           onChange={onDiffLayoutChange}
         />
 
+        <ThemePicker />
+
         <span
           className='gprv-header-divider'
           aria-hidden='true'
@@ -175,6 +186,100 @@ function DiffLayoutToggle({
           stroke={2}
         />
       </button>
+    </div>
+  );
+}
+
+function ThemePicker() {
+  const { theme, setTheme } = useDiffThemeContext();
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
+
+  const close = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  const selectTheme = useCallback(
+    (next: DiffsThemeNames) => {
+      void setTheme(next);
+      close();
+    },
+    [close, setTheme],
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (rootRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      close();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        close();
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown, { capture: true });
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, { capture: true });
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+    };
+  }, [close, isOpen]);
+
+  return (
+    <div
+      ref={rootRef}
+      className='gprv-theme-picker'
+    >
+      <button
+        type='button'
+        className='gprv-header-icon-button gprv-theme-picker-trigger'
+        aria-label={`Theme: ${theme}`}
+        aria-haspopup='listbox'
+        aria-expanded={isOpen}
+        aria-controls={listboxId}
+        title={`Theme: ${theme}`}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <IconPaint
+          size={20}
+          stroke={2}
+        />
+      </button>
+
+      {isOpen ? (
+        <ul
+          id={listboxId}
+          className='gprv-theme-picker-menu'
+          role='listbox'
+          aria-label='Theme'
+        >
+          {DIFF_THEMES.map((id) => (
+            <li key={id}>
+              <button
+                type='button'
+                className='gprv-theme-picker-option'
+                role='option'
+                aria-selected={id === theme}
+                data-selected={id === theme ? '' : undefined}
+                onClick={() => selectTheme(id)}
+              >
+                {id}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

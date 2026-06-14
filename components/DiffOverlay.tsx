@@ -152,7 +152,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     [data, liveReviewComments],
   );
 
-  const { isThemeReady, codeViewOptions, codeViewThemeType } = useCodeViewThemeBootstrap({
+  const { theme, isThemeReady, codeViewOptions, codeViewThemeType } = useCodeViewThemeBootstrap({
     diffLayout,
   });
   const treeThemeStyles = useTreeThemeStyles();
@@ -281,6 +281,15 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     viewerRef.current?.getInstance()?.render(true);
     refreshCodeViewLayout();
   }, [codeViewOptionsWithInteractions, isCodeViewMounted, refreshCodeViewLayout]);
+
+  useEffect(() => {
+    if (!isCodeViewMounted) {
+      return;
+    }
+
+    viewerRef.current?.getInstance()?.render(true);
+    refreshCodeViewLayout();
+  }, [theme, isCodeViewMounted, refreshCodeViewLayout]);
 
   useEffect(() => {
     if (!isCodeViewMounted) {
