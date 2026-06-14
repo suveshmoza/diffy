@@ -39,7 +39,7 @@ export function useCodeViewThemeBootstrap({ diffLayout }: UseCodeViewThemeBootst
       diffStyle,
       stickyHeaders: true,
       unsafeCSS: unsafeCss,
-      layout: { paddingTop: 0, paddingBottom: 0, gap: 0 },
+      layout: { paddingTop: 0, paddingBottom: 0, gap: 1 },
     };
   }, [theme, unsafeCss, diffStyle]);
 
