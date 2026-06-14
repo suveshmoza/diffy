@@ -1,5 +1,5 @@
 import { IconColumns, IconLayoutRows, IconLayoutSidebar, IconX } from '@tabler/icons-react';
-import { memo } from 'react';
+import { memo, type CSSProperties } from 'react';
 
 import type { DiffLayout } from '@/lib/diff-layout-prefs';
 import type { GitHubPullRequest } from '@/lib/github';
@@ -12,6 +12,7 @@ type DiffOverlayHeaderProps = {
   onToggleSidebar: () => void;
   onDiffLayoutChange: (layout: DiffLayout) => void;
   onClose: () => void;
+  themeStyle?: CSSProperties;
 };
 
 export const DiffOverlayHeader = memo(function DiffOverlayHeader({
@@ -22,11 +23,15 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   onToggleSidebar,
   onDiffLayoutChange,
   onClose,
+  themeStyle,
 }: DiffOverlayHeaderProps) {
   const { base, head } = pullRequest;
 
   return (
-    <header className='gprv-header gprv-diff-header'>
+    <header
+      className='gprv-header gprv-diff-header'
+      style={themeStyle}
+    >
       <div className='gprv-header-leading'>
         <div className='gprv-title'>
           <div className='gprv-title-row'>

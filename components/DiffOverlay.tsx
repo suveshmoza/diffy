@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
+import { useTreeThemeStyles, pickTreeThemeCustomProperties } from '@/hooks/useTreeThemeStyles';
 import {
   getCodeViewItemIdForFile,
   invalidateCodeViewItemsCache,
@@ -154,6 +155,11 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const { isThemeReady, codeViewOptions, codeViewThemeType } = useCodeViewThemeBootstrap({
     diffLayout,
   });
+  const treeThemeStyles = useTreeThemeStyles();
+  const treeThemeVars = useMemo(
+    () => pickTreeThemeCustomProperties(treeThemeStyles),
+    [treeThemeStyles],
+  );
 
   const {
     result: codeViewItems,
@@ -691,6 +697,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         ref={modalRef}
         className='gprv-modal'
         data-theme={codeViewThemeType}
+        style={treeThemeVars}
         role='dialog'
         aria-modal='true'
         aria-label='Pull request diff'
@@ -705,6 +712,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
           onToggleSidebar={handleToggleSidebar}
           onDiffLayoutChange={updateDiffLayout}
           onClose={onClose}
+          themeStyle={treeThemeStyles}
         />
 
         <div className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}>

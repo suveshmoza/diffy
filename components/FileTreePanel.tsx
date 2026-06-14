@@ -12,6 +12,7 @@ import {
   type RefObject,
 } from 'react';
 
+import { useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
 import {
   buildCommentBadgeCountCss,
   FILE_TREE_REVIEW_COMMENT_TITLE_MARKER,
@@ -22,8 +23,6 @@ import {
 } from '@/lib/file-tree-comment-icon';
 import { createFileTreeInput } from '@/lib/file-tree-input';
 import type { GitHubPullRequestFile } from '@/lib/github';
-import { getTreeThemeStyles } from '@/lib/resolve-diff-theme';
-import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 
 const TREE_INITIAL_VISIBLE_ROW_COUNT = 80;
 const TREE_OVERSCAN = 12;
@@ -182,7 +181,7 @@ export function FileTreePanel({
   reviewCommentCountByPath,
   onSelectPath,
 }: FileTreePanelProps) {
-  const { theme } = useDiffThemeContext();
+  const treeThemeStyles = useTreeThemeStyles();
   const treeInput = useMemo(
     () => createFileTreeInput(files, reviewCommentCountByPath),
     [files, reviewCommentCountByPath],
@@ -198,24 +197,6 @@ export function FileTreePanel({
   const keepSearchFocusRef = useRef(false);
   const searchQueryRef = useRef(searchQuery);
   searchQueryRef.current = searchQuery;
-  const [treeThemeStyles, setTreeThemeStyles] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    void getTreeThemeStyles(theme)
-      .then((styles) => {
-        if (!isCancelled) {
-          setTreeThemeStyles(styles);
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [theme]);
-
   const handleSelectionChange = useCallback(
     (selectedPaths: readonly string[]) => {
       const nextPath = selectedPaths[0];
@@ -301,7 +282,10 @@ export function FileTreePanel({
   }, [model, selectedPath, treeInput.annotationsByPath]);
 
   return (
-    <div className='gprv-tree-panel'>
+    <div
+      className='gprv-tree-panel'
+      style={treeThemeStyles}
+    >
       <FileTreeSearchHeader
         inputRef={searchInputRef}
         matchingPaths={search.matchingPaths}
@@ -313,7 +297,7 @@ export function FileTreePanel({
       <FileTree
         className='gprv-tree'
         model={model}
-        style={{ height: '100%', ...treeThemeStyles }}
+        style={{ height: '100%' }}
       />
     </div>
   );
