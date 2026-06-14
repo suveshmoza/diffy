@@ -1,51 +1,264 @@
-import type { ReactNode } from 'react';
+import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
+import { useMemo, type ReactNode } from 'react';
 
-const INLINE_MARKDOWN_PATTERN =
-  /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s<>)]+)/g;
-const FENCED_BLOCK_PATTERN = /```([^\n]*)\n([\s\S]*?)```/g;
-const LINK_PATTERN = /^\[([^\]]+)\]\(([^)]+)\)$/;
+import type { GitHubPullRequestRef } from '@/lib/github';
+import { preprocessGithubCommentAutolinks } from '@/lib/github-comment-autolinks';
 
-const commentBodyCache = new Map<string, ReactNode>();
+export type RenderGitHubCommentBodyOptions = {
+  pullRequestRef?: GitHubPullRequestRef;
+};
 
-type MarkdownSegment =
-  | { type: 'text'; content: string }
-  | { type: 'code'; language: string; content: string };
-
-export function renderGitHubCommentBody(body: string): ReactNode {
-  const cached = commentBodyCache.get(body);
-  if (cached !== undefined) {
-    return cached;
-  }
-
-  const rendered = renderGitHubCommentBodyUncached(body);
-  commentBodyCache.set(body, rendered);
-  return rendered;
+export function renderGitHubCommentBody(
+  body: string,
+  options?: RenderGitHubCommentBodyOptions,
+): ReactNode {
+  return (
+    <GitHubCommentMarkdown
+      body={body}
+      pullRequestRef={options?.pullRequestRef}
+    />
+  );
 }
 
-function renderGitHubCommentBodyUncached(body: string): ReactNode {
-  const segments = splitFencedBlocks(body);
-  if (segments.length === 0) {
+type GitHubCommentMarkdownProps = {
+  body: string;
+  pullRequestRef?: GitHubPullRequestRef;
+};
+
+function GitHubCommentMarkdown({ body, pullRequestRef }: GitHubCommentMarkdownProps) {
+  const trimmed = body.trim();
+  const markdown = useMemo(
+    () => preprocessGithubCommentAutolinks(trimmed, pullRequestRef),
+    [trimmed, pullRequestRef],
+  );
+
+  if (!trimmed) {
     return null;
   }
 
-  return segments.map((segment, index) => {
-    if (segment.type === 'code') {
-      return (
-        <CommentCodeBlock
-          key={`code-${index}`}
-          language={segment.language}
-          content={segment.content}
-        />
-      );
-    }
-
+  try {
     return (
-      <CommentTextBlock
-        key={`text-${index}`}
-        content={segment.content}
-      />
+      <Markdown
+        className='gprv-review-prose'
+        options={MARKDOWN_OPTIONS}
+      >
+        {markdown}
+      </Markdown>
     );
-  });
+  } catch {
+    return (
+      <div className='gprv-review-prose'>
+        <p className='gprv-review-paragraph'>{body}</p>
+      </div>
+    );
+  }
+}
+
+const MARKDOWN_OPTIONS: MarkdownToJSX.Options = {
+  disableParsingRawHTML: false,
+  forceBlock: true,
+  overrides: {
+    p: {
+      component: 'p',
+      props: { className: 'gprv-review-paragraph' },
+    },
+    em: {
+      component: 'em',
+      props: { className: 'gprv-review-em' },
+    },
+    del: {
+      component: 'del',
+      props: { className: 'gprv-review-strikethrough' },
+    },
+    a: {
+      component: SafeMarkdownLink,
+    },
+    blockquote: {
+      component: 'blockquote',
+      props: { className: 'gprv-review-quote' },
+    },
+    ul: {
+      component: 'ul',
+      props: { className: 'gprv-review-list gprv-review-list-unordered' },
+    },
+    ol: {
+      component: 'ol',
+      props: { className: 'gprv-review-list gprv-review-list-ordered' },
+    },
+    li: {
+      component: 'li',
+      props: { className: 'gprv-review-list-item' },
+    },
+    h1: {
+      component: 'h1',
+      props: { className: 'gprv-review-heading gprv-review-heading-h1' },
+    },
+    h2: {
+      component: 'h2',
+      props: { className: 'gprv-review-heading gprv-review-heading-h2' },
+    },
+    h3: {
+      component: 'h3',
+      props: { className: 'gprv-review-heading gprv-review-heading-h3' },
+    },
+    h4: {
+      component: 'h4',
+      props: { className: 'gprv-review-heading gprv-review-heading-h4' },
+    },
+    h5: {
+      component: 'h5',
+      props: { className: 'gprv-review-heading gprv-review-heading-h5' },
+    },
+    h6: {
+      component: 'h6',
+      props: { className: 'gprv-review-heading gprv-review-heading-h6' },
+    },
+    hr: {
+      component: 'hr',
+      props: { className: 'gprv-review-divider' },
+    },
+    table: {
+      component: MarkdownTable,
+    },
+    thead: {
+      component: 'thead',
+      props: { className: 'gprv-review-table-head' },
+    },
+    tbody: {
+      component: 'tbody',
+      props: { className: 'gprv-review-table-body' },
+    },
+    tr: {
+      component: 'tr',
+      props: { className: 'gprv-review-table-row' },
+    },
+    th: {
+      component: 'th',
+      props: { className: 'gprv-review-table-cell gprv-review-table-header-cell' },
+    },
+    td: {
+      component: 'td',
+      props: { className: 'gprv-review-table-cell' },
+    },
+    img: {
+      component: SafeMarkdownImage,
+    },
+    input: {
+      component: MarkdownTaskCheckbox,
+    },
+    code: {
+      component: MarkdownCode,
+    },
+    pre: {
+      component: MarkdownPre,
+    },
+    details: {
+      component: 'details',
+      props: { className: 'gprv-review-details' },
+    },
+    summary: {
+      component: 'summary',
+      props: { className: 'gprv-review-summary' },
+    },
+  },
+};
+
+function SafeMarkdownLink({
+  href,
+  children,
+  ...props
+}: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+  if (!href || !isSafeLinkUrl(href)) {
+    return <span>{children}</span>;
+  }
+
+  return (
+    <a
+      className='gprv-review-link'
+      href={href}
+      target='_blank'
+      rel='noopener noreferrer'
+      {...props}
+    >
+      {children}
+    </a>
+  );
+}
+
+function SafeMarkdownImage({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) {
+  if (!src || !isSafeImageUrl(src)) {
+    return null;
+  }
+
+  return (
+    <img
+      className='gprv-review-image'
+      src={src}
+      alt={alt ?? ''}
+      loading='lazy'
+      decoding='async'
+      {...props}
+    />
+  );
+}
+
+function MarkdownTaskCheckbox({
+  type,
+  checked,
+  disabled,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement>) {
+  if (type !== 'checkbox') {
+    return null;
+  }
+
+  return (
+    <input
+      className='gprv-review-task-checkbox'
+      type='checkbox'
+      checked={checked}
+      disabled={disabled ?? true}
+      readOnly
+      {...props}
+    />
+  );
+}
+
+function MarkdownTable({ children }: { children?: ReactNode }) {
+  return (
+    <div className='gprv-review-table-wrap'>
+      <table className='gprv-review-table'>{children}</table>
+    </div>
+  );
+}
+
+function MarkdownPre({ children }: { children?: ReactNode }) {
+  return <>{children}</>;
+}
+
+function MarkdownCode({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) {
+  const language = getCodeLanguage(className);
+  const rawContent = String(children);
+  const content = rawContent.replace(/\n$/, '');
+  const isFenced = language != null || rawContent.includes('\n');
+
+  if (!isFenced) {
+    return (
+      <code
+        className='gprv-review-inline-code'
+        {...props}
+      >
+        {children}
+      </code>
+    );
+  }
+
+  return (
+    <CommentCodeBlock
+      language={language ?? ''}
+      content={content}
+    />
+  );
 }
 
 function CommentCodeBlock({ language, content }: { language: string; content: string }) {
@@ -86,128 +299,13 @@ function normalizeSuggestionContent(content: string): string {
     .trimEnd();
 }
 
-function CommentTextBlock({ content }: { content: string }) {
-  const paragraphs = content.split(/\n{2,}/);
-
-  const blocks = paragraphs.map((paragraph, index) => {
-    const trimmed = paragraph.trim();
-    if (!trimmed) {
-      return null;
-    }
-
-    if (trimmed.startsWith('> ')) {
-      return (
-        <blockquote
-          key={`quote-${index}`}
-          className='gprv-review-quote'
-        >
-          {renderInlineMarkdown(trimmed.replace(/^>\s?/gm, ''))}
-        </blockquote>
-      );
-    }
-
-    return (
-      <p
-        key={`p-${index}`}
-        className='gprv-review-paragraph'
-      >
-        {renderInlineMarkdown(trimmed)}
-      </p>
-    );
-  });
-
-  return <div className='gprv-review-prose'>{blocks}</div>;
-}
-
-function renderInlineMarkdown(text: string): ReactNode[] {
-  const nodes: ReactNode[] = [];
-  const pattern = new RegExp(INLINE_MARKDOWN_PATTERN.source, INLINE_MARKDOWN_PATTERN.flags);
-
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let key = 0;
-
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      nodes.push(...renderPlainTextWithBreaks(text.slice(lastIndex, match.index), key));
-      key += 1;
-    }
-
-    const token = match[0];
-    if (token.startsWith('`') && token.endsWith('`')) {
-      nodes.push(
-        <code
-          key={`code-${key}`}
-          className='gprv-review-inline-code'
-        >
-          {token.slice(1, -1)}
-        </code>,
-      );
-    } else if (token.startsWith('**') && token.endsWith('**')) {
-      nodes.push(<strong key={`strong-${key}`}>{token.slice(2, -2)}</strong>);
-    } else if (token.startsWith('[')) {
-      const linkMatch = token.match(LINK_PATTERN);
-      if (linkMatch && isSafeLinkUrl(linkMatch[2])) {
-        nodes.push(
-          <a
-            key={`link-${key}`}
-            className='gprv-review-link'
-            href={linkMatch[2]}
-            target='_blank'
-            rel='noopener noreferrer'
-          >
-            {linkMatch[1]}
-          </a>,
-        );
-      } else if (linkMatch) {
-        nodes.push(linkMatch[1]);
-      } else {
-        nodes.push(token);
-      }
-    } else if (isSafeLinkUrl(token)) {
-      nodes.push(
-        <a
-          key={`url-${key}`}
-          className='gprv-review-link'
-          href={token}
-          target='_blank'
-          rel='noopener noreferrer'
-        >
-          {token}
-        </a>,
-      );
-    } else {
-      nodes.push(token);
-    }
-
-    key += 1;
-    lastIndex = pattern.lastIndex;
+function getCodeLanguage(className?: string): string | null {
+  if (!className) {
+    return null;
   }
 
-  if (lastIndex < text.length) {
-    nodes.push(...renderPlainTextWithBreaks(text.slice(lastIndex), key));
-  }
-
-  return nodes;
-}
-
-function renderPlainTextWithBreaks(text: string, keyBase: number): ReactNode[] {
-  const lines = text.split('\n');
-  if (lines.length === 1) {
-    return [text];
-  }
-
-  const nodes: ReactNode[] = [];
-  lines.forEach((line, index) => {
-    if (index > 0) {
-      nodes.push(<br key={`br-${keyBase}-${index}`} />);
-    }
-    if (line) {
-      nodes.push(line);
-    }
-  });
-
-  return nodes;
+  const match = /(?:lang(?:uage)?-)(\S+)/.exec(className);
+  return match?.[1] ?? null;
 }
 
 function isSafeLinkUrl(url: string): boolean {
@@ -219,28 +317,10 @@ function isSafeLinkUrl(url: string): boolean {
   }
 }
 
-function splitFencedBlocks(body: string): MarkdownSegment[] {
-  const segments: MarkdownSegment[] = [];
-  const pattern = new RegExp(FENCED_BLOCK_PATTERN.source, FENCED_BLOCK_PATTERN.flags);
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(body)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: body.slice(lastIndex, match.index) });
-    }
-
-    segments.push({
-      type: 'code',
-      language: match[1].trim(),
-      content: match[2].replace(/\n$/, ''),
-    });
-    lastIndex = pattern.lastIndex;
+function isSafeImageUrl(url: string): boolean {
+  try {
+    return new URL(url).protocol === 'https:';
+  } catch {
+    return false;
   }
-
-  if (lastIndex < body.length) {
-    segments.push({ type: 'text', content: body.slice(lastIndex) });
-  }
-
-  return segments;
 }

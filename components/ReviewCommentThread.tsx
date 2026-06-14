@@ -309,7 +309,9 @@ const CommentReplySlot = memo(function CommentReplySlot({
               onSave={handleSaveEdit}
             />
           ) : (
-            <div className='gprv-review-comment-text'>{renderGitHubCommentBody(comment.body)}</div>
+            <div className='gprv-review-comment-text'>
+              {renderGitHubCommentBody(comment.body, { pullRequestRef })}
+            </div>
           )}
           {canReply && onReplyOpen && !isHidden && !isEditing ? (
             <button
