@@ -23,11 +23,6 @@ export function getReviewReplyKey(itemId: string, inReplyToId: number): string {
   return `${itemId}:${inReplyToId}`;
 }
 
-/** @deprecated Use getReviewReplyKey */
-export function getReviewThreadKey(itemId: string, rootCommentId: number): string {
-  return getReviewReplyKey(itemId, rootCommentId);
-}
-
 type ReviewCommentThreadBaseProps = {
   annotation:
     | LineAnnotation<ReviewAnnotationMetadata>

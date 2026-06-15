@@ -20,7 +20,7 @@ type ReviewAnnotation =
   | DiffLineAnnotation<ReviewAnnotationMetadata>
   | LineAnnotation<ReviewAnnotationMetadata>;
 
-export function bumpItemVersion<T>(item: CodeViewItem<T>): CodeViewItem<T> {
+function bumpItemVersion<T>(item: CodeViewItem<T>): CodeViewItem<T> {
   return {
     ...item,
     version: item.version != null ? item.version + 1 : 1,
@@ -102,14 +102,6 @@ export function addDraftAnnotation(
     item: withAnnotations(item, [...getAnnotations(item), draftAnnotation]),
     draftId,
   };
-}
-
-/** @deprecated Use addDraftAnnotation */
-export function upsertDraftAnnotation(
-  item: CodeViewItem<ReviewAnnotationMetadata>,
-  range: SelectedLineRange,
-): CodeViewItem<ReviewAnnotationMetadata> {
-  return addDraftAnnotation(item, range).item;
 }
 
 export function replaceDraftWithThreadAnnotation(

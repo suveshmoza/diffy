@@ -35,9 +35,6 @@ export type ReviewDraftMetadata = {
 
 export type ReviewAnnotationMetadata = ReviewThreadMetadata | ReviewDraftMetadata;
 
-/** @deprecated Use ReviewThreadMetadata */
-export type ReviewCommentThreadMetadata = ReviewThreadMetadata;
-
 export type ReviewCommentItemMaps = {
   inlineByItemId: Map<
     string,
@@ -254,10 +251,4 @@ function getThreadRoot(
 
 export function toAnnotationSide(side: GitHubPullRequestReviewComment['side']): AnnotationSide {
   return side === 'LEFT' ? 'deletions' : 'additions';
-}
-
-export function isThreadMetadata(
-  metadata: ReviewAnnotationMetadata,
-): metadata is ReviewThreadMetadata {
-  return metadata.kind === 'thread';
 }

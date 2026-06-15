@@ -5,19 +5,3 @@ export const FILE_TREE_COMMENT_ICON_MASK_URL = `url("data:image/svg+xml,${encode
 )}")`;
 
 export const FILE_TREE_COMMENT_ICON_SIZE = '16px';
-
-export const COMMENT_ICON_MASK_STYLE = {
-  backgroundColor: 'currentColor',
-  display: 'block',
-  flexShrink: 0,
-  height: FILE_TREE_COMMENT_ICON_SIZE,
-  width: FILE_TREE_COMMENT_ICON_SIZE,
-  WebkitMaskImage: FILE_TREE_COMMENT_ICON_MASK_URL,
-  maskImage: FILE_TREE_COMMENT_ICON_MASK_URL,
-  WebkitMaskPosition: 'center',
-  maskPosition: 'center',
-  WebkitMaskRepeat: 'no-repeat',
-  maskRepeat: 'no-repeat',
-  WebkitMaskSize: 'contain',
-  maskSize: 'contain',
-} as const;

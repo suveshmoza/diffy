@@ -422,18 +422,6 @@
   outline-offset: -2px;
 }
 
-.gprv-sr-only {
-  border: 0;
-  clip: rect(0, 0, 0, 0);
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  padding: 0;
-  position: absolute;
-  white-space: nowrap;
-  width: 1px;
-}
-
 .gprv-diff-header .gprv-header-icon-button,
 .gprv-diff-header .gprv-close {
   background: var(--trees-theme-input-bg, var(--gprv-control-bg));
@@ -450,7 +438,6 @@
 }
 
 .gprv-close,
-.gprv-open-pr,
 .gprv-header-button,
 .gprv-header-icon-button {
   align-items: center;
@@ -475,7 +462,6 @@
 }
 
 .gprv-header-button:hover,
-.gprv-open-pr:hover,
 .gprv-close:hover,
 .gprv-header-icon-button:hover {
   background: var(--gprv-control-active-bg);
