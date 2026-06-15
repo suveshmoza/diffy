@@ -68,8 +68,7 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './src/modules/shiki-pruner.ts'],
   srcDir: 'src',
   autoIcons: {
-    baseIconPath: './src/assets/logo.png',
-    sizes: [128, 96, 48, 32, 24, 16],
+    baseIconPath: './assets/logo.png',
   },
   webExt: {
     binaries: process.env.WXT_FIREFOX_BINARY
@@ -79,7 +78,7 @@ export default defineConfig({
   manifest: {
     version: '1.0.0',
     name: 'diffy',
-    description: 'Better PR diffs on GitHub',
+    description: 'The missing PR review experience on GitHub',
     permissions: ['storage'],
     host_permissions: ['https://api.github.com/*', 'https://github.com/*'],
     content_security_policy: {
