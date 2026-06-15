@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
-import { diffThemeType } from '@/lib/diff/themes/prefs';
 import {
   fetchCachedPullRequestDiffData,
   invalidatePullRequestDiffCache,
   parseGitHubPullRequestUrl,
   type PullRequestDiffData,
 } from '@/lib/github/api';
-import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 import { useResolvedThemeContext } from '@/providers/ResolvedThemeProvider';
+import { SidebarProvider } from '@/providers/SidebarContext';
 
-import { DiffOverlay } from './DiffOverlay';
+import { DiffOverlay } from '../diff/DiffOverlay';
 import { ErrorOverlay } from './ErrorOverlay';
 import { LoadingOverlay } from './LoadingOverlay';
 
@@ -28,9 +27,7 @@ type AppProps = {
 export function App({ pullRequestUrl, onClose }: AppProps) {
   const [state, setState] = useState<OverlayState>({ status: 'loading' });
   const [retryCount, setRetryCount] = useState(0);
-  const { theme, isReady: isThemeReady } = useDiffThemeContext();
   const { isResolvedThemeReady } = useResolvedThemeContext();
-  const chromeTheme = diffThemeType(theme);
 
   const retry = useCallback(() => {
     const ref = parseGitHubPullRequestUrl(pullRequestUrl);
@@ -108,43 +105,25 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
 
   if (state.status === 'loaded' && isResolvedThemeReady) {
     content = (
-      <DiffOverlay
-        data={state.data}
-        onClose={onClose}
-      />
+      <SidebarProvider>
+        <DiffOverlay
+          data={state.data}
+          onClose={onClose}
+        />
+      </SidebarProvider>
     );
   } else if (state.status === 'loaded') {
-    content = (
-      <LoadingOverlay
-        onClose={onClose}
-        theme={chromeTheme}
-      />
-    );
+    content = <LoadingOverlay onClose={onClose} />;
   } else if (state.status === 'error') {
     content = (
       <ErrorOverlay
         message={state.message}
         onRetry={retry}
         onClose={onClose}
-        theme={chromeTheme}
       />
     );
   } else {
-    content = (
-      <LoadingOverlay
-        onClose={onClose}
-        theme={chromeTheme}
-      />
-    );
-  }
-
-  if (!isThemeReady && state.status !== 'loaded') {
-    return (
-      <LoadingOverlay
-        onClose={onClose}
-        theme={chromeTheme}
-      />
-    );
+    content = <LoadingOverlay onClose={onClose} />;
   }
 
   return content;

@@ -58,11 +58,9 @@ diffy/
 ├── src/
 │   ├── assets/                  # Extension icon source (logo.png)
 │   ├── components/              # React UI for the diff overlay
-│   │   ├── App.tsx              # Overlay shell: loading, error, and diff states
-│   │   ├── DiffOverlay.tsx      # Main viewer: CodeView, file tree, review threads
-│   │   ├── DiffOverlayHeader.tsx # PR title, layout toggle, theme picker, close
-│   │   ├── FileTreePanel.tsx    # Searchable file tree with comment badges
-│   │   └── ReviewComment*.tsx   # Inline comment, reply, and edit composers
+│   │   ├── app/                 # App shell: loading, error, and error-modal states
+│   │   ├── diff/                # Main viewer, file tree, header controls
+│   │   └── review/              # Inline comment threads, composers, reply UI
 │   ├── entrypoints/
 │   │   ├── github-pr.content/   # Content script entry (button injection, prefetch)
 │   │   │   ├── index.tsx        # Page lifecycle, overlay mount/unmount
@@ -79,7 +77,7 @@ diffy/
 │   │   └── theming/             # Tree chrome theme resolution
 │   ├── modules/
 │   │   └── shiki-pruner.ts      # Prunes unused Shiki chunks after production builds
-│   ├── providers/               # React context (diff theme, resolved theme, worker sync)
+│   ├── providers/               # React context and providers (themes, auth, worker pool, sidebar)
 │   └── types/                   # Ambient type declarations
 └── wxt.config.ts                # Manifest, permissions, Vite plugins
 ```

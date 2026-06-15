@@ -12,13 +12,12 @@ import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { DIFF_THEMES } from '@/lib/diff/themes/prefs';
 import type { GitHubPullRequest } from '@/lib/github/api';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
+import { useSidebarContext } from '@/providers/SidebarContext';
 
 type DiffOverlayHeaderProps = {
   pullRequest: GitHubPullRequest;
   diffLayout: DiffLayout;
-  isSidebarCollapsed: boolean;
   reviewCommentsLoadError?: string | null;
-  onToggleSidebar: () => void;
   onDiffLayoutChange: (layout: DiffLayout) => void;
   onClose: () => void;
   themeStyle?: CSSProperties;
@@ -27,13 +26,12 @@ type DiffOverlayHeaderProps = {
 export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   pullRequest,
   diffLayout,
-  isSidebarCollapsed,
   reviewCommentsLoadError,
-  onToggleSidebar,
   onDiffLayoutChange,
   onClose,
   themeStyle,
 }: DiffOverlayHeaderProps) {
+  const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
   const { base, head } = pullRequest;
 
   return (
@@ -109,7 +107,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
         <button
           className='gprv-header-icon-button'
           type='button'
-          onClick={onToggleSidebar}
+          onClick={toggleSidebar}
           aria-label={isSidebarCollapsed ? 'Show file list' : 'Hide file list'}
           aria-pressed={!isSidebarCollapsed}
           title={isSidebarCollapsed ? 'Show files' : 'Hide files'}

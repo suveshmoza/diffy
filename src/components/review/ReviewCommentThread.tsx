@@ -4,7 +4,6 @@ import { memo, useCallback, useState } from 'react';
 
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { renderGitHubCommentBody } from '@/lib/github/comments/markdown';
-import type { GitHubViewer } from '@/lib/github/review-write';
 import {
   formatReviewCommentHiddenLabel,
   isReviewCommentHidden,
@@ -15,6 +14,7 @@ import {
   reviewCommentToSelectedLineRange,
 } from '@/lib/review/format-line-range';
 import { formatQuoteReplyPrefill } from '@/lib/review/format-quote-reply';
+import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 
 import { ReviewCommentEditComposer } from './ReviewCommentEditComposer';
 import { ReviewReplyComposer } from './ReviewReplyComposer';
@@ -28,15 +28,13 @@ export function getReviewThreadKey(itemId: string, rootCommentId: number): strin
   return getReviewReplyKey(itemId, rootCommentId);
 }
 
-type ReviewCommentThreadProps = {
+type ReviewCommentThreadBaseProps = {
   annotation:
     | LineAnnotation<ReviewAnnotationMetadata>
     | DiffLineAnnotation<ReviewAnnotationMetadata>;
   itemId?: string;
-  variant?: 'inline' | 'header';
+  variant: 'inline' | 'header';
   pullRequestRef?: GitHubPullRequestRef;
-  viewerUser?: GitHubViewer | null;
-  hasToken?: boolean;
   onReplyOpen?: (replyKey: string) => void;
   onReplyClose?: (replyKey: string) => void;
   onReplySuccess?: (comment: GitHubPullRequestReviewComment, replyKey: string) => void;
@@ -46,13 +44,11 @@ type ReviewCommentThreadProps = {
   onClearHighlight?: () => void;
 };
 
-export const ReviewCommentThread = memo(function ReviewCommentThread({
+const ReviewCommentThreadBase = memo(function ReviewCommentThreadBase({
   annotation,
   itemId,
-  variant = 'inline',
+  variant,
   pullRequestRef,
-  viewerUser = null,
-  hasToken = false,
   onReplyOpen,
   onReplyClose,
   onReplySuccess,
@@ -60,7 +56,8 @@ export const ReviewCommentThread = memo(function ReviewCommentThread({
   onEdit,
   onHighlightRange,
   onClearHighlight,
-}: ReviewCommentThreadProps) {
+}: ReviewCommentThreadBaseProps) {
+  const { hasToken } = useGitHubAuth();
   const metadata = annotation.metadata;
   const mainComment = metadata?.kind === 'thread' ? metadata.comments[0] : undefined;
   const replies = metadata?.kind === 'thread' ? metadata.comments.slice(1) : [];
@@ -111,8 +108,6 @@ export const ReviewCommentThread = memo(function ReviewCommentThread({
           lineRangeLabel={formatReviewCommentLineLabel(mainComment)}
           canReply={canReply}
           pullRequestRef={pullRequestRef}
-          viewerUser={viewerUser}
-          hasToken={hasToken}
           onReplyOpen={onReplyOpen}
           onReplyClose={onReplyClose}
           onReplySuccess={onReplySuccess}
@@ -127,11 +122,9 @@ export const ReviewCommentThread = memo(function ReviewCommentThread({
                 itemId={itemId}
                 comment={comment}
                 rootCommentId={mainComment.id}
-                nested
+                depth={1}
                 canReply={canReply}
                 pullRequestRef={pullRequestRef}
-                viewerUser={viewerUser}
-                hasToken={hasToken}
                 onReplyOpen={onReplyOpen}
                 onReplyClose={onReplyClose}
                 onReplySuccess={onReplySuccess}
@@ -146,16 +139,36 @@ export const ReviewCommentThread = memo(function ReviewCommentThread({
   );
 });
 
+export const ReviewCommentThread = memo(function ReviewCommentThread(
+  props: Omit<ReviewCommentThreadBaseProps, 'variant'>,
+) {
+  return (
+    <ReviewCommentThreadBase
+      variant='inline'
+      {...props}
+    />
+  );
+});
+
+export const HeaderReviewCommentThread = memo(function HeaderReviewCommentThread(
+  props: Omit<ReviewCommentThreadBaseProps, 'variant'>,
+) {
+  return (
+    <ReviewCommentThreadBase
+      variant='header'
+      {...props}
+    />
+  );
+});
+
 type CommentReplySlotProps = {
   itemId: string;
   comment: GitHubPullRequestReviewComment;
   rootCommentId: number;
   lineRangeLabel?: string | null;
-  nested?: boolean;
+  depth?: number;
   canReply: boolean;
   pullRequestRef?: GitHubPullRequestRef;
-  viewerUser: GitHubViewer | null;
-  hasToken: boolean;
   onReplyOpen?: (replyKey: string) => void;
   onReplyClose?: (replyKey: string) => void;
   onReplySuccess?: (comment: GitHubPullRequestReviewComment, replyKey: string) => void;
@@ -168,19 +181,18 @@ const CommentReplySlot = memo(function CommentReplySlot({
   comment,
   rootCommentId,
   lineRangeLabel,
-  nested = false,
+  depth = 0,
   canReply,
   pullRequestRef,
-  viewerUser,
-  hasToken,
   onReplyOpen,
   onReplyClose,
   onReplySuccess,
   onDelete,
   onEdit,
 }: CommentReplySlotProps) {
+  const { viewerUser, hasToken } = useGitHubAuth();
   const replyKey = getReviewReplyKey(itemId, comment.id);
-  const replyLabel = nested ? 'Quote reply' : 'Reply';
+  const replyLabel = depth > 0 ? 'Quote reply' : 'Reply';
   const isMinimized = isReviewCommentHidden(comment);
   const [isExpanded, setIsExpanded] = useState(false);
   const isHidden = isMinimized && !isExpanded;
@@ -220,9 +232,9 @@ const CommentReplySlot = memo(function CommentReplySlot({
 
   return (
     <div
-      className={`gprv-review-comment-block${nested ? ' gprv-review-comment-block--nested' : ''}`}
+      className={`gprv-review-comment-block${depth > 0 ? ' gprv-review-comment-block--nested' : ''}`}
       data-reply-key={replyKey}
-      {...(nested ? { 'data-reply-prefill': formatQuoteReplyPrefill(comment) } : {})}
+      {...(depth > 0 ? { 'data-reply-prefill': formatQuoteReplyPrefill(comment) } : {})}
     >
       {lineRangeLabel ? <p className='gprv-review-line-range'>{lineRangeLabel}</p> : null}
       <article className='gprv-review-comment'>
@@ -304,7 +316,6 @@ const CommentReplySlot = memo(function CommentReplySlot({
           ) : isEditing && onEdit ? (
             <ReviewCommentEditComposer
               comment={comment}
-              hasToken={hasToken}
               onCancel={() => setIsEditing(false)}
               onSave={handleSaveEdit}
             />
@@ -338,8 +349,6 @@ const CommentReplySlot = memo(function CommentReplySlot({
           <ReviewReplyComposer
             pullRequestRef={pullRequestRef}
             inReplyToId={rootCommentId}
-            viewerUser={viewerUser}
-            hasToken={hasToken}
             onCancel={() => onReplyClose(replyKey)}
             onSuccess={(postedComment) => onReplySuccess(postedComment, replyKey)}
           />

@@ -38,17 +38,11 @@ import {
   writeDiffLayoutPreference,
   type DiffLayout,
 } from '@/lib/diff/layout-prefs';
-import {
-  getGitHubToken,
-  type GitHubPullRequestReviewComment,
-  type PullRequestDiffData,
-} from '@/lib/github/api';
+import { type GitHubPullRequestReviewComment, type PullRequestDiffData } from '@/lib/github/api';
 import {
   deleteReviewComment,
-  fetchGitHubViewer,
   GitHubReviewWriteError,
   updateReviewComment,
-  type GitHubViewer,
 } from '@/lib/github/review-write';
 import {
   buildReviewCommentCountByPath,
@@ -62,12 +56,14 @@ import {
   closeReplyComposer,
   openReplySession,
 } from '@/lib/review/reply-session';
+import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
+import { useSidebarContext } from '@/providers/SidebarContext';
 
+import { OrphanedReviewCommentsBadge } from '../review/OrphanedReviewCommentsBadge';
+import { ReviewCommentComposer } from '../review/ReviewCommentComposer';
+import { ReviewCommentThread, getReviewReplyKey } from '../review/ReviewCommentThread';
 import { DiffOverlayHeader } from './DiffOverlayHeader';
 import { FileTreePanel } from './FileTreePanel';
-import { OrphanedReviewCommentsBadge } from './OrphanedReviewCommentsBadge';
-import { ReviewCommentComposer } from './ReviewCommentComposer';
-import { ReviewCommentThread, getReviewReplyKey } from './ReviewCommentThread';
 
 type DiffOverlayProps = {
   data: PullRequestDiffData;
@@ -88,11 +84,8 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const [selectedLines, setSelectedLines] = useState<CodeViewLineSelection | null>(null);
   const [hoveredThreadSelection, setHoveredThreadSelection] =
     useState<CodeViewLineSelection | null>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [diffLayout, setDiffLayout] = useState<DiffLayout>(DEFAULT_DIFF_LAYOUT);
   const [liveReviewComments, setLiveReviewComments] = useState(data.reviewComments);
-  const [viewerUser, setViewerUser] = useState<GitHubViewer | null>(null);
-  const [hasToken, setHasToken] = useState(false);
 
   selectedLinesRef.current = selectedLines;
   hoveredThreadSelectionRef.current = hoveredThreadSelection;
@@ -124,31 +117,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     };
   }, []);
 
-  useEffect(() => {
-    let isCancelled = false;
-
-    void (async () => {
-      const token = await getGitHubToken();
-      if (isCancelled) {
-        return;
-      }
-
-      setHasToken(token != null);
-      if (!token) {
-        setViewerUser(null);
-        return;
-      }
-
-      const viewer = await fetchGitHubViewer();
-      if (!isCancelled) {
-        setViewerUser(viewer);
-      }
-    })();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
+  const { isSidebarCollapsed } = useSidebarContext();
 
   const augmentedData = useMemo(
     () => ({
@@ -513,10 +482,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     [codeViewThemeType],
   );
 
-  const handleToggleSidebar = useCallback(() => {
-    setIsSidebarCollapsed((collapsed) => !collapsed);
-  }, []);
-
   const updateDiffLayout = useCallback((nextLayout: DiffLayout) => {
     setDiffLayout(nextLayout);
     void writeDiffLayoutPreference(nextLayout);
@@ -616,8 +581,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
             range={metadata.range}
             pullRequestRef={data.ref}
             commitId={data.pullRequest.head.sha}
-            viewerUser={viewerUser}
-            hasToken={hasToken}
             onCancel={() => handleCancelDraft(item.id, metadata.draftId, metadata.range)}
             onSuccess={(comment) =>
               handleImmediateCommentSuccess(item.id, comment, metadata.draftId, metadata.range)
@@ -631,8 +594,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
           annotation={annotation}
           itemId={item.id}
           pullRequestRef={data.ref}
-          viewerUser={viewerUser}
-          hasToken={hasToken}
           onReplyOpen={handleReplyOpen}
           onReplyClose={handleReplyClose}
           onReplySuccess={(comment, replyKey) => handleReplySuccess(item.id, comment, replyKey)}
@@ -655,8 +616,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       handleReplySuccess,
       handleThreadHighlight,
       handleThreadHighlightClear,
-      hasToken,
-      viewerUser,
     ],
   );
 
@@ -672,8 +631,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
           threads={orphanedThreads}
           itemId={item.id}
           pullRequestRef={data.ref}
-          viewerUser={viewerUser}
-          hasToken={hasToken}
           onReplyOpen={handleReplyOpen}
           onReplyClose={handleReplyClose}
           onReplySuccess={(comment, replyKey) =>
@@ -695,8 +652,6 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       handleReplySuccess,
       handleThreadHighlight,
       handleThreadHighlightClear,
-      hasToken,
-      viewerUser,
     ],
   );
 
@@ -720,79 +675,79 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         <DiffOverlayHeader
           pullRequest={data.pullRequest}
           diffLayout={diffLayout}
-          isSidebarCollapsed={isSidebarCollapsed}
           reviewCommentsLoadError={data.reviewCommentsLoadError}
-          onToggleSidebar={handleToggleSidebar}
           onDiffLayoutChange={updateDiffLayout}
           onClose={onClose}
           themeStyle={treeThemeStyles}
         />
 
-        <div className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}>
-          {isSidebarCollapsed ? null : (
-            <aside className='gprv-sidebar'>
-              {data.files.length > 0 && codeViewItems ? (
-                <FileTreePanel
-                  files={data.files}
-                  selectedPath={selectedPath}
-                  reviewCommentCountByPath={reviewCommentCountByPath}
-                  onSelectPath={handleTreeSelect}
+        <GitHubAuthProvider>
+          <div className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}>
+            {isSidebarCollapsed ? null : (
+              <aside className='gprv-sidebar'>
+                {data.files.length > 0 && codeViewItems ? (
+                  <FileTreePanel
+                    files={data.files}
+                    selectedPath={selectedPath}
+                    reviewCommentCountByPath={reviewCommentCountByPath}
+                    onSelectPath={handleTreeSelect}
+                  />
+                ) : (
+                  <div className='gprv-state'>
+                    {isBuilding ? 'Building file list…' : 'No changed files found.'}
+                  </div>
+                )}
+              </aside>
+            )}
+
+            <div
+              ref={codeViewHostRef}
+              className='gprv-code-view-host'
+            >
+              {codeViewBuildError ? (
+                <div
+                  className='gprv-state'
+                  style={{ color: 'var(--gprv-error)' }}
+                >
+                  {codeViewBuildError}
+                </div>
+              ) : isCodeViewMounted && codeViewItems ? (
+                <CodeView<ReviewAnnotationMetadata>
+                  ref={viewerRef}
+                  containerRef={handleCodeViewContainer}
+                  initialItems={codeViewItems.items}
+                  className='gprv-code-view'
+                  style={codeViewStyle}
+                  renderAnnotation={renderReviewAnnotation}
+                  renderHeaderMetadata={renderReviewHeaderMetadata}
+                  options={codeViewOptionsWithInteractions ?? codeViewOptions}
+                  selectedLines={hoveredThreadSelection ?? selectedLines}
+                  onSelectedLinesChange={handleSelectedLinesChange}
                 />
               ) : (
                 <div className='gprv-state'>
-                  {isBuilding ? 'Building file list…' : 'No changed files found.'}
+                  {isBuilding ? (
+                    'Building diff…'
+                  ) : (
+                    <div
+                      className='gprv-loading-panel'
+                      role='status'
+                      aria-live='polite'
+                      aria-label='Preparing diff viewer'
+                    >
+                      <IconLoader
+                        size={48}
+                        stroke={2}
+                        className='gprv-loading-spinner'
+                      />
+                      <p className='gprv-loading-summary'>Preparing diff viewer…</p>
+                    </div>
+                  )}
                 </div>
               )}
-            </aside>
-          )}
-
-          <div
-            ref={codeViewHostRef}
-            className='gprv-code-view-host'
-          >
-            {codeViewBuildError ? (
-              <div
-                className='gprv-state'
-                style={{ color: 'var(--gprv-error)' }}
-              >
-                {codeViewBuildError}
-              </div>
-            ) : isCodeViewMounted && codeViewItems ? (
-              <CodeView<ReviewAnnotationMetadata>
-                ref={viewerRef}
-                containerRef={handleCodeViewContainer}
-                initialItems={codeViewItems.items}
-                className='gprv-code-view'
-                style={codeViewStyle}
-                renderAnnotation={renderReviewAnnotation}
-                renderHeaderMetadata={renderReviewHeaderMetadata}
-                options={codeViewOptionsWithInteractions ?? codeViewOptions}
-                selectedLines={hoveredThreadSelection ?? selectedLines}
-                onSelectedLinesChange={handleSelectedLinesChange}
-              />
-            ) : (
-              <div className='gprv-state'>
-                {isBuilding ? (
-                  'Building diff…'
-                ) : (
-                  <div
-                    className='gprv-loading-panel'
-                    role='status'
-                    aria-live='polite'
-                    aria-label='Preparing diff viewer'
-                  >
-                    <IconLoader
-                      size={48}
-                      stroke={2}
-                      className='gprv-loading-spinner'
-                    />
-                    <p className='gprv-loading-summary'>Preparing diff viewer…</p>
-                  </div>
-                )}
-              </div>
-            )}
+            </div>
           </div>
-        </div>
+        </GitHubAuthProvider>
       </section>
     </>
   );

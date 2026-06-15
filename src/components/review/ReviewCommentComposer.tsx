@@ -2,20 +2,15 @@ import type { SelectedLineRange } from '@pierre/diffs';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
-import {
-  createImmediateReviewComment,
-  GitHubReviewWriteError,
-  type GitHubViewer,
-} from '@/lib/github/review-write';
+import { createImmediateReviewComment, GitHubReviewWriteError } from '@/lib/github/review-write';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
+import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 
 type ReviewCommentComposerProps = {
   path: string;
   range: SelectedLineRange;
   pullRequestRef: GitHubPullRequestRef;
   commitId: string;
-  viewerUser: GitHubViewer | null;
-  hasToken: boolean;
   onCancel: () => void;
   onSuccess: (comment: GitHubPullRequestReviewComment) => void;
 };
@@ -25,11 +20,10 @@ export function ReviewCommentComposer({
   range,
   pullRequestRef,
   commitId,
-  viewerUser,
-  hasToken,
   onCancel,
   onSuccess,
 }: ReviewCommentComposerProps) {
+  const { viewerUser, hasToken } = useGitHubAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);

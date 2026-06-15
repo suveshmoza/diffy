@@ -6,15 +6,13 @@ type ErrorOverlayProps = {
   message: string;
   onRetry: () => void;
   onClose: () => void;
-  theme: 'light' | 'dark';
 };
 
-export function ErrorOverlay({ message, onRetry, onClose, theme }: ErrorOverlayProps) {
+export function ErrorOverlay({ message, onRetry, onClose }: ErrorOverlayProps) {
   return (
     <ChromeModal
       title='Unable to load PR diff'
       onClose={onClose}
-      theme={theme}
     >
       <div className='gprv-modal-body'>
         <div className='gprv-error-panel'>

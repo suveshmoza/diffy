@@ -2,17 +2,14 @@ import type { CodeViewLineSelection, LineAnnotation } from '@pierre/diffs';
 import { memo, useMemo } from 'react';
 
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
-import type { GitHubViewer } from '@/lib/github/review-write';
 import type { ReviewThreadMetadata } from '@/lib/review/comments';
 
-import { ReviewCommentThread } from './ReviewCommentThread';
+import { HeaderReviewCommentThread } from './ReviewCommentThread';
 
 type OrphanedReviewCommentsBadgeProps = {
   threads: ReviewThreadMetadata[];
   itemId: string;
   pullRequestRef: GitHubPullRequestRef;
-  viewerUser: GitHubViewer | null;
-  hasToken: boolean;
   onReplyOpen: (replyKey: string) => void;
   onReplyClose: (replyKey: string) => void;
   onReplySuccess: (comment: GitHubPullRequestReviewComment, replyKey: string) => void;
@@ -26,8 +23,6 @@ export const OrphanedReviewCommentsBadge = memo(function OrphanedReviewCommentsB
   threads,
   itemId,
   pullRequestRef,
-  viewerUser,
-  hasToken,
   onReplyOpen,
   onReplyClose,
   onReplySuccess,
@@ -64,14 +59,11 @@ export const OrphanedReviewCommentsBadge = memo(function OrphanedReviewCommentsB
         {commentCount} outdated
       </span>
       {threadAnnotations.map(({ thread, annotation }) => (
-        <ReviewCommentThread
+        <HeaderReviewCommentThread
           key={thread.comments[0]?.id ?? thread.comments.map((comment) => comment.id).join('-')}
           annotation={annotation}
           itemId={itemId}
-          variant='header'
           pullRequestRef={pullRequestRef}
-          viewerUser={viewerUser}
-          hasToken={hasToken}
           onReplyOpen={onReplyOpen}
           onReplyClose={onReplyClose}
           onReplySuccess={onReplySuccess}

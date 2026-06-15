@@ -2,20 +2,20 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 're
 
 import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { GitHubReviewWriteError } from '@/lib/github/review-write';
+import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 
 type ReviewCommentEditComposerProps = {
   comment: GitHubPullRequestReviewComment;
-  hasToken: boolean;
   onCancel: () => void;
   onSave: (body: string) => void | Promise<void>;
 };
 
 export function ReviewCommentEditComposer({
   comment,
-  hasToken,
   onCancel,
   onSave,
 }: ReviewCommentEditComposerProps) {
+  const { hasToken } = useGitHubAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState(comment.body);
   const [error, setError] = useState<string | null>(null);

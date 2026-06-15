@@ -1,9 +1,9 @@
 import { createRoot, type Root } from 'react-dom/client';
 
-import { App } from '@/components/App';
-import { PersistentWorkerPoolShell } from '@/components/PersistentWorkerPoolShell';
+import { App } from '@/components/app/App';
 import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github/api';
 import { DiffThemeProvider } from '@/providers/DiffThemeProvider';
+import { PersistentWorkerPoolShell } from '@/providers/PersistentWorkerPoolShell';
 import { ResolvedThemeProvider } from '@/providers/ResolvedThemeProvider';
 
 export type MountOverlayOptions = {

@@ -4,15 +4,13 @@ import { ChromeModal } from './ChromeModal';
 
 type LoadingOverlayProps = {
   onClose: () => void;
-  theme: 'light' | 'dark';
 };
 
-export function LoadingOverlay({ onClose, theme }: LoadingOverlayProps) {
+export function LoadingOverlay({ onClose }: LoadingOverlayProps) {
   return (
     <ChromeModal
       title='Loading PR diff…'
       onClose={onClose}
-      theme={theme}
     >
       <div className='gprv-modal-body gprv-modal-body-centered'>
         <div

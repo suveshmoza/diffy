@@ -1,17 +1,12 @@
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
 
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
-import {
-  createReviewCommentReply,
-  GitHubReviewWriteError,
-  type GitHubViewer,
-} from '@/lib/github/review-write';
+import { createReviewCommentReply, GitHubReviewWriteError } from '@/lib/github/review-write';
+import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 
 type ReviewReplyComposerProps = {
   pullRequestRef: GitHubPullRequestRef;
   inReplyToId: number;
-  viewerUser: GitHubViewer | null;
-  hasToken: boolean;
   onCancel: () => void;
   onSuccess: (comment: GitHubPullRequestReviewComment) => void;
 };
@@ -19,11 +14,10 @@ type ReviewReplyComposerProps = {
 export function ReviewReplyComposer({
   pullRequestRef,
   inReplyToId,
-  viewerUser,
-  hasToken,
   onCancel,
   onSuccess,
 }: ReviewReplyComposerProps) {
+  const { viewerUser, hasToken } = useGitHubAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

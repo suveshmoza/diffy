@@ -1,13 +1,16 @@
 import type { ReactNode } from 'react';
 
+import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
+
 type ChromeModalProps = {
   title: string;
   children: ReactNode;
   onClose: () => void;
-  theme?: 'light' | 'dark';
 };
 
-export function ChromeModal({ title, children, onClose, theme }: ChromeModalProps) {
+export function ChromeModal({ title, children, onClose }: ChromeModalProps) {
+  const { colorScheme } = useDiffThemeContext();
+
   return (
     <>
       <div
@@ -16,7 +19,7 @@ export function ChromeModal({ title, children, onClose, theme }: ChromeModalProp
       />
       <section
         className='gprv-modal'
-        data-theme={theme}
+        data-theme={colorScheme}
         role='dialog'
         aria-modal='true'
         aria-label={title}
