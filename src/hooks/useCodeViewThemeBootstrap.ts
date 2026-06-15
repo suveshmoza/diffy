@@ -1,10 +1,10 @@
 import type { CodeViewOptions } from '@pierre/diffs';
 import { useEffect, useMemo, useState } from 'react';
 
-import type { DiffLayout } from '@/lib/diff-layout-prefs';
-import { diffThemeType } from '@/lib/diff-themes';
-import { getCodeViewUnsafeCss, getFallbackCodeViewUnsafeCss } from '@/lib/resolve-diff-theme';
-import type { ReviewAnnotationMetadata } from '@/lib/review-comments';
+import type { DiffLayout } from '@/lib/diff/layout-prefs';
+import { diffThemeType } from '@/lib/diff/themes/prefs';
+import { getCodeViewUnsafeCss, getFallbackCodeViewUnsafeCss } from '@/lib/diff/themes/resolve';
+import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 
 type UseCodeViewThemeBootstrapOptions = {

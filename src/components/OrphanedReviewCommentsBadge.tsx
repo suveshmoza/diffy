@@ -1,9 +1,9 @@
 import type { CodeViewLineSelection, LineAnnotation } from '@pierre/diffs';
 import { memo, useMemo } from 'react';
 
-import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github';
-import type { GitHubViewer } from '@/lib/github-review-write';
-import type { ReviewThreadMetadata } from '@/lib/review-comments';
+import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
+import type { GitHubViewer } from '@/lib/github/review-write';
+import type { ReviewThreadMetadata } from '@/lib/review/comments';
 
 import { ReviewCommentThread } from './ReviewCommentThread';
 

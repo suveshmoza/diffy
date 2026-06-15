@@ -5,8 +5,9 @@ import {
   type GitStatusEntry,
 } from '@pierre/trees';
 
-import { formatReviewCommentDecorationTitle } from './file-tree-comment-badge';
-import type { GitHubPullRequestFile } from './github';
+import type { GitHubPullRequestFile } from '@/lib/github/api';
+
+import { formatReviewCommentDecorationTitle } from './comment-badge';
 
 export type PreparedFileTreeInput = {
   annotationsByPath: Map<string, FileTreeRowDecoration>;

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
-import { invalidateCodeViewItemsCache } from '@/lib/build-code-view-items';
-import { diffThemeType } from '@/lib/diff-themes';
+import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
+import { diffThemeType } from '@/lib/diff/themes/prefs';
 import {
   fetchCachedPullRequestDiffData,
   invalidatePullRequestDiffCache,
   parseGitHubPullRequestUrl,
   type PullRequestDiffData,
-} from '@/lib/github';
+} from '@/lib/github/api';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 import { useResolvedThemeContext } from '@/providers/ResolvedThemeProvider';
 

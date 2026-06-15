@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
-import type { GitHubPullRequestReviewComment } from '@/lib/github';
-import { GitHubReviewWriteError } from '@/lib/github-review-write';
+import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
+import { GitHubReviewWriteError } from '@/lib/github/review-write';
 
 type ReviewCommentEditComposerProps = {
   comment: GitHubPullRequestReviewComment;

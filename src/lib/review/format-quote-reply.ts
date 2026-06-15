@@ -1,4 +1,4 @@
-import type { GitHubPullRequestReviewComment } from '@/lib/github';
+import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 
 export function formatQuoteReplyPrefill(comment: GitHubPullRequestReviewComment): string {
   const quotedBody = comment.body

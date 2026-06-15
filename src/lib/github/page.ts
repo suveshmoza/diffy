@@ -1,4 +1,4 @@
-import { parseCurrentPullRequestUrl, parseGitHubPullRequestUrl } from './github';
+import { parseCurrentPullRequestUrl, parseGitHubPullRequestUrl } from './api';
 
 const BUTTON_ID = 'github-pr-viewer-button';
 const BUTTON_HOST_ID = 'github-pr-viewer-button-host';

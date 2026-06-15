@@ -4,7 +4,7 @@ import {
   getGitHubToken,
   type GitHubPullRequestRef,
   type GitHubPullRequestReviewComment,
-} from './github';
+} from './api';
 
 export type GitHubViewer = {
   login: string;

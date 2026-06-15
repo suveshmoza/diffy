@@ -1,4 +1,4 @@
-import type { ResolvedDiffTheme } from '@/lib/resolve-diff-theme';
+import type { ResolvedDiffTheme } from '@/lib/diff/themes/resolve';
 import type { ThemeColorScheme } from '@/lib/theming/activeThemeSnapshot';
 import { treeThemeProps } from '@/lib/theming/treeThemeProps';
 

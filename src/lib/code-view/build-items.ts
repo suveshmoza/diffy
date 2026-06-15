@@ -5,12 +5,12 @@ import {
   getPullRequestContentCacheKey,
   type GitHubPullRequestFile,
   type PullRequestDiffData,
-} from './github';
+} from '@/lib/github/api';
 import {
   attachReviewCommentsToItems,
   mapReviewCommentsToItems,
   type ReviewAnnotationMetadata,
-} from './review-comments';
+} from '@/lib/review/comments';
 
 export type CodeViewItemsResult = {
   items: CodeViewItem<ReviewAnnotationMetadata>[];

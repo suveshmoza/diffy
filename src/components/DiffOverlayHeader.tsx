@@ -8,9 +8,9 @@ import {
 } from '@tabler/icons-react';
 import { memo, useCallback, useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 
-import type { DiffLayout } from '@/lib/diff-layout-prefs';
-import { DIFF_THEMES } from '@/lib/diff-themes';
-import type { GitHubPullRequest } from '@/lib/github';
+import type { DiffLayout } from '@/lib/diff/layout-prefs';
+import { DIFF_THEMES } from '@/lib/diff/themes/prefs';
+import type { GitHubPullRequest } from '@/lib/github/api';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 
 type DiffOverlayHeaderProps = {

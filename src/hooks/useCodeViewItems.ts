@@ -4,8 +4,8 @@ import {
   buildCodeViewItems,
   isLargePullRequestData,
   type CodeViewItemsResult,
-} from '@/lib/build-code-view-items';
-import type { PullRequestDiffData } from '@/lib/github';
+} from '@/lib/code-view/build-items';
+import type { PullRequestDiffData } from '@/lib/github/api';
 
 type UseCodeViewItemsState = {
   result: CodeViewItemsResult | null;

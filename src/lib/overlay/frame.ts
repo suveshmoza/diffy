@@ -1,10 +1,9 @@
+import { getOrCreateOverlayRoot, hideOverlayRoot, removeOverlayRoot } from '@/lib/github/page';
 import {
   OVERLAY_PARENT_SOURCE,
   isOverlayFrameMessage,
   type OverlayHostMessage,
-} from '@/lib/overlay-messages';
-
-import { getOrCreateOverlayRoot, hideOverlayRoot, removeOverlayRoot } from './github-page';
+} from '@/lib/overlay/messages';
 
 const OVERLAY_PAGE_PATH = '/overlay.html';
 const FRAME_ID = 'github-pr-viewer-frame';

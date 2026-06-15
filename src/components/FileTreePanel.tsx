@@ -16,13 +16,13 @@ import { useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
 import {
   buildCommentBadgeCountCss,
   FILE_TREE_REVIEW_COMMENT_TITLE_MARKER,
-} from '@/lib/file-tree-comment-badge';
+} from '@/lib/file-tree/comment-badge';
 import {
   FILE_TREE_COMMENT_ICON_MASK_URL,
   FILE_TREE_COMMENT_ICON_SIZE,
-} from '@/lib/file-tree-comment-icon';
-import { createFileTreeInput } from '@/lib/file-tree-input';
-import type { GitHubPullRequestFile } from '@/lib/github';
+} from '@/lib/file-tree/comment-icon';
+import { createFileTreeInput } from '@/lib/file-tree/input';
+import type { GitHubPullRequestFile } from '@/lib/github/api';
 
 const TREE_INITIAL_VISIBLE_ROW_COUNT = 80;
 const TREE_OVERSCAN = 12;

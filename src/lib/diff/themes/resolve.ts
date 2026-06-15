@@ -1,7 +1,10 @@
 import type { DiffsThemeNames } from '@pierre/diffs';
 import { resolveTheme } from '@pierre/diffs';
 
-import { buildCodeViewUnsafeCss, buildFallbackCodeViewUnsafeCss } from '@/lib/code-view-unsafe-css';
+import {
+  buildCodeViewUnsafeCss,
+  buildFallbackCodeViewUnsafeCss,
+} from '@/lib/diff/themes/unsafe-css';
 
 export type ResolvedDiffTheme = Awaited<ReturnType<typeof resolveTheme>>;
 

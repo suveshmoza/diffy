@@ -2,7 +2,7 @@ import type { DiffsThemeNames } from '@pierre/diffs';
 import { resolveTheme } from '@pierre/diffs';
 import diffsBaseCSS from '@pierre/diffs/dist/style.js';
 
-import { diffThemeType } from '@/lib/diff-themes';
+import { diffThemeType } from '@/lib/diff/themes/prefs';
 
 const BASE_UNSAFE_CSS = diffsBaseCSS;
 

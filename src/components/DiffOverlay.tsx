@@ -17,7 +17,7 @@ import { useTreeThemeStyles, pickTreeThemeCustomProperties } from '@/hooks/useTr
 import {
   getCodeViewItemIdForFile,
   invalidateCodeViewItemsCache,
-} from '@/lib/build-code-view-items';
+} from '@/lib/code-view/build-items';
 import {
   addDraftAnnotation,
   appendReplyToThreadAnnotation,
@@ -27,41 +27,41 @@ import {
   removeDraftAnnotation,
   replaceDraftWithThreadAnnotation,
   updateCommentInAnnotation,
-} from '@/lib/code-view-review-mutations';
+} from '@/lib/code-view/review-mutations';
 import {
   runCodeViewMutationPreservingScroll,
   deferCodeViewControlledSync,
-} from '@/lib/code-view-scroll-anchor';
+} from '@/lib/code-view/scroll-anchor';
 import {
   DEFAULT_DIFF_LAYOUT,
   readDiffLayoutPreference,
   writeDiffLayoutPreference,
   type DiffLayout,
-} from '@/lib/diff-layout-prefs';
+} from '@/lib/diff/layout-prefs';
 import {
   getGitHubToken,
   type GitHubPullRequestReviewComment,
   type PullRequestDiffData,
-} from '@/lib/github';
+} from '@/lib/github/api';
 import {
   deleteReviewComment,
   fetchGitHubViewer,
   GitHubReviewWriteError,
   updateReviewComment,
   type GitHubViewer,
-} from '@/lib/github-review-write';
-import {
-  bindReplySession,
-  closeAllReplyComposers,
-  closeReplyComposer,
-  openReplySession,
-} from '@/lib/reply-session';
+} from '@/lib/github/review-write';
 import {
   buildReviewCommentCountByPath,
   getItemPath,
   type ReviewAnnotationMetadata,
   type ReviewThreadMetadata,
-} from '@/lib/review-comments';
+} from '@/lib/review/comments';
+import {
+  bindReplySession,
+  closeAllReplyComposers,
+  closeReplyComposer,
+  openReplySession,
+} from '@/lib/review/reply-session';
 
 import { DiffOverlayHeader } from './DiffOverlayHeader';
 import { FileTreePanel } from './FileTreePanel';

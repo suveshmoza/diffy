@@ -3,7 +3,7 @@ import {
   installViewDiffButton,
   isPullRequestPage,
   uninstallViewDiffButton,
-} from '@/lib/github-page';
+} from '@/lib/github/page';
 import {
   destroyOverlayFrame,
   hideOverlayFrame,
@@ -11,7 +11,7 @@ import {
   preloadOverlayFrame,
   prefetchOverlayFrame,
   setOverlayCloseHandler,
-} from '@/lib/overlay-frame';
+} from '@/lib/overlay/frame';
 
 import './style.css';
 

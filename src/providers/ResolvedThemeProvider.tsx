@@ -1,8 +1,8 @@
 import type { DiffsThemeNames } from '@pierre/diffs';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { diffThemeType } from '@/lib/diff-themes';
-import { getResolvedDiffTheme, type ResolvedDiffTheme } from '@/lib/resolve-diff-theme';
+import { diffThemeType } from '@/lib/diff/themes/prefs';
+import { getResolvedDiffTheme, type ResolvedDiffTheme } from '@/lib/diff/themes/resolve';
 import type { ThemeColorScheme } from '@/lib/theming/activeThemeSnapshot';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 

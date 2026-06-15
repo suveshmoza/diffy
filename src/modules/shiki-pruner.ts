@@ -4,8 +4,8 @@ import { resolve } from 'node:path';
 import { bundledLanguages, bundledThemes } from 'shiki';
 import { defineWxtModule } from 'wxt/modules';
 
-import blockedLangIds from '../lib/diff-blocked-lang-ids.json' with { type: 'json' };
-import themeIds from '../lib/diff-theme-ids.json' with { type: 'json' };
+import blockedLangIds from '../lib/diff/blocked-lang-ids.json' with { type: 'json' };
+import themeIds from '../lib/diff/themes/ids.json' with { type: 'json' };
 
 /** Shiki chunk stems that alias to a canonical lang id. */
 const DIFF_LANG_ALIASES: Record<string, string> = {
@@ -87,7 +87,7 @@ async function syncWorkerLangIds(
   logger: { info: (msg: string) => void },
 ): Promise<void> {
   const langIds = computeWorkerLangIds();
-  const outPath = resolve(wxtRoot, './src/lib/diff-lang-ids.json');
+  const outPath = resolve(wxtRoot, './src/lib/diff/lang-ids.json');
   const next = `${JSON.stringify(langIds, null, 2)}\n`;
   const current = await readFile(outPath, 'utf-8').catch(() => null);
   if (current === next) {
@@ -95,7 +95,7 @@ async function syncWorkerLangIds(
   }
 
   await writeFile(outPath, next, 'utf-8');
-  logger.info(`\`[shiki-pruner]\` Updated diff-lang-ids.json (${langIds.length} langs).`);
+  logger.info(`\`[shiki-pruner]\` Updated lang-ids.json (${langIds.length} langs).`);
 }
 
 async function pruneUnusedShikiChunks(

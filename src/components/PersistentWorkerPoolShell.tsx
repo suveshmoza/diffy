@@ -2,8 +2,8 @@ import type { DiffsThemeNames } from '@pierre/diffs';
 import { WorkerPoolContextProvider } from '@pierre/diffs/react';
 import { useMemo, useState, type ReactNode } from 'react';
 
-import { DIFF_LANG_IDS } from '@/lib/diff-lang-ids';
-import { workerFactory } from '@/lib/diff-worker';
+import { DIFF_LANG_IDS } from '@/lib/diff/lang-ids';
+import { workerFactory } from '@/lib/diff/worker';
 import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
 import { WorkerPoolSyncedThemeProvider } from '@/providers/WorkerPoolSyncedThemeContext';
 

@@ -2,7 +2,7 @@ import { createRoot, type Root } from 'react-dom/client';
 
 import { App } from '@/components/App';
 import { PersistentWorkerPoolShell } from '@/components/PersistentWorkerPoolShell';
-import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github';
+import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github/api';
 import { DiffThemeProvider } from '@/providers/DiffThemeProvider';
 import { ResolvedThemeProvider } from '@/providers/ResolvedThemeProvider';
 

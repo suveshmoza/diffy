@@ -15,7 +15,7 @@ import {
   normalizeDiffTheme,
   readDiffTheme,
   writeDiffTheme,
-} from '@/lib/diff-themes';
+} from '@/lib/diff/themes/prefs';
 import type { ThemeColorScheme } from '@/lib/theming/activeThemeSnapshot';
 
 const STORAGE_KEY = 'diffTheme';

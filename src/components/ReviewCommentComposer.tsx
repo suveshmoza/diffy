@@ -1,13 +1,13 @@
 import type { SelectedLineRange } from '@pierre/diffs';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
-import { formatSelectedLineRangeLabel } from '@/lib/format-line-range';
-import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github';
+import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
 import {
   createImmediateReviewComment,
   GitHubReviewWriteError,
   type GitHubViewer,
-} from '@/lib/github-review-write';
+} from '@/lib/github/review-write';
+import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
 
 type ReviewCommentComposerProps = {
   path: string;

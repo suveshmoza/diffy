@@ -2,19 +2,19 @@ import type { CodeViewLineSelection, DiffLineAnnotation, LineAnnotation } from '
 import { IconMessageCircle } from '@tabler/icons-react';
 import { memo, useCallback, useState } from 'react';
 
-import {
-  formatReviewCommentLineLabel,
-  reviewCommentToSelectedLineRange,
-} from '@/lib/format-line-range';
-import { formatQuoteReplyPrefill } from '@/lib/format-quote-reply';
-import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github';
-import { renderGitHubCommentBody } from '@/lib/github-comment-markdown';
-import type { GitHubViewer } from '@/lib/github-review-write';
+import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
+import { renderGitHubCommentBody } from '@/lib/github/comments/markdown';
+import type { GitHubViewer } from '@/lib/github/review-write';
 import {
   formatReviewCommentHiddenLabel,
   isReviewCommentHidden,
   type ReviewAnnotationMetadata,
-} from '@/lib/review-comments';
+} from '@/lib/review/comments';
+import {
+  formatReviewCommentLineLabel,
+  reviewCommentToSelectedLineRange,
+} from '@/lib/review/format-line-range';
+import { formatQuoteReplyPrefill } from '@/lib/review/format-quote-reply';
 
 import { ReviewCommentEditComposer } from './ReviewCommentEditComposer';
 import { ReviewReplyComposer } from './ReviewReplyComposer';

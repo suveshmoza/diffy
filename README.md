@@ -70,16 +70,13 @@ diffy/
 │   │   └── popup/               # Extension popup (GitHub token settings)
 │   ├── hooks/                   # React hooks (CodeView, themes, worker pool readiness)
 │   ├── lib/                     # Core logic
-│   │   ├── github.ts            # GitHub API client, caching, prefetch
-│   │   ├── github-review-write.ts # Post, reply, edit, and delete review comments
-│   │   ├── build-code-view-items.ts # PR patches → Pierre CodeView items
-│   │   ├── diff-worker.ts       # Web worker pool for diff rendering
-│   │   ├── review-comments.ts   # Review thread grouping and annotations
-│   │   ├── diff-themes.ts       # Theme list and storage
-│   │   ├── diff-theme-ids.json  # Theme picker allowlist (12 themes)
-│   │   ├── diff-blocked-lang-ids.json # Syntax langs to exclude from the bundle
-│   │   ├── diff-lang-ids.json   # Auto-generated worker lang list (do not edit)
-│   │   └── theming/             # Tree and CodeView theme resolution
+│   │   ├── github/              # GitHub API, page integration, comment rendering
+│   │   ├── overlay/             # Content script ↔ iframe messaging
+│   │   ├── diff/                # Worker, languages, themes, layout prefs
+│   │   ├── code-view/           # PR patches → Pierre CodeView items
+│   │   ├── review/              # Review threads, formatting, reply UI
+│   │   ├── file-tree/           # File tree panel helpers
+│   │   └── theming/             # Tree chrome theme resolution
 │   ├── modules/
 │   │   └── shiki-pruner.ts      # Prunes unused Shiki chunks after production builds
 │   ├── providers/               # React context (diff theme, resolved theme, worker sync)
@@ -157,22 +154,22 @@ Syntax highlighting is powered by [Shiki](https://shiki.style/) via Pierre Diffs
 
 ### Files
 
-| File                                 | Editable?               | Role                                                                            |
-| ------------------------------------ | ----------------------- | ------------------------------------------------------------------------------- |
-| `src/lib/diff-blocked-lang-ids.json` | **Yes**                 | Language ids to **exclude** from the worker and production bundle               |
-| `src/lib/diff-lang-ids.json`         | **No — auto-generated** | Language ids the diff worker loads at runtime                                   |
-| `src/lib/diff-lang-ids.ts`           | No                      | Typed re-export of `diff-lang-ids.json` for app code                            |
-| `src/modules/shiki-pruner.ts`        | No                      | Regenerates `diff-lang-ids.json` and prunes unused Shiki chunks on `pnpm build` |
+| File                                 | Editable?               | Role                                                                       |
+| ------------------------------------ | ----------------------- | -------------------------------------------------------------------------- |
+| `src/lib/diff/blocked-lang-ids.json` | **Yes**                 | Language ids to **exclude** from the worker and production bundle          |
+| `src/lib/diff/lang-ids.json`         | **No — auto-generated** | Language ids the diff worker loads at runtime                              |
+| `src/lib/diff/lang-ids.ts`           | No                      | Typed re-export of `lang-ids.json` for app code                            |
+| `src/modules/shiki-pruner.ts`        | No                      | Regenerates `lang-ids.json` and prunes unused Shiki chunks on `pnpm build` |
 
-On every production build, `shiki-pruner` reads the blocklist, computes **all Shiki bundled languages minus blocked**, writes the result to `src/lib/diff-lang-ids.json`, and removes unneeded grammar chunks from the output zip.
+On every production build, `shiki-pruner` reads the blocklist, computes **all Shiki bundled languages minus blocked**, writes the result to `src/lib/diff/lang-ids.json`, and removes unneeded grammar chunks from the output zip.
 
-**Do not edit `src/lib/diff-lang-ids.json` by hand** — changes will be overwritten on the next build.
+**Do not edit `src/lib/diff/lang-ids.json` by hand** — changes will be overwritten on the next build.
 
 Language ids are [Shiki language ids](https://shiki.style/languages) (e.g. `python`, `typescript`, `shell`, `dockerfile`).
 
 ### Add a language
 
-1. Open `src/lib/diff-blocked-lang-ids.json`.
+1. Open `src/lib/diff/blocked-lang-ids.json`.
 2. **Remove** the language id you want to support (keep the JSON array valid and sorted if you like).
 3. Rebuild:
 
@@ -182,11 +179,11 @@ Language ids are [Shiki language ids](https://shiki.style/languages) (e.g. `pyth
 
 4. Reload the unpacked extension.
 
-The new language is included in `src/lib/diff-lang-ids.json`, loaded by the diff worker, and its grammar chunk is kept in the bundle.
+The new language is included in `src/lib/diff/lang-ids.json`, loaded by the diff worker, and its grammar chunk is kept in the bundle.
 
 ### Remove a language
 
-1. Open `src/lib/diff-blocked-lang-ids.json`.
+1. Open `src/lib/diff/blocked-lang-ids.json`.
 2. **Add** the language id to the array.
 3. Rebuild with `pnpm build` and reload the extension.
 
@@ -194,11 +191,11 @@ Removing a language shrinks the zip; keeping the blocklist lean helps stay under
 
 ### Themes
 
-Syntax **themes** are configured separately in `src/lib/diff-theme-ids.json`. The theme picker currently exposes **12 themes**:
+Syntax **themes** are configured separately in `src/lib/diff/themes/ids.json`. The theme picker currently exposes **12 themes**:
 
 `pierre-dark`, `pierre-light`, `github-dark`, `github-light`, `catppuccin-mocha`, `catppuccin-latte`, `dracula`, `one-dark-pro`, `nord`, `tokyo-night`, `everforest-dark`, `everforest-light`
 
-To add or remove a theme, edit `src/lib/diff-theme-ids.json` and rebuild. Theme changes do not go through the language blocklist.
+To add or remove a theme, edit `src/lib/diff/themes/ids.json` and rebuild. Theme changes do not go through the language blocklist.
 
 ## Development scripts
 

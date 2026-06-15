@@ -1,11 +1,11 @@
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
 
-import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github';
+import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
 import {
   createReviewCommentReply,
   GitHubReviewWriteError,
   type GitHubViewer,
-} from '@/lib/github-review-write';
+} from '@/lib/github/review-write';
 
 type ReviewReplyComposerProps = {
   pullRequestRef: GitHubPullRequestRef;

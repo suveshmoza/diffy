@@ -6,7 +6,7 @@ import {
   normalizeDiffTheme,
   readDiffTheme,
   writeDiffTheme,
-} from '@/lib/diff-themes';
+} from '@/lib/diff/themes/prefs';
 
 const STORAGE_KEY = 'diffTheme';
 
