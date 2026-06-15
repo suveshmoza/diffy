@@ -1,7 +1,7 @@
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import logoUrl from '@/assets/logo.jpg';
+import logoUrl from '@/assets/logo.png';
 
 import './style.css';
 
