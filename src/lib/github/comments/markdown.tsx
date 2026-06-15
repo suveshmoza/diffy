@@ -1,4 +1,4 @@
-import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx';
+import MarkdownToJsx, { type MarkdownToJSX } from 'markdown-to-jsx';
 import { useMemo, type ReactNode } from 'react';
 
 import type { GitHubPullRequestRef } from '@/lib/github/api';
@@ -38,12 +38,12 @@ function GitHubCommentMarkdown({ body, pullRequestRef }: GitHubCommentMarkdownPr
 
   try {
     return (
-      <Markdown
+      <MarkdownToJsx
         className='gprv-review-prose'
         options={MARKDOWN_OPTIONS}
       >
         {markdown}
-      </Markdown>
+      </MarkdownToJsx>
     );
   } catch {
     return (
