@@ -87,7 +87,7 @@ async function syncWorkerLangIds(
   logger: { info: (msg: string) => void },
 ): Promise<void> {
   const langIds = computeWorkerLangIds();
-  const outPath = resolve(wxtRoot, 'lib/diff-lang-ids.json');
+  const outPath = resolve(wxtRoot, './src/lib/diff-lang-ids.json');
   const next = `${JSON.stringify(langIds, null, 2)}\n`;
   const current = await readFile(outPath, 'utf-8').catch(() => null);
   if (current === next) {

@@ -20,7 +20,7 @@ function toAscii(): Plugin {
     enforce: 'post',
     generateBundle(_options, bundle) {
       for (const fileName in bundle) {
-        if (!fileName.startsWith('content-scripts/') || !fileName.endsWith('.js')) continue;
+        if (!fileName.startsWith('src/content-scripts/') || !fileName.endsWith('.js')) continue;
         const chunk = bundle[fileName];
         if (chunk.type === 'chunk') chunk.code = escapeToAscii(chunk.code);
       }
@@ -30,7 +30,7 @@ function toAscii(): Plugin {
       if (!outDir) return;
 
       for (const fileName in bundle) {
-        if (!fileName.startsWith('content-scripts/') || !fileName.endsWith('.js')) continue;
+        if (!fileName.startsWith('src/content-scripts/') || !fileName.endsWith('.js')) continue;
         const path = resolve(outDir, fileName);
         const code = await readFile(path, 'utf-8');
         const ascii = escapeToAscii(code);
@@ -65,9 +65,10 @@ function tolerateNullCustomElements(): Plugin {
 }
 
 export default defineConfig({
-  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './modules/shiki-pruner.ts'],
+  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './src/modules/shiki-pruner.ts'],
+  srcDir: 'src',
   autoIcons: {
-    baseIconPath: 'assets/logo.jpg',
+    baseIconPath: './src/assets/logo.png',
     sizes: [128, 96, 48, 32, 24, 16],
   },
   webExt: {
@@ -103,7 +104,7 @@ export default defineConfig({
   vite: () => ({
     resolve: {
       alias: {
-        '@': resolve(import.meta.dirname),
+        '@': resolve(import.meta.dirname, 'src'),
         '@pierre/diffs/dist/style.js': resolve(
           import.meta.dirname,
           'node_modules/@pierre/diffs/dist/style.js',
