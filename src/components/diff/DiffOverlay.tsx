@@ -33,6 +33,12 @@ import {
   deferCodeViewControlledSync,
 } from '@/lib/code-view/scroll-anchor';
 import {
+  DEFAULT_CODE_VIEW_DISPLAY_PREFS,
+  readCodeViewDisplayPrefs,
+  writeCodeViewDisplayPrefs,
+  type CodeViewDisplayPrefs,
+} from '@/lib/diff/display-prefs';
+import {
   DEFAULT_DIFF_LAYOUT,
   readDiffLayoutPreference,
   writeDiffLayoutPreference,
@@ -85,6 +91,9 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   const [hoveredThreadSelection, setHoveredThreadSelection] =
     useState<CodeViewLineSelection | null>(null);
   const [diffLayout, setDiffLayout] = useState<DiffLayout>(DEFAULT_DIFF_LAYOUT);
+  const [displayPrefs, setDisplayPrefs] = useState<CodeViewDisplayPrefs>(
+    DEFAULT_CODE_VIEW_DISPLAY_PREFS,
+  );
   const [liveReviewComments, setLiveReviewComments] = useState(data.reviewComments);
 
   selectedLinesRef.current = selectedLines;
@@ -112,6 +121,16 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         // Ignore preference read failures and keep the default layout.
       });
 
+    readCodeViewDisplayPrefs()
+      .then((storedPrefs) => {
+        if (!isCancelled) {
+          setDisplayPrefs(storedPrefs);
+        }
+      })
+      .catch(() => {
+        // Ignore preference read failures and keep the default display prefs.
+      });
+
     return () => {
       isCancelled = true;
     };
@@ -129,6 +148,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
 
   const { isThemeReady, codeViewOptions, codeViewThemeType } = useCodeViewThemeBootstrap({
     diffLayout,
+    displayPrefs,
   });
   const treeThemeStyles = useTreeThemeStyles();
   const treeThemeVars = useMemo(
@@ -487,6 +507,14 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     void writeDiffLayoutPreference(nextLayout);
   }, []);
 
+  const updateDisplayPrefs = useCallback((partial: Partial<CodeViewDisplayPrefs>) => {
+    setDisplayPrefs((current) => {
+      const next = { ...current, ...partial };
+      void writeCodeViewDisplayPrefs(next);
+      return next;
+    });
+  }, []);
+
   const handleTreeSelect = useCallback(
     (path: string) => {
       if (!codeViewItems) {
@@ -675,8 +703,10 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         <DiffOverlayHeader
           pullRequest={data.pullRequest}
           diffLayout={diffLayout}
+          displayPrefs={displayPrefs}
           reviewCommentsLoadError={data.reviewCommentsLoadError}
           onDiffLayoutChange={updateDiffLayout}
+          onDisplayPrefsChange={updateDisplayPrefs}
           onClose={onClose}
           themeStyle={treeThemeStyles}
         />
