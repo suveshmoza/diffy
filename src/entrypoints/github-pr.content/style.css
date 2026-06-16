@@ -347,23 +347,23 @@
   color: var(--trees-theme-sidebar-fg, var(--gprv-text));
 }
 
-.gprv-theme-picker {
+.gprv-header-popover {
   min-width: 0;
   position: relative;
 }
 
-.gprv-theme-picker-trigger[aria-expanded='true'] {
+.gprv-header-popover-trigger[aria-expanded='true'] {
   background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
 }
 
-.gprv-theme-picker-trigger:focus-visible {
+.gprv-header-popover-trigger:focus-visible {
   border-color: var(--trees-theme-focus-ring, var(--gprv-accent));
   box-shadow: 0 0 0 2px
     color-mix(in srgb, var(--trees-theme-focus-ring, var(--gprv-accent)) 30%, transparent);
   outline: none;
 }
 
-.gprv-theme-picker-menu {
+.gprv-header-popover-menu {
   background: var(--trees-theme-input-bg, var(--gprv-control-bg));
   border: 1px solid
     var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
@@ -383,11 +383,11 @@
   z-index: 2;
 }
 
-.gprv-theme-picker-menu li {
+.gprv-header-popover-menu li {
   margin: 0;
 }
 
-.gprv-theme-picker-option {
+.gprv-header-popover-option {
   background: transparent;
   border: 0;
   border-radius: 6px;
@@ -403,11 +403,11 @@
   width: 100%;
 }
 
-.gprv-theme-picker-option:hover {
+.gprv-header-popover-option:hover {
   background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
 }
 
-.gprv-theme-picker-option[data-selected] {
+.gprv-header-popover-option[data-selected] {
   background: color-mix(
     in srgb,
     var(--trees-theme-focus-ring, var(--gprv-accent)) 16%,
@@ -417,7 +417,104 @@
   font-weight: 600;
 }
 
-.gprv-theme-picker-option:focus-visible {
+.gprv-header-popover-option:focus-visible {
+  outline: 2px solid var(--trees-theme-focus-ring, var(--gprv-accent));
+  outline-offset: -2px;
+}
+
+.gprv-settings-menu {
+  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
+  border: 1px solid
+    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  border-radius: 10px;
+  box-shadow: var(--gprv-shadow, 0 10px 30px rgb(0 0 0 / 0.18));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 6px 0 0;
+  min-width: 16rem;
+  padding: 12px;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 2;
+}
+
+.gprv-settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gprv-settings-label {
+  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gprv-segmented {
+  align-items: stretch;
+  background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
+  border-radius: 8px;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+}
+
+.gprv-segmented[data-wrap] {
+  flex-wrap: wrap;
+}
+
+.gprv-segmented-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  cursor: pointer;
+  display: inline-flex;
+  flex: 1 1 0;
+  font: inherit;
+  font-size: 13px;
+  gap: 6px;
+  justify-content: center;
+  min-height: 30px;
+  min-width: 0;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.gprv-segmented[data-wrap] .gprv-segmented-button {
+  flex: 1 1 auto;
+}
+
+.gprv-segmented-button:hover {
+  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+}
+
+.gprv-segmented-icon {
+  align-items: center;
+  display: inline-flex;
+}
+
+.gprv-segmented-button[data-active] {
+  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.12),
+    inset 0 0 0 1px
+      color-mix(
+        in srgb,
+        var(--trees-theme-sidebar-border, var(--gprv-border)) 70%,
+        var(--trees-theme-sidebar-fg, var(--gprv-text))
+      );
+  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  font-weight: 600;
+}
+
+.gprv-segmented-button:focus-visible {
   outline: 2px solid var(--trees-theme-focus-ring, var(--gprv-accent));
   outline-offset: -2px;
 }
@@ -465,6 +562,17 @@
 .gprv-close:hover,
 .gprv-header-icon-button:hover {
   background: var(--gprv-control-active-bg);
+}
+
+.gprv-diff-header .gprv-header-icon-button[aria-pressed='true'] {
+  background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
+  box-shadow: inset 0 0 0 1px
+    color-mix(
+      in srgb,
+      var(--trees-theme-sidebar-border, var(--gprv-border)) 70%,
+      var(--trees-theme-sidebar-fg, var(--gprv-text))
+    );
+  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
 }
 
 @media (max-width: 900px) {
