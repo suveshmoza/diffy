@@ -1,12 +1,38 @@
 import { IconLoader } from '@tabler/icons-react';
 
+import type { LoadProgress } from '@/lib/github/api';
+
 import { ChromeModal } from './ChromeModal';
 
 type LoadingOverlayProps = {
   onClose: () => void;
+  progress?: LoadProgress | null;
 };
 
-export function LoadingOverlay({ onClose }: LoadingOverlayProps) {
+function formatProgress(progress: LoadProgress): string {
+  switch (progress.phase) {
+    case 'metadata':
+      return 'Fetching pull request metadata…';
+    case 'files':
+      return progress.total > 0
+        ? `Fetching changed files (${progress.loaded}/${progress.total})…`
+        : 'Fetching changed files…';
+    case 'comments':
+      return 'Fetching review comments…';
+    case 'diff':
+      return 'Fetching diff…';
+    case 'building':
+      return 'Building diff viewer…';
+    default:
+      return 'Loading…';
+  }
+}
+
+export function LoadingOverlay({ onClose, progress }: LoadingOverlayProps) {
+  const message = progress
+    ? formatProgress(progress)
+    : 'Fetching pull request metadata and changed files…';
+
   return (
     <ChromeModal
       title='Loading PR diff…'
@@ -24,7 +50,7 @@ export function LoadingOverlay({ onClose }: LoadingOverlayProps) {
             stroke={2}
             className='gprv-loading-spinner'
           />
-          <p className='gprv-loading-summary'>Fetching pull request metadata and changed files…</p>
+          <p className='gprv-loading-summary'>{message}</p>
           <p className='gprv-loading-hint'>Large pull requests may take a few seconds.</p>
         </div>
       </div>

@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useSyncExternalStore, useState, type ReactNode } from 'react';
 
 import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
 import {
   fetchCachedPullRequestDiffData,
+  getLoadProgress,
   invalidatePullRequestDiffCache,
   isGitHubRateLimitError,
   parseGitHubPullRequestUrl,
+  subscribeToLoadProgress,
   type PullRequestDiffData,
 } from '@/lib/github/api';
 import { useResolvedThemeContext } from '@/providers/ResolvedThemeProvider';
@@ -29,6 +31,7 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
   const [state, setState] = useState<OverlayState>({ status: 'loading' });
   const [retryCount, setRetryCount] = useState(0);
   const { isResolvedThemeReady, error: themeError } = useResolvedThemeContext();
+  const loadProgress = useSyncExternalStore(subscribeToLoadProgress, getLoadProgress);
 
   const retry = useCallback(() => {
     const ref = parseGitHubPullRequestUrl(pullRequestUrl);
@@ -131,7 +134,12 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
         />
       );
     } else {
-      content = <LoadingOverlay onClose={onClose} />;
+      content = (
+        <LoadingOverlay
+          onClose={onClose}
+          progress={loadProgress}
+        />
+      );
     }
   } else if (state.status === 'error') {
     content = (
@@ -142,7 +150,12 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
       />
     );
   } else {
-    content = <LoadingOverlay onClose={onClose} />;
+    content = (
+      <LoadingOverlay
+        onClose={onClose}
+        progress={loadProgress}
+      />
+    );
   }
 
   return content;

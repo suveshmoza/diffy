@@ -71,6 +71,31 @@ export type RateLimitState = {
   reset: number;
 };
 
+export type LoadProgress = {
+  phase: 'metadata' | 'files' | 'comments' | 'diff' | 'building';
+  loaded: number;
+  total: number;
+};
+
+let latestLoadProgress: LoadProgress | null = null;
+const loadProgressListeners = new Set<() => void>();
+
+function updateLoadProgress(progress: LoadProgress): void {
+  latestLoadProgress = progress;
+  loadProgressListeners.forEach((fn) => fn());
+}
+
+export function getLoadProgress(): LoadProgress | null {
+  return latestLoadProgress;
+}
+
+export function subscribeToLoadProgress(listener: () => void): () => void {
+  loadProgressListeners.add(listener);
+  return () => {
+    loadProgressListeners.delete(listener);
+  };
+}
+
 const GITHUB_PULL_URL_PATTERN = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/i;
 /** GitHub rejects unified diffs above this file count. */
 const GITHUB_MAX_AGGREGATE_DIFF_FILES = 300;
@@ -251,11 +276,18 @@ async function fetchPullRequestDiffDataBody(
   headers: Record<string, string>,
   apiBase: string,
 ): Promise<PullRequestDiffData> {
+  const fileTotal = pullRequest.changed_files;
+
+  updateLoadProgress({ phase: 'files', loaded: 0, total: fileTotal });
+
   const [files, reviewCommentsResult] = await Promise.all([
-    fetchAllPullRequestFiles(`${apiBase}/files`, headers),
+    fetchAllPullRequestFiles(`${apiBase}/files`, headers, (loaded) => {
+      updateLoadProgress({ phase: 'files', loaded, total: fileTotal });
+    }),
     fetchAllPullRequestReviewComments(`${apiBase}/comments`, headers),
   ]);
 
+  updateLoadProgress({ phase: 'diff', loaded: 0, total: 1 });
   const patch = await fetchAggregatePullRequestPatch(ref, apiBase, headers, pullRequest, files);
 
   return {
@@ -420,8 +452,9 @@ function createGitHubHeaders(token: string | null): Record<string, string> {
 async function fetchAllPullRequestFiles(
   url: string,
   headers: Record<string, string>,
+  onProgress?: (loaded: number) => void,
 ): Promise<GitHubPullRequestFile[]> {
-  return fetchAllPaginated<GitHubPullRequestFile>(url, headers);
+  return fetchAllPaginated<GitHubPullRequestFile>(url, headers, onProgress);
 }
 
 async function fetchAllPullRequestReviewComments(
@@ -443,7 +476,11 @@ async function fetchAllPullRequestReviewComments(
   }
 }
 
-async function fetchAllPaginated<T>(url: string, headers: Record<string, string>): Promise<T[]> {
+async function fetchAllPaginated<T>(
+  url: string,
+  headers: Record<string, string>,
+  onProgress?: (loaded: number) => void,
+): Promise<T[]> {
   const items: T[] = [];
   let nextUrl: string | null = `${url}?per_page=100`;
 
@@ -456,6 +493,7 @@ async function fetchAllPaginated<T>(url: string, headers: Record<string, string>
     updateRateLimitFromResponse(response);
     items.push(...((await response.json()) as T[]));
     nextUrl = getNextLink(response.headers.get('Link'));
+    onProgress?.(items.length);
   }
 
   return items;
