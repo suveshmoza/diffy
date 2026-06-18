@@ -15,9 +15,17 @@ export type ResolvedThemeDisplay = {
 type ResolvedThemeContextValue = {
   resolvedThemeDisplay: ResolvedThemeDisplay | undefined;
   isResolvedThemeReady: boolean;
+  error: string | null;
 };
 
 const ResolvedThemeContext = createContext<ResolvedThemeContextValue | null>(null);
+
+const FALLBACK_THEME_NAMES: DiffsThemeNames[] = [
+  'github-light',
+  'github-dark',
+  'pierre-light',
+  'pierre-dark',
+];
 
 /** Overlay-only: resolves Shiki theme objects for chrome styling without bloating the popup bundle. */
 export function ResolvedThemeProvider({ children }: { children: ReactNode }) {
@@ -25,21 +33,44 @@ export function ResolvedThemeProvider({ children }: { children: ReactNode }) {
   const [resolvedThemeDisplay, setResolvedThemeDisplay] = useState<
     ResolvedThemeDisplay | undefined
   >();
+  const [error, setError] = useState<string | null>(null);
+  const primaryThemeRef = { current: theme };
+
+  useEffect(() => {
+    primaryThemeRef.current = theme;
+  });
 
   useEffect(() => {
     let isCancelled = false;
 
-    void getResolvedDiffTheme(theme)
-      .then((resolved) => {
+    const tryResolve = async (attemptedTheme: DiffsThemeNames, depth: number): Promise<void> => {
+      try {
+        const resolved = await getResolvedDiffTheme(attemptedTheme);
         if (!isCancelled) {
           setResolvedThemeDisplay({
             resolved,
-            name: theme,
-            colorScheme: diffThemeType(theme),
+            name: attemptedTheme,
+            colorScheme: diffThemeType(attemptedTheme),
           });
+          setError(null);
         }
-      })
-      .catch(() => {});
+      } catch (cause) {
+        if (isCancelled) {
+          return;
+        }
+
+        if (depth < 2) {
+          const nextTheme = FALLBACK_THEME_NAMES.find((t) => t !== attemptedTheme);
+          if (nextTheme) {
+            return tryResolve(nextTheme, depth + 1);
+          }
+        }
+
+        setError(cause instanceof Error ? cause.message : String(cause));
+      }
+    };
+
+    void tryResolve(theme, 0);
 
     return () => {
       isCancelled = true;
@@ -50,8 +81,9 @@ export function ResolvedThemeProvider({ children }: { children: ReactNode }) {
     () => ({
       resolvedThemeDisplay,
       isResolvedThemeReady: resolvedThemeDisplay != null,
+      error,
     }),
-    [resolvedThemeDisplay],
+    [resolvedThemeDisplay, error],
   );
 
   return <ResolvedThemeContext.Provider value={value}>{children}</ResolvedThemeContext.Provider>;
