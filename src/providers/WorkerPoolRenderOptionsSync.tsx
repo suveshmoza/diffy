@@ -1,36 +1,18 @@
 import type { DiffsThemeNames } from '@pierre/diffs';
 import { useWorkerPool } from '@pierre/diffs/react';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
-type WorkerPoolRenderOptionsSyncProps = {
-  theme: DiffsThemeNames;
-  onSynced?: (theme: DiffsThemeNames) => void;
-};
-
-export function WorkerPoolRenderOptionsSync({ theme, onSynced }: WorkerPoolRenderOptionsSyncProps) {
+/**
+ * The worker pool bakes in the theme it is created with and does not react to
+ * later prop changes, so push live theme switches to it via `setRenderOptions`.
+ * The initial theme is already correct (the pool is created with it), so there
+ * is no flash to gate against.
+ */
+export function WorkerPoolRenderOptionsSync({ theme }: { theme: DiffsThemeNames }) {
   const workerPool = useWorkerPool();
-  const onSyncedRef = useRef(onSynced);
-  onSyncedRef.current = onSynced;
 
   useEffect(() => {
-    if (!workerPool) {
-      onSyncedRef.current?.(theme);
-      return;
-    }
-
-    let isCancelled = false;
-
-    const markSynced = () => {
-      if (!isCancelled) {
-        onSyncedRef.current?.(theme);
-      }
-    };
-
-    void workerPool.setRenderOptions({ theme }).then(markSynced).catch(markSynced);
-
-    return () => {
-      isCancelled = true;
-    };
+    void workerPool?.setRenderOptions({ theme });
   }, [theme, workerPool]);
 
   return null;

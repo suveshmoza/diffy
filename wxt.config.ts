@@ -1,8 +1,12 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { Plugin } from 'vite';
 import { defineConfig } from 'wxt';
+
+/** Stable output path for Pierre's portable highlighter worker (see src/lib/diff/worker.ts). */
+const DIFF_WORKER_DEST = 'diff-highlighter-worker.js';
 
 function escapeToAscii(code: string): string {
   return code
@@ -67,6 +71,18 @@ function tolerateNullCustomElements(): Plugin {
 export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './src/modules/shiki-pruner.ts'],
   srcDir: 'src',
+  hooks: {
+    // Copy Pierre's self-contained portable worker into the extension at a
+    // stable, same-origin path. Runs in both dev and build, so `new Worker()`
+    // works identically in `pnpm dev` and `pnpm build` (a bundled `?worker`
+    // would be served cross-origin from the dev server and fail to spawn).
+    'build:publicAssets'(_wxt, files) {
+      files.push({
+        absoluteSrc: fileURLToPath(import.meta.resolve('@pierre/diffs/worker/worker-portable.js')),
+        relativeDest: DIFF_WORKER_DEST,
+      });
+    },
+  },
   autoIcons: {
     baseIconPath: './assets/logo.png',
   },

@@ -12,7 +12,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
-import { useIsWorkerPoolReady } from '@/hooks/useIsWorkerPoolReady';
 import { useTreeThemeStyles, pickTreeThemeCustomProperties } from '@/hooks/useTreeThemeStyles';
 import {
   getCodeViewItemIdForFile,
@@ -162,9 +161,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     error: codeViewBuildError,
   } = useCodeViewItems(augmentedData);
   const isCodeViewHostReady = useCodeViewHostReady(codeViewHostRef);
-  const isWorkerPoolReady = useIsWorkerPoolReady();
-  const isCodeViewMounted =
-    isCodeViewHostReady && isThemeReady && codeViewItems != null && isWorkerPoolReady;
+  const isCodeViewMounted = isCodeViewHostReady && isThemeReady && codeViewItems != null;
 
   const itemById = useMemo(() => {
     if (!codeViewItems) {
