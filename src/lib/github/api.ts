@@ -10,12 +10,21 @@ export type GitHubPullRequest = {
   title: string;
   number: number;
   state: string;
-  user?: { login: string };
+  draft: boolean;
+  user?: { login: string; avatar_url?: string };
   base: { ref: string; sha: string; repo: { full_name: string } };
   head: { ref: string; sha: string; repo: { full_name: string } | null };
   additions: number;
   deletions: number;
   changed_files: number;
+  created_at: string;
+  merged_at: string | null;
+  body: string | null;
+  labels: Array<{
+    name: string;
+    color: string;
+    description?: string;
+  }>;
 };
 
 export type GitHubPullRequestReviewComment = {
