@@ -18,7 +18,9 @@
     "fmt:check": "oxfmt --check",
     "prepare": "husky",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix"
+    "lint:fix": "oxlint --fix",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@pierre/diffs": "1.2.10",
@@ -32,6 +34,7 @@
     "@types/chrome": "0.1.43",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "@vitest/ui": "^4.1.9",
     "@wxt-dev/auto-icons": "^1.1.1",
     "@wxt-dev/module-react": "^1.2.2",
     "husky": "^9.1.7",
@@ -41,6 +44,7 @@
     "shiki": "^4.2.0",
     "typescript": "6.0.3",
     "vite": "^8.0.16",
+    "vitest": "^4.1.9",
     "wxt": "^0.20.26"
   },
   "lint-staged": {
