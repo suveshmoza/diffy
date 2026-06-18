@@ -1,4 +1,4 @@
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
   sharp: true
-  spawn-sync: set this to true or false
+  spawn-sync: true
