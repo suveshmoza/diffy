@@ -48,6 +48,9 @@
 }
 
 .gprv-modal {
+  font-family: 'Open Sans', sans-serif;
+  --diffs-header-font-family: 'Open Sans', sans-serif;
+  --trees-font-family-override: 'Open Sans', sans-serif;
   --gprv-bg: #0d1117;
   --gprv-panel-bg: #0d1117;
   --gprv-control-bg: #21262d;
@@ -109,8 +112,8 @@
   border-bottom-color: var(--trees-theme-sidebar-border, var(--gprv-border));
   color: var(--trees-theme-sidebar-fg, var(--gprv-text));
   gap: 16px;
-  min-height: 60px;
-  padding: 10px 12px 10px 16px;
+  min-height: 45px;
+  padding: 8px 16px;
 }
 
 .gprv-header-leading {
@@ -215,8 +218,8 @@
     Liberation Mono,
     monospace;
   font-size: 11px;
-  max-width: 9rem;
-  padding: 1px 6px;
+  max-width: 10rem;
+  padding: 3px 6px;
 }
 
 .gprv-branch-arrow {
