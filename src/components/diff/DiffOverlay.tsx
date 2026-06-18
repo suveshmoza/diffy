@@ -6,8 +6,9 @@ import type {
   SelectedLineRange,
 } from '@pierre/diffs';
 import { CodeView, type CodeViewHandle, useStableCallback } from '@pierre/diffs/react';
-import { IconLoader } from '@tabler/icons-react';
+import { IconCircleX, IconLoader, IconX } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
@@ -43,7 +44,12 @@ import {
   writeDiffLayoutPreference,
   type DiffLayout,
 } from '@/lib/diff/layout-prefs';
-import { type GitHubPullRequestReviewComment, type PullRequestDiffData } from '@/lib/github/api';
+import {
+  getRateLimitState,
+  subscribeToRateLimitChanges,
+  type GitHubPullRequestReviewComment,
+  type PullRequestDiffData,
+} from '@/lib/github/api';
 import {
   deleteReviewComment,
   GitHubReviewWriteError,
@@ -94,6 +100,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     DEFAULT_CODE_VIEW_DISPLAY_PREFS,
   );
   const [liveReviewComments, setLiveReviewComments] = useState(data.reviewComments);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
 
   selectedLinesRef.current = selectedLines;
   hoveredThreadSelectionRef.current = hoveredThreadSelection;
@@ -136,6 +143,8 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
   }, []);
 
   const { isSidebarCollapsed } = useSidebarContext();
+
+  const rateLimit = useSyncExternalStore(subscribeToRateLimitChanges, getRateLimitState);
 
   const augmentedData = useMemo(
     () => ({
@@ -349,7 +358,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
             : error instanceof Error
               ? error.message
               : String(error);
-        window.alert(message);
+        setNotificationError(message);
         return;
       }
 
@@ -498,6 +507,15 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
     () => ({ height: '100%', colorScheme: codeViewThemeType }),
     [codeViewThemeType],
   );
+
+  useEffect(() => {
+    if (!notificationError) {
+      return;
+    }
+
+    const id = setTimeout(() => setNotificationError(null), 6000);
+    return () => clearTimeout(id);
+  }, [notificationError]);
 
   const updateDiffLayout = useCallback((nextLayout: DiffLayout) => {
     setDiffLayout(nextLayout);
@@ -702,6 +720,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
           diffLayout={diffLayout}
           displayPrefs={displayPrefs}
           reviewCommentsLoadError={data.reviewCommentsLoadError}
+          rateLimit={rateLimit}
           onDiffLayoutChange={updateDiffLayout}
           onDisplayPrefsChange={updateDisplayPrefs}
           onClose={onClose}
@@ -709,6 +728,26 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
         />
 
         <GitHubAuthProvider>
+          {notificationError ? (
+            <div className='gprv-notification-error'>
+              <IconCircleX
+                size={16}
+                stroke={2}
+              />
+              <span>{notificationError}</span>
+              <button
+                className='gprv-notification-dismiss'
+                type='button'
+                onClick={() => setNotificationError(null)}
+                aria-label='Dismiss'
+              >
+                <IconX
+                  size={14}
+                  stroke={2}
+                />
+              </button>
+            </div>
+          ) : null}
           <div className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}>
             {isSidebarCollapsed ? null : (
               <aside className='gprv-sidebar'>
@@ -737,6 +776,20 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
                   style={{ color: 'var(--gprv-error)' }}
                 >
                   {codeViewBuildError}
+                </div>
+              ) : codeViewItems && codeViewItems.items.length === 0 ? (
+                <div className='gprv-state'>
+                  <div className='gprv-empty-state'>
+                    <IconCircleX
+                      size={48}
+                      stroke={2}
+                      color='var(--gprv-muted)'
+                    />
+                    <p className='gprv-loading-summary'>This pull request has no code changes.</p>
+                    <p className='gprv-loading-hint'>
+                      The diff viewer requires at least one changed file.
+                    </p>
+                  </div>
                 </div>
               ) : isCodeViewMounted && codeViewItems ? (
                 <CodeView<ReviewAnnotationMetadata>

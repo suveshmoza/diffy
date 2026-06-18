@@ -4,6 +4,7 @@ import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
 import {
   fetchCachedPullRequestDiffData,
   invalidatePullRequestDiffCache,
+  isGitHubRateLimitError,
   parseGitHubPullRequestUrl,
   type PullRequestDiffData,
 } from '@/lib/github/api';
@@ -27,7 +28,7 @@ type AppProps = {
 export function App({ pullRequestUrl, onClose }: AppProps) {
   const [state, setState] = useState<OverlayState>({ status: 'loading' });
   const [retryCount, setRetryCount] = useState(0);
-  const { isResolvedThemeReady } = useResolvedThemeContext();
+  const { isResolvedThemeReady, error: themeError } = useResolvedThemeContext();
 
   const retry = useCallback(() => {
     const ref = parseGitHubPullRequestUrl(pullRequestUrl);
@@ -89,10 +90,18 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
       })
       .catch((error: unknown) => {
         if (!isCancelled) {
-          setState({
-            status: 'error',
-            message: error instanceof Error ? error.message : String(error),
-          });
+          const message = error instanceof Error ? error.message : String(error);
+          if (isGitHubRateLimitError(error)) {
+            setState({
+              status: 'error',
+              message: message,
+            });
+          } else {
+            setState({
+              status: 'error',
+              message,
+            });
+          }
         }
       });
 
@@ -103,17 +112,27 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
 
   let content: ReactNode;
 
-  if (state.status === 'loaded' && isResolvedThemeReady) {
-    content = (
-      <SidebarProvider>
-        <DiffOverlay
-          data={state.data}
+  if (state.status === 'loaded') {
+    if (isResolvedThemeReady) {
+      content = (
+        <SidebarProvider>
+          <DiffOverlay
+            data={state.data}
+            onClose={onClose}
+          />
+        </SidebarProvider>
+      );
+    } else if (themeError) {
+      content = (
+        <ErrorOverlay
+          message={`Failed to apply theme: ${themeError}`}
+          onRetry={retry}
           onClose={onClose}
         />
-      </SidebarProvider>
-    );
-  } else if (state.status === 'loaded') {
-    content = <LoadingOverlay onClose={onClose} />;
+      );
+    } else {
+      content = <LoadingOverlay onClose={onClose} />;
+    }
   } else if (state.status === 'error') {
     content = (
       <ErrorOverlay

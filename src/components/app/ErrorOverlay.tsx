@@ -1,4 +1,6 @@
-import { IconGhost2 } from '@tabler/icons-react';
+import { IconGhost2, IconAlertTriangle } from '@tabler/icons-react';
+
+import { isGitHubRateLimitError } from '@/lib/github/api';
 
 import { ChromeModal } from './ChromeModal';
 
@@ -9,24 +11,37 @@ type ErrorOverlayProps = {
 };
 
 export function ErrorOverlay({ message, onRetry, onClose }: ErrorOverlayProps) {
+  const isRateLimit = isGitHubRateLimitError(message);
+
   return (
     <ChromeModal
-      title='Unable to load PR diff'
+      title={isRateLimit ? 'Rate limit reached' : 'Unable to load PR diff'}
       onClose={onClose}
     >
       <div className='gprv-modal-body'>
         <div className='gprv-error-panel'>
-          <IconGhost2
-            size={128}
-            stroke={2}
-            color='var(--gprv-error)'
-          />
+          {isRateLimit ? (
+            <IconAlertTriangle
+              size={128}
+              stroke={2}
+              color='var(--gprv-danger)'
+            />
+          ) : (
+            <IconGhost2
+              size={128}
+              stroke={2}
+              color='var(--gprv-error)'
+            />
+          )}
           <p className='gprv-error-summary'>
-            Something went wrong while loading this pull request.
+            {isRateLimit
+              ? 'GitHub API rate limit exceeded.'
+              : 'Something went wrong while loading this pull request.'}
           </p>
           <p className='gprv-error-hint'>
-            If this is a private repo or you are rate-limited, add a GitHub token in the diffy
-            popup.
+            {isRateLimit
+              ? 'Add a GitHub token in the diffy popup for a higher rate limit, or wait a few minutes and try again.'
+              : 'If this is a private repo or you are rate-limited, add a GitHub token in the diffy popup.'}
           </p>
           <div className='gprv-error-actions'>
             <button

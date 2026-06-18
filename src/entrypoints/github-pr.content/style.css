@@ -1582,3 +1582,65 @@
 .gprv-review-composer-button-secondary {
   background: transparent;
 }
+
+/* ── Rate limit warning ── */
+
+.gprv-rate-limit-warning {
+  align-items: center;
+  color: var(--gprv-danger);
+  display: inline-flex;
+  font-size: 11px;
+  gap: 4px;
+  line-height: 1.2;
+  margin: 0;
+  max-width: 12rem;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gprv-rate-limit-exhausted {
+  font-weight: 600;
+}
+
+/* ── Error notification bar ── */
+
+.gprv-notification-error {
+  align-items: center;
+  background: color-mix(in srgb, var(--gprv-danger) 14%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--gprv-danger) 26%, transparent);
+  color: var(--gprv-danger);
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  line-height: 1.4;
+  padding: 8px 16px;
+}
+
+.gprv-notification-dismiss {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: auto;
+  opacity: 0.6;
+  padding: 2px;
+}
+
+.gprv-notification-dismiss:hover {
+  opacity: 1;
+}
+
+/* ── Empty state ── */
+
+.gprv-empty-state {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  max-width: 24rem;
+  padding: 24px;
+  text-align: center;
+}

@@ -1,9 +1,9 @@
-import { IconLayoutSidebar, IconX } from '@tabler/icons-react';
+import { IconAlertTriangle, IconLayoutSidebar, IconX } from '@tabler/icons-react';
 import { memo, type CSSProperties } from 'react';
 
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
-import type { GitHubPullRequest } from '@/lib/github/api';
+import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
 import { useSidebarContext } from '@/providers/SidebarContext';
 
 import { DiffLayoutToggle } from './header/DiffLayoutToggle';
@@ -15,6 +15,7 @@ type DiffOverlayHeaderProps = {
   diffLayout: DiffLayout;
   displayPrefs: CodeViewDisplayPrefs;
   reviewCommentsLoadError?: string | null;
+  rateLimit?: RateLimitState | null;
   onDiffLayoutChange: (layout: DiffLayout) => void;
   onDisplayPrefsChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
   onClose: () => void;
@@ -26,6 +27,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   diffLayout,
   displayPrefs,
   reviewCommentsLoadError,
+  rateLimit,
   onDiffLayoutChange,
   onDisplayPrefsChange,
   onClose,
@@ -33,10 +35,12 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
 }: DiffOverlayHeaderProps) {
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
   const { base, head } = pullRequest;
+  const isRateLimitLow = rateLimit != null && rateLimit.remaining >= 0 && rateLimit.remaining <= 10;
+  const isRateLimitExhausted = rateLimit != null && rateLimit.remaining <= 0;
 
   return (
     <header
-      className='gprv-header gprv-diff-header'
+      className={`gprv-header gprv-diff-header${isRateLimitExhausted ? ' gprv-diff-header-rate-limited' : ''}`}
       style={themeStyle}
     >
       <div className='gprv-header-leading'>
@@ -98,6 +102,25 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
               title={reviewCommentsLoadError}
             >
               Review comments unavailable
+            </p>
+          ) : null}
+          {isRateLimitLow ? (
+            <p
+              className={`gprv-rate-limit-warning${isRateLimitExhausted ? ' gprv-rate-limit-exhausted' : ''}`}
+              title={
+                isRateLimitExhausted
+                  ? 'API rate limit exhausted. Add a token in the diffy popup.'
+                  : `${rateLimit.remaining} requests remaining — add a token to avoid hitting the limit.`
+              }
+            >
+              <IconAlertTriangle
+                size={12}
+                stroke={2}
+                style={{ flexShrink: 0 }}
+              />
+              {isRateLimitExhausted
+                ? 'API limit exhausted'
+                : `${rateLimit.remaining} req remaining`}
             </p>
           ) : null}
         </div>
