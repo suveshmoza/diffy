@@ -66,6 +66,11 @@ export type PullRequestDiffData = {
   reviewCommentsLoadError: string | null;
 };
 
+export type RateLimitState = {
+  remaining: number;
+  reset: number;
+};
+
 const GITHUB_PULL_URL_PATTERN = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/i;
 /** GitHub rejects unified diffs above this file count. */
 const GITHUB_MAX_AGGREGATE_DIFF_FILES = 300;
@@ -73,6 +78,42 @@ const pullRequestDiffCache = new Map<string, Promise<PullRequestDiffData>>();
 const pullRequestDiffInFlight = new Map<string, Promise<PullRequestDiffData>>();
 let cachedGitHubToken: string | null | undefined;
 let githubTokenPromise: Promise<string | null> | null = null;
+
+let latestRateLimitState: RateLimitState | null = null;
+const rateLimitListeners = new Set<() => void>();
+
+function updateRateLimitFromResponse(response: Response): void {
+  const remaining = response.headers.get('x-ratelimit-remaining');
+  const reset = response.headers.get('x-ratelimit-reset');
+  if (remaining !== null && reset !== null) {
+    latestRateLimitState = {
+      remaining: parseInt(remaining, 10),
+      reset: parseInt(reset, 10),
+    };
+    rateLimitListeners.forEach((fn) => fn());
+  }
+}
+
+export function getRateLimitState(): RateLimitState | null {
+  return latestRateLimitState;
+}
+
+export function subscribeToRateLimitChanges(listener: () => void): () => void {
+  rateLimitListeners.add(listener);
+  return () => {
+    rateLimitListeners.delete(listener);
+  };
+}
+
+export function isGitHubRateLimitError(error: unknown): boolean {
+  if (typeof error === 'string' && error.includes('429')) {
+    return true;
+  }
+  if (error instanceof Error && error.message.includes('429')) {
+    return true;
+  }
+  return false;
+}
 
 export function warmGitHubTokenCache(): void {
   void getGitHubToken().catch(() => undefined);
@@ -412,6 +453,7 @@ async function fetchAllPaginated<T>(url: string, headers: Record<string, string>
       throw await createGitHubError(response);
     }
 
+    updateRateLimitFromResponse(response);
     items.push(...((await response.json()) as T[]));
     nextUrl = getNextLink(response.headers.get('Link'));
   }
@@ -425,6 +467,7 @@ async function fetchJson<T>(url: string, headers: Record<string, string>): Promi
     throw await createGitHubError(response);
   }
 
+  updateRateLimitFromResponse(response);
   return (await response.json()) as T;
 }
 
@@ -434,6 +477,7 @@ async function fetchText(url: string, headers: Record<string, string>): Promise<
     throw await createGitHubError(response);
   }
 
+  updateRateLimitFromResponse(response);
   return response.text();
 }
 
