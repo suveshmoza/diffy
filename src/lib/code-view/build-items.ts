@@ -137,7 +137,7 @@ function isFileCoveredByDiff(
   return file.previous_filename != null && diffPathSet.has(file.previous_filename);
 }
 
-function getMissingPatchMessage(file: GitHubPullRequestFile): string {
+export function getMissingPatchMessage(file: GitHubPullRequestFile): string {
   if (file.status === 'renamed' && file.previous_filename) {
     return `Renamed from ${file.previous_filename}. GitHub did not include diff text for this file.`;
   }
