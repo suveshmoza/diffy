@@ -27,7 +27,7 @@ function bumpItemVersion<T>(item: CodeViewItem<T>): CodeViewItem<T> {
   };
 }
 
-function areRangesEqual(left: SelectedLineRange, right: SelectedLineRange): boolean {
+export function areRangesEqual(left: SelectedLineRange, right: SelectedLineRange): boolean {
   return (
     left.start === right.start &&
     left.end === right.end &&

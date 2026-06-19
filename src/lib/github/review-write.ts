@@ -29,14 +29,14 @@ export class GitHubReviewWriteError extends Error {
   }
 }
 
-type CreateReviewCommentInput = {
+export type CreateReviewCommentInput = {
   body: string;
   commitId: string;
   path: string;
   range: SelectedLineRange;
 };
 
-function createGitHubHeaders(token: string | null): Record<string, string> {
+export function createGitHubHeaders(token: string | null): Record<string, string> {
   return {
     Accept: 'application/vnd.github+json',
     'Content-Type': 'application/json',
@@ -45,7 +45,7 @@ function createGitHubHeaders(token: string | null): Record<string, string> {
   };
 }
 
-function pullRequestApiBase(ref: GitHubPullRequestRef): string {
+export function pullRequestApiBase(ref: Omit<GitHubPullRequestRef, 'url'>): string {
   return `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/${ref.pullNumber}`;
 }
 

@@ -398,7 +398,7 @@ export function buildPatchFromFiles(files: GitHubPullRequestFile[]): string {
     .join('\n');
 }
 
-function buildSyntheticRenamePatch(file: GitHubPullRequestFile): string | null {
+export function buildSyntheticRenamePatch(file: GitHubPullRequestFile): string | null {
   if (file.status !== 'renamed' && file.status !== 'copied') {
     return null;
   }
@@ -419,7 +419,7 @@ function buildSyntheticRenamePatch(file: GitHubPullRequestFile): string | null {
   ].join('\n');
 }
 
-function wrapGitHubFilePatch(file: GitHubPullRequestFile): string {
+export function wrapGitHubFilePatch(file: GitHubPullRequestFile): string {
   const newPath = file.filename;
   const oldPath = file.previous_filename ?? file.filename;
 
@@ -528,7 +528,7 @@ async function fetchText(url: string, headers: Record<string, string>): Promise<
   return response.text();
 }
 
-function getNextLink(linkHeader: string | null): string | null {
+export function getNextLink(linkHeader: string | null): string | null {
   if (!linkHeader) {
     return null;
   }
