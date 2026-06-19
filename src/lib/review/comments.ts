@@ -223,7 +223,14 @@ export function getItemPath(item: CodeViewItem<unknown>): string {
 }
 
 export function getCommentAnchorLine(comment: GitHubPullRequestReviewComment): number | null {
-  return comment.start_line ?? comment.line ?? comment.original_start_line ?? comment.original_line;
+  const candidateLines = [
+    comment.start_line,
+    comment.line,
+    comment.original_start_line,
+    comment.original_line,
+  ];
+
+  return candidateLines.find((line) => line != null) ?? null;
 }
 
 function getThreadRoot(
