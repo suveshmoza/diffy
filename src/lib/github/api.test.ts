@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  parseGitHubPullRequestUrl,
-  isGitHubRateLimitError,
-  getNextLink,
-  GitHubPullRequestFile,
-  wrapGitHubFilePatch,
-  buildSyntheticRenamePatch,
   buildPatchFromFiles,
+  buildSyntheticRenamePatch,
+  getNextLink,
+  getPullRequestContentCacheKey,
+  getPullRequestRefPrefix,
+  GitHubPullRequestFile,
+  isGitHubRateLimitError,
+  parseGitHubPullRequestUrl,
+  wrapGitHubFilePatch,
 } from './api';
 
 describe('parseGitHubPullRequestUrl', () => {
@@ -286,5 +288,27 @@ describe('buildPatchFromFiles', () => {
         '\ndiff --git a/src/file.ts b/src/file.ts\n--- a/src/file.ts\n+++ b/src/file.ts\n@@ -1,3 +1,4 @@\n foo\n-bar\n+baz\n' +
         '\ndiff --git a/src/old.ts b/src/old.ts\n--- a/src/old.ts\n+++ b/src/old.ts\n@@ -1 +1 @@\n-const x = 1;\n+const y = 2;\n',
     );
+  });
+});
+
+describe('getPullRequestRefPrefix', () => {
+  it('returns owner/repo#number', () => {
+    expect(getPullRequestRefPrefix({ owner: 'Foo', repo: 'Bar', pullNumber: 42, url: '' })).toBe(
+      'foo/bar#42',
+    );
+  });
+
+  it('lowercases owner and repo', () => {
+    expect(getPullRequestRefPrefix({ owner: 'UPPER', repo: 'MIXED', pullNumber: 1, url: '' })).toBe(
+      'upper/mixed#1',
+    );
+  });
+});
+
+describe('getPullRequestContentCacheKey', () => {
+  it('returns prefix@sha', () => {
+    expect(
+      getPullRequestContentCacheKey({ owner: 'o', repo: 'r', pullNumber: 7, url: '' }, 'abc123'),
+    ).toBe('o/r#7@abc123');
   });
 });
