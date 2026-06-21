@@ -12,6 +12,7 @@ import {
   addDraftAnnotation,
   appendReplyToThreadAnnotation,
   areRangesEqual,
+  hasAnyDraftAnnotation,
   hasDraftAnnotation,
   removeCommentFromAnnotation,
   removeDraftAnnotation,
@@ -473,5 +474,49 @@ describe('addDraftAnnotation', () => {
     const diffRange: SelectedLineRange = { start: 1, end: 2, side: 'deletions' };
     const { draftId } = addDraftAnnotation(item, diffRange);
     expect(draftId).toBe('mock-uuid-123');
+  });
+});
+
+describe('hasAnyDraftAnnotation', () => {
+  it('returns true when viewer returns an item with a draft annotation', () => {
+    const item = makeDiffItem({
+      annotations: [{ side: 'additions', lineNumber: 1, metadata: draftMeta }],
+    });
+    const viewer = { getItem: () => item };
+    expect(hasAnyDraftAnnotation(viewer, [item])).toBe(true);
+  });
+
+  it('returns false when no items have draft annotations', () => {
+    const item = makeDiffItem({
+      annotations: [{ side: 'additions', lineNumber: 1, metadata: threadMeta }],
+    });
+    const viewer = { getItem: () => item };
+    expect(hasAnyDraftAnnotation(viewer, [item])).toBe(false);
+  });
+
+  it('returns false when viewer returns undefined for the item id', () => {
+    const item = makeDiffItem({
+      annotations: [{ side: 'additions', lineNumber: 1, metadata: draftMeta }],
+    });
+    const viewer = { getItem: () => undefined };
+    expect(hasAnyDraftAnnotation(viewer, [item])).toBe(false);
+  });
+
+  it('returns true when at least one of many items has a draft', () => {
+    const draftItem = makeDiffItem({
+      id: 'draft-item',
+      annotations: [{ side: 'additions', lineNumber: 1, metadata: draftMeta }],
+    });
+    const cleanItem = makeDiffItem({
+      id: 'clean-item',
+      annotations: [{ side: 'additions', lineNumber: 5, metadata: threadMeta }],
+    });
+    const viewer = { getItem: (id: string) => (id === 'draft-item' ? draftItem : cleanItem) };
+    expect(hasAnyDraftAnnotation(viewer, [cleanItem, draftItem])).toBe(true);
+  });
+
+  it('returns false for empty items array', () => {
+    const viewer = { getItem: () => undefined };
+    expect(hasAnyDraftAnnotation(viewer, [])).toBe(false);
   });
 });

@@ -1,12 +1,15 @@
-import { type CodeViewItem } from '@pierre/diffs';
+import { type CodeViewItem, FileDiffMetadata } from '@pierre/diffs';
 import { describe, expect, it } from 'vitest';
 
 import type { GitHubPullRequestReviewComment } from '../github/api';
 import {
+  attachReviewCommentsToItems,
+  buildReviewCommentCountByPath,
   formatReviewCommentHiddenLabel,
   getCommentAnchorLine,
   getItemPath,
   isReviewCommentHidden,
+  mapReviewCommentsToItems,
   toAnnotationSide,
 } from './comments';
 
@@ -92,7 +95,7 @@ describe('getItemPath', () => {
     const item = {
       type: 'diff' as const,
       fileDiff: { name: 'src/foo.ts' },
-    } as CodeViewItem<unknown>;
+    } as CodeViewItem;
     expect(getItemPath(item)).toBe('src/foo.ts');
   });
 
@@ -100,7 +103,7 @@ describe('getItemPath', () => {
     const item = {
       type: 'file' as const,
       file: { name: 'src/bar.ts', contents: '' },
-    } as CodeViewItem<unknown>;
+    } as CodeViewItem;
     expect(getItemPath(item)).toBe('src/bar.ts');
   });
 });
@@ -150,5 +153,248 @@ describe('getCommentAnchorLine', () => {
 
   it('returns null when all fields are undefined', () => {
     expect(getCommentAnchorLine({} as GitHubPullRequestReviewComment)).toBeNull();
+  });
+});
+
+const stubFileDiff: FileDiffMetadata = {
+  name: 'src/file.ts',
+  type: 'change',
+  hunks: [],
+  splitLineCount: 0,
+  unifiedLineCount: 0,
+  isPartial: false,
+  deletionLines: [],
+  additionLines: [],
+};
+
+const stubComment: GitHubPullRequestReviewComment = {
+  id: 1,
+  path: 'src/file.ts',
+  body: 'test comment',
+  html_url: '',
+  user: { login: 'user' },
+  created_at: '2025-01-01T00:00:00Z',
+  updated_at: '2025-01-01T00:00:00Z',
+  line: 10,
+  original_line: null,
+  start_line: null,
+  original_start_line: null,
+  side: 'LEFT',
+  in_reply_to_id: null,
+};
+
+const stubDiffItem = {
+  id: 'item-1',
+  type: 'diff' as const,
+  fileDiff: stubFileDiff,
+} as CodeViewItem;
+
+describe('buildReviewCommentCountByPath', () => {
+  it('returns empty map for empty comments', () => {
+    const result = buildReviewCommentCountByPath([], [stubDiffItem]);
+    expect(result.size).toBe(0);
+  });
+
+  it('counts comments by path', () => {
+    const commentB: GitHubPullRequestReviewComment = {
+      ...stubComment,
+      id: 2,
+      path: 'src/file.ts',
+    };
+    const commentC: GitHubPullRequestReviewComment = {
+      ...stubComment,
+      id: 3,
+      path: 'src/other.ts',
+    };
+    const otherItem: CodeViewItem = {
+      id: 'item-2',
+      type: 'diff',
+      fileDiff: { ...stubFileDiff, name: 'src/other.ts' },
+    } as CodeViewItem;
+
+    const result = buildReviewCommentCountByPath(
+      [stubComment, commentB, commentC],
+      [stubDiffItem, otherItem],
+    );
+    expect(result.get('src/file.ts')).toBe(2);
+    expect(result.get('src/other.ts')).toBe(1);
+  });
+
+  it('uses canonical path for renamed files when comment uses old path', () => {
+    const comment = { ...stubComment, path: 'src/old.ts' };
+    const renamedItem: CodeViewItem = {
+      id: 'item-1',
+      type: 'diff',
+      fileDiff: { ...stubFileDiff, name: 'src/new.ts', prevName: 'src/old.ts' },
+    } as CodeViewItem;
+
+    const result = buildReviewCommentCountByPath([comment], [renamedItem]);
+    expect(result.get('src/new.ts')).toBe(1);
+    expect(result.get('src/old.ts')).toBeUndefined();
+  });
+
+  it('uses comment path when no matching item found', () => {
+    const comment = { ...stubComment, path: 'src/orphan.ts' };
+    const result = buildReviewCommentCountByPath([comment], [stubDiffItem]);
+    expect(result.get('src/orphan.ts')).toBe(1);
+  });
+});
+
+describe('attachReviewCommentsToItems', () => {
+  it('returns items unchanged when no annotations match', () => {
+    const maps = {
+      inlineByItemId: new Map(),
+      orphanedByItemId: new Map(),
+      countByPath: new Map(),
+    };
+    const result = attachReviewCommentsToItems([stubDiffItem], maps);
+    expect(result).toHaveLength(1);
+    expect(result[0].annotations).toBeUndefined();
+  });
+
+  it('attaches diff annotations to a diff-type item', () => {
+    const annotation = {
+      side: 'additions' as const,
+      lineNumber: 10,
+      metadata: { kind: 'thread' as const, comments: [stubComment], orphaned: false },
+    };
+    const maps = {
+      inlineByItemId: new Map([['item-1', [annotation]]]),
+      orphanedByItemId: new Map(),
+      countByPath: new Map(),
+    };
+    const result = attachReviewCommentsToItems([stubDiffItem], maps);
+    expect(result[0].annotations).toHaveLength(1);
+    expect(result[0].annotations![0]).toHaveProperty('side', 'additions');
+  });
+
+  it('attaches line annotations to a file-type item', () => {
+    const fileItem: CodeViewItem = {
+      id: 'file-1',
+      type: 'file',
+      file: { name: 'src/file.ts', contents: '' },
+    } as CodeViewItem;
+
+    const annotation = {
+      lineNumber: 5,
+      metadata: { kind: 'thread' as const, comments: [stubComment], orphaned: false },
+    };
+    const maps = {
+      inlineByItemId: new Map([['file-1', [annotation]]]),
+      orphanedByItemId: new Map(),
+      countByPath: new Map(),
+    };
+    const result = attachReviewCommentsToItems([fileItem], maps);
+    expect(result[0].annotations).toHaveLength(1);
+    expect(result[0].annotations![0]).not.toHaveProperty('side');
+  });
+
+  it('filters out non-matching annotation types for each item type', () => {
+    const diffAnnotation = {
+      side: 'additions' as const,
+      lineNumber: 10,
+      metadata: { kind: 'thread' as const, comments: [stubComment], orphaned: false },
+    };
+    const lineAnnotation = {
+      lineNumber: 5,
+      metadata: { kind: 'thread' as const, comments: [stubComment], orphaned: false },
+    };
+
+    const fileItem: CodeViewItem = {
+      id: 'file-1',
+      type: 'file',
+      file: { name: 'src/file.ts', contents: '' },
+    } as CodeViewItem;
+
+    const diffItem: CodeViewItem = {
+      id: 'diff-1',
+      type: 'diff',
+      fileDiff: stubFileDiff,
+    } as CodeViewItem;
+
+    const maps = {
+      inlineByItemId: new Map([
+        ['file-1', [diffAnnotation, lineAnnotation]],
+        ['diff-1', [lineAnnotation, diffAnnotation]],
+      ]),
+      orphanedByItemId: new Map(),
+      countByPath: new Map(),
+    };
+
+    const result = attachReviewCommentsToItems([fileItem, diffItem], maps);
+    const fileResult = result.find((i) => i.id === 'file-1');
+    const diffResult = result.find((i) => i.id === 'diff-1');
+
+    expect(fileResult!.annotations).toHaveLength(1);
+    expect(fileResult!.annotations![0]).not.toHaveProperty('side');
+
+    expect(diffResult!.annotations).toHaveLength(1);
+    expect(diffResult!.annotations![0]).toHaveProperty('side', 'additions');
+  });
+});
+
+describe('mapReviewCommentsToItems', () => {
+  it('returns empty maps for empty comments', () => {
+    const result = mapReviewCommentsToItems([stubDiffItem], []);
+    expect(result.inlineByItemId.size).toBe(0);
+    expect(result.orphanedByItemId.size).toBe(0);
+    expect(result.countByPath.size).toBe(0);
+  });
+
+  it('maps an inline comment to the matching item', () => {
+    const result = mapReviewCommentsToItems([stubDiffItem], [stubComment]);
+    expect(result.inlineByItemId.size).toBe(1);
+    expect(result.orphanedByItemId.size).toBe(0);
+
+    const annotations = result.inlineByItemId.get('item-1');
+    expect(annotations).toHaveLength(1);
+    expect(annotations![0].lineNumber).toBe(10);
+    expect(annotations![0]).toHaveProperty('side', 'deletions');
+  });
+
+  it('maps orphaned comments when anchor has no line', () => {
+    const orphanComment: GitHubPullRequestReviewComment = {
+      ...stubComment,
+      line: null,
+      original_line: null,
+      start_line: null,
+      original_start_line: null,
+    };
+    const result = mapReviewCommentsToItems([stubDiffItem], [orphanComment]);
+    expect(result.inlineByItemId.size).toBe(0);
+    expect(result.orphanedByItemId.size).toBe(1);
+  });
+
+  it('builds count by path from mapped comments', () => {
+    const result = mapReviewCommentsToItems([stubDiffItem], [stubComment]);
+    expect(result.countByPath.get('src/file.ts')).toBe(1);
+  });
+
+  it('groups comments in the same thread together', () => {
+    const reply: GitHubPullRequestReviewComment = {
+      ...stubComment,
+      id: 2,
+      body: 'reply',
+      in_reply_to_id: 1,
+    };
+    const result = mapReviewCommentsToItems([stubDiffItem], [stubComment, reply]);
+    const annotations = result.inlineByItemId.get('item-1');
+    expect(annotations).toHaveLength(1);
+    const metadata = annotations![0].metadata;
+    expect(metadata?.kind).toBe('thread');
+    if (metadata?.kind === 'thread') {
+      expect(metadata.comments).toHaveLength(2);
+    }
+  });
+
+  it('skips comments that do not match any item path', () => {
+    const unmatchedComment: GitHubPullRequestReviewComment = {
+      ...stubComment,
+      path: 'src/no-match.ts',
+    };
+    const result = mapReviewCommentsToItems([stubDiffItem], [unmatchedComment]);
+    expect(result.inlineByItemId.size).toBe(0);
+    expect(result.orphanedByItemId.size).toBe(0);
+    expect(result.countByPath.size).toBe(0);
   });
 });
