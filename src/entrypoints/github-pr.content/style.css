@@ -819,6 +819,21 @@
   }
 }
 
+.gprv-progress-bar {
+  background: var(--gprv-border);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.gprv-progress-bar-fill {
+  background: var(--gprv-accent);
+  border-radius: 999px;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
 .gprv-loading-summary {
   color: var(--gprv-text);
   font-size: 15px;
