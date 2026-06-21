@@ -74,8 +74,9 @@ export function usePopup() {
       const viewer = await fetchGitHubViewer();
 
       if (viewer) {
+        const { login, avatar_url } = viewer;
         await browser.storage.sync.set({
-          githubTokenViewer: JSON.stringify(viewer),
+          githubTokenViewer: JSON.stringify({ login, avatar_url }),
         });
         dispatch({ type: 'SET_SAVED', viewer });
       } else {
