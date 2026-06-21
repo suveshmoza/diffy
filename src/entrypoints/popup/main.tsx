@@ -1,60 +1,19 @@
-import { type SubmitEvent, useEffect, useState } from 'react';
+import {
+  IconAlertCircle,
+  IconCircleCheck,
+  IconLoader,
+  IconLoader2,
+  IconUser,
+} from '@tabler/icons-react';
 import { createRoot } from 'react-dom/client';
 
 import logoUrl from '@/assets/logo.png';
+import { usePopup } from '@/hooks/use-popup';
 
 import './style.css';
 
 function PopupApp() {
-  const [token, setToken] = useState('');
-  const [hasSavedToken, setHasSavedToken] = useState(false);
-  const [status, setStatus] = useState('');
-
-  useEffect(() => {
-    if (!browser?.storage?.sync) {
-      return;
-    }
-
-    browser.storage.sync
-      .get('githubToken')
-      .then((stored) => {
-        if (typeof stored.githubToken === 'string' && stored.githubToken.trim()) {
-          setToken(stored.githubToken);
-          setHasSavedToken(true);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  async function save(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!browser?.storage?.sync) {
-      setStatus('Extension storage is unavailable.');
-      return;
-    }
-
-    const trimmed = token.trim();
-    if (!trimmed) {
-      setStatus('Enter a token before saving.');
-      return;
-    }
-
-    await browser.storage.sync.set({ githubToken: trimmed });
-    setHasSavedToken(true);
-    setStatus('Saved. Reload open PR tabs to apply.');
-  }
-
-  async function clear() {
-    if (!browser?.storage?.sync) {
-      setStatus('Extension storage is unavailable.');
-      return;
-    }
-
-    await browser.storage.sync.remove('githubToken');
-    setToken('');
-    setHasSavedToken(false);
-    setStatus('Token cleared.');
-  }
+  const { state, tokenInput, handleSave, handleClear, handleTokenChange } = usePopup();
 
   return (
     <main>
@@ -72,81 +31,153 @@ function PopupApp() {
         </div>
       </header>
 
-      <p className='intro'>
-        Open a pull request and click <strong>View Diff</strong> in the PR header.
-      </p>
-
-      <section className='card'>
-        <div className='card-header'>
-          <h2>GitHub token</h2>
-          <span className={`badge${hasSavedToken ? ' badge-saved' : ''}`}>
-            {hasSavedToken ? 'Saved' : 'Optional'}
-          </span>
-        </div>
-        <p className='card-copy'>For private repos or higher API rate limits.</p>
-
-        <form onSubmit={save}>
-          <label
-            className='sr-only'
-            htmlFor='github-token'
-          >
-            GitHub token
-          </label>
-          <input
-            id='github-token'
-            type='password'
-            value={token}
-            placeholder='github_pat_…'
-            onChange={(event) => setToken(event.currentTarget.value)}
-            autoComplete='off'
-            spellCheck={false}
+      {state.status === 'loading' && (
+        <section
+          className='card card-centered'
+          role='status'
+          aria-live='polite'
+        >
+          <IconLoader
+            className='popup-spinner'
+            size={28}
+            stroke={2}
           />
-          <div className='actions'>
-            <button type='submit'>Save</button>
-            <button
-              type='button'
-              className='button-secondary'
-              onClick={clear}
-              disabled={!token && !hasSavedToken}
-            >
-              Clear
-            </button>
-          </div>
-        </form>
+          <p className='status-text'>Loading&hellip;</p>
+        </section>
+      )}
 
-        {status ? <p className='status'>{status}</p> : null}
-        <p className='hint'>
-          Needs pull request write access (repo or public_repo scope) to post comments.
-        </p>
-      </section>
+      {(state.status === 'empty' || state.status === 'error' || state.status === 'validating') && (
+        <>
+          <p className='intro'>
+            Open any PR and click <strong>View Diff</strong> in the header.
+          </p>
 
-      <a
-        className='footer-link'
-        href='https://github.com/pulls'
-        target='_blank'
-        rel='noreferrer'
-      >
-        Open GitHub pulls
-      </a>
+          <section className={`card ${state.status === 'error' ? 'card-error' : ''}`}>
+            <div className='card-header'>
+              <h2>GitHub token</h2>
+              <span className='badge'>Optional</span>
+            </div>
+            <p className='card-copy'>For private repos and higher API rate limits.</p>
 
-      <p className='powered-by'>
-        Powered by{' '}
-        <a
-          href='https://trees.software'
-          target='_blank'
-          rel='noreferrer'
-        >
-          Pierre Trees
-        </a>{' '}
-        &{' '}
-        <a
-          href='https://diffs.com'
-          target='_blank'
-          rel='noreferrer'
-        >
-          Pierre Diffs
-        </a>
-      </p>
+            {state.status === 'error' && (
+              <div
+                className='error-banner'
+                role='alert'
+              >
+                <IconAlertCircle
+                  size={16}
+                  stroke={2}
+                />
+                <span>{state.message}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSave}>
+              <label
+                className='input-label'
+                htmlFor='github-token'
+              >
+                Personal access token
+              </label>
+              <input
+                id='github-token'
+                type='password'
+                value={tokenInput}
+                placeholder='github_pat_…'
+                onChange={(event) => handleTokenChange(event.currentTarget.value)}
+                autoComplete='off'
+                spellCheck={false}
+                aria-invalid={state.status === 'error'}
+                disabled={state.status === 'validating'}
+              />
+              <div className='actions actions-single'>
+                <button
+                  type='submit'
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                  disabled={state.status === 'validating'}
+                >
+                  {state.status === 'validating' ? (
+                    <>
+                      <IconLoader2
+                        color='white'
+                        className='popup-spinner'
+                        size={20}
+                        stroke={2}
+                      />
+                    </>
+                  ) : (
+                    'Save'
+                  )}
+                </button>
+              </div>
+            </form>
+
+            <p className='hint'>
+              Pull request (read and write) and Contents (read) access is required.
+            </p>
+          </section>
+        </>
+      )}
+
+      {state.status === 'saved' && (
+        <>
+          <p className='intro'>
+            Open any PR and click <strong>View Diff</strong> in the header.
+          </p>
+
+          <section className='card card-saved'>
+            <div className='card-header'>
+              <h2>GitHub token</h2>
+              <span className='badge badge-saved'>
+                <IconCircleCheck
+                  size={12}
+                  stroke={2}
+                />
+                Verified
+              </span>
+            </div>
+            <p className='card-copy'>For private repos and higher API rate limits.</p>
+
+            {state.viewer ? (
+              <div className='viewer-row'>
+                {state.viewer.avatar_url ? (
+                  <img
+                    className='viewer-avatar'
+                    src={state.viewer.avatar_url}
+                    alt=''
+                    width={32}
+                    height={32}
+                  />
+                ) : (
+                  <div className='viewer-avatar viewer-avatar-fallback'>
+                    <IconUser
+                      size={18}
+                      stroke={2}
+                    />
+                  </div>
+                )}
+                <span className='viewer-login'>@{state.viewer.login}</span>
+              </div>
+            ) : (
+              <p className='status-text status-text-saved'>Token saved and ready to use.</p>
+            )}
+
+            <div className='actions actions-single'>
+              <button
+                type='button'
+                className='button-secondary'
+                onClick={handleClear}
+              >
+                Remove token
+              </button>
+            </div>
+          </section>
+        </>
+      )}
     </main>
   );
 }
