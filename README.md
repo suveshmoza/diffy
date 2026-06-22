@@ -14,7 +14,7 @@
 
 <https://github.com/user-attachments/assets/0a37798f-da98-46e1-a200-187290414452>
 
-> **Launching soon** on the Chrome Web Store and Firefox Add-ons. Install from source below in the meantime.
+> Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/diffy/oaakiockkfndnholpbeijclfbnldnpfn) or [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/diffy-pr/). Or build from source below.
 
 > Inspired by [Linear View Diff](https://github.com/CarterMcAlister/linear-code-review) by [Carter McAlister](https://github.com/CarterMcAlister) - a Chrome extension that adds a **View Diff** button on Linear review pages and renders linked GitHub PRs with Pierre Trees and Pierre Diffs.
 
