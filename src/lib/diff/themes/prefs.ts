@@ -2,7 +2,7 @@ import { type DiffsThemeNames } from '@pierre/diffs';
 
 import { DIFF_THEME_IDS } from './ids';
 
-export const DEFAULT_DIFF_THEME: DiffsThemeNames = 'github-dark';
+export const DEFAULT_DIFF_THEME: DiffsThemeNames = 'pierre-dark';
 
 export const DIFF_THEMES = DIFF_THEME_IDS;
 
