@@ -21,7 +21,7 @@
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
-    "@pierre/diffs": "1.2.10",
+    "@pierre/diffs": "1.2.11",
     "@pierre/trees": "1.0.0-beta.4",
     "@tabler/icons-react": "^3.44.0",
     "markdown-to-jsx": "^9.8.2",
@@ -29,15 +29,15 @@
     "react-dom": "19.2.7"
   },
   "devDependencies": {
-    "@types/chrome": "0.1.43",
+    "@types/chrome": "0.2.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@wxt-dev/auto-icons": "^1.1.1",
     "@wxt-dev/module-react": "^1.2.2",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.7",
-    "oxfmt": "^0.54.0",
-    "oxlint": "^1.69.0",
+    "lint-staged": "^17.0.8",
+    "oxfmt": "^0.55.0",
+    "oxlint": "^1.70.0",
     "shiki": "^4.2.0",
     "typescript": "6.0.3",
     "vite": "^8.0.16",
