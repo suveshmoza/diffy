@@ -78,10 +78,11 @@ import { FileTreePanel } from './FileTreePanel';
 
 type DiffOverlayProps = {
   data: PullRequestDiffData;
+  pullRequestUrl: string;
   onClose: () => void;
 };
 
-export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
+export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps) {
   const viewerRef = useRef<CodeViewHandle<ReviewAnnotationMetadata>>(null);
   const codeViewHostRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLElement>(null);
@@ -717,6 +718,7 @@ export function DiffOverlay({ data, onClose }: DiffOverlayProps) {
       >
         <DiffOverlayHeader
           pullRequest={data.pullRequest}
+          pullRequestUrl={pullRequestUrl}
           diffLayout={diffLayout}
           displayPrefs={displayPrefs}
           reviewCommentsLoadError={data.reviewCommentsLoadError}

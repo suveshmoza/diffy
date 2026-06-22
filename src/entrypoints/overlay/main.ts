@@ -32,33 +32,51 @@ function postToHost(message: OverlayFrameMessage): void {
 }
 
 function notifyClose(): void {
-  postToHost({ source: OVERLAY_CHILD_SOURCE, type: 'close' });
+  if (window === window.parent) {
+    window.close();
+  } else {
+    postToHost({ source: OVERLAY_CHILD_SOURCE, type: 'close' });
+  }
 }
 
-window.addEventListener('message', (event: MessageEvent) => {
-  if (event.source !== window.parent || !isOverlayHostMessage(event.data)) {
-    return;
-  }
+const isStandalone = window === window.parent;
 
-  const message = event.data;
-  switch (message.type) {
-    case 'mount':
-      mountOverlay({
-        container: getContainer(),
-        pullRequestUrl: message.pullRequestUrl,
-        onClose: notifyClose,
-      });
-      break;
-    case 'prefetch':
-      prefetchOverlayData(message.pullRequestUrl);
-      break;
-    case 'unmount':
-      unmountOverlayApp();
-      break;
-    case 'destroy':
-      destroyOverlayRuntime();
-      break;
+if (isStandalone) {
+  const params = new URLSearchParams(location.search);
+  const prUrl = params.get('pr');
+  if (prUrl) {
+    mountOverlay({
+      container: getContainer(),
+      pullRequestUrl: prUrl,
+      onClose: notifyClose,
+    });
   }
-});
+} else {
+  window.addEventListener('message', (event: MessageEvent) => {
+    if (event.source !== window.parent || !isOverlayHostMessage(event.data)) {
+      return;
+    }
 
-postToHost({ source: OVERLAY_CHILD_SOURCE, type: 'ready' });
+    const message = event.data;
+    switch (message.type) {
+      case 'mount':
+        mountOverlay({
+          container: getContainer(),
+          pullRequestUrl: message.pullRequestUrl,
+          onClose: notifyClose,
+        });
+        break;
+      case 'prefetch':
+        prefetchOverlayData(message.pullRequestUrl);
+        break;
+      case 'unmount':
+        unmountOverlayApp();
+        break;
+      case 'destroy':
+        destroyOverlayRuntime();
+        break;
+    }
+  });
+
+  postToHost({ source: OVERLAY_CHILD_SOURCE, type: 'ready' });
+}

@@ -121,6 +121,7 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
         <SidebarProvider>
           <DiffOverlay
             data={state.data}
+            pullRequestUrl={pullRequestUrl}
             onClose={onClose}
           />
         </SidebarProvider>

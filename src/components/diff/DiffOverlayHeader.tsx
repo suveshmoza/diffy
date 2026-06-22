@@ -1,4 +1,10 @@
-import { IconAlertTriangle, IconLayoutSidebar, IconUserCircle, IconX } from '@tabler/icons-react';
+import {
+  IconAlertTriangle,
+  IconExternalLink,
+  IconLayoutSidebar,
+  IconUserCircle,
+  IconX,
+} from '@tabler/icons-react';
 import { memo, type CSSProperties } from 'react';
 
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
@@ -22,6 +28,7 @@ function labelTextColor(bgColor: string): string {
 
 type DiffOverlayHeaderProps = {
   pullRequest: GitHubPullRequest;
+  pullRequestUrl: string;
   diffLayout: DiffLayout;
   displayPrefs: CodeViewDisplayPrefs;
   reviewCommentsLoadError?: string | null;
@@ -34,6 +41,7 @@ type DiffOverlayHeaderProps = {
 
 export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   pullRequest,
+  pullRequestUrl,
   diffLayout,
   displayPrefs,
   reviewCommentsLoadError,
@@ -216,6 +224,24 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           displayPrefs={displayPrefs}
           onChange={onDisplayPrefsChange}
         />
+
+        <button
+          className='gprv-header-icon-button'
+          type='button'
+          onClick={() => {
+            const url = browser.runtime.getURL(
+              `/overlay.html?pr=${encodeURIComponent(pullRequestUrl)}`,
+            );
+            window.open(url, '_blank');
+          }}
+          aria-label='Open in new tab'
+          title='Open in new tab'
+        >
+          <IconExternalLink
+            size={20}
+            stroke={2}
+          />
+        </button>
 
         <span
           className='gprv-header-divider'

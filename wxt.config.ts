@@ -95,7 +95,7 @@ export default defineConfig({
     version: '1.1.0',
     name: 'diffy',
     description: 'The missing PR review experience on GitHub',
-    permissions: ['storage'],
+    permissions: ['storage', 'contextMenus'],
     host_permissions: ['https://api.github.com/*', 'https://github.com/*'],
     content_security_policy: {
       // The overlay iframe runs Shiki's oniguruma WASM in the extension page + its worker.
