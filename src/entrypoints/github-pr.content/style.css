@@ -1743,3 +1743,34 @@
   padding: 2px 5px;
   white-space: nowrap;
 }
+
+.gprv-code-view-collapse-btn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--gprv-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  margin-left: -8px;
+  padding: 0;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+  width: 24px;
+}
+
+.gprv-code-view-collapse-btn:hover {
+  background: var(--gprv-control-active-bg);
+  color: var(--gprv-text);
+}
+
+.gprv-code-view-collapse-icon {
+  transition: transform 120ms ease;
+}
+
+.gprv-code-view-collapse-icon-collapsed {
+  transform: rotate(-90deg);
+}

@@ -1,19 +1,19 @@
 import type {
+  CodeViewItem,
   CodeViewLineSelection,
   CodeViewOptions,
   DiffLineAnnotation,
   LineAnnotation,
   SelectedLineRange,
 } from '@pierre/diffs';
-import { CodeView, type CodeViewHandle, useStableCallback } from '@pierre/diffs/react';
-import { IconCircleX, IconLoader, IconX } from '@tabler/icons-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSyncExternalStore } from 'react';
+import { CodeView, useStableCallback, type CodeViewHandle } from '@pierre/diffs/react';
+import { IconChevronDown, IconCircleX, IconLoader, IconX } from '@tabler/icons-react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
-import { useTreeThemeStyles, pickTreeThemeCustomProperties } from '@/hooks/useTreeThemeStyles';
+import { pickTreeThemeCustomProperties, useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
 import {
   getCodeViewItemIdForFile,
   invalidateCodeViewItemsCache,
@@ -29,8 +29,8 @@ import {
   updateCommentInAnnotation,
 } from '@/lib/code-view/review-mutations';
 import {
-  runCodeViewMutationPreservingScroll,
   deferCodeViewControlledSync,
+  runCodeViewMutationPreservingScroll,
 } from '@/lib/code-view/scroll-anchor';
 import {
   DEFAULT_CODE_VIEW_DISPLAY_PREFS,
@@ -72,7 +72,7 @@ import { useSidebarContext } from '@/providers/SidebarContext';
 
 import { OrphanedReviewCommentsBadge } from '../review/OrphanedReviewCommentsBadge';
 import { ReviewCommentComposer } from '../review/ReviewCommentComposer';
-import { ReviewCommentThread, getReviewReplyKey } from '../review/ReviewCommentThread';
+import { getReviewReplyKey, ReviewCommentThread } from '../review/ReviewCommentThread';
 import { DiffOverlayHeader } from './DiffOverlayHeader';
 import { FileTreePanel } from './FileTreePanel';
 
@@ -253,6 +253,20 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
       openDraftComposer({ id: context.item.id, range });
     },
   );
+
+  const handleToggleItemCollapsed = useStableCallback((itemId: string) => {
+    const viewer = viewerRef.current;
+    const item = viewer?.getItem(itemId);
+    if (!viewer || !item) {
+      return;
+    }
+
+    viewer.updateItem({
+      ...item,
+      collapsed: !item.collapsed,
+      version: item.version != null ? item.version + 1 : 1,
+    });
+  });
 
   const codeViewOptionsWithInteractions =
     useMemo((): CodeViewOptions<ReviewAnnotationMetadata> | null => {
@@ -699,6 +713,15 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     ],
   );
 
+  const renderHeaderPrefix = useStableCallback((item: CodeViewItem<ReviewAnnotationMetadata>) => {
+    return (
+      <CollapseDiffButton
+        collapsed={item.collapsed}
+        onToggle={() => handleToggleItemCollapsed(item.id)}
+      />
+    );
+  });
+
   return (
     <>
       <div
@@ -801,6 +824,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
                   className='gprv-code-view'
                   style={codeViewStyle}
                   renderAnnotation={renderReviewAnnotation}
+                  renderHeaderPrefix={renderHeaderPrefix}
                   renderHeaderMetadata={renderReviewHeaderMetadata}
                   options={codeViewOptionsWithInteractions ?? codeViewOptions}
                   selectedLines={hoveredThreadSelection ?? selectedLines}
@@ -832,5 +856,34 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
         </GitHubAuthProvider>
       </section>
     </>
+  );
+}
+
+function CollapseDiffButton({
+  collapsed = false,
+  onToggle,
+}: {
+  collapsed?: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type='button'
+      aria-expanded={!collapsed}
+      aria-label={collapsed ? 'Expand file' : 'Collapse file'}
+      className='gprv-code-view-collapse-btn'
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onToggle();
+      }}
+    >
+      <IconChevronDown
+        size={16}
+        stroke={2}
+        aria-hidden='true'
+        className={`gprv-code-view-collapse-icon${collapsed ? ' gprv-code-view-collapse-icon-collapsed' : ''}`}
+      />
+    </button>
   );
 }
