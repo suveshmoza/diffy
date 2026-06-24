@@ -22,7 +22,10 @@ import {
   FILE_TREE_COMMENT_ICON_SIZE,
 } from '@/lib/file-tree/comment-icon';
 import { createFileTreeInput } from '@/lib/file-tree/input';
-import type { GitHubPullRequestFile } from '@/lib/github/api';
+import type { GitHubPullRequest, GitHubPullRequestFile } from '@/lib/github/api';
+
+import { SidebarPrInfo } from './SidebarPrInfo';
+import { SidebarPrStats } from './SidebarPrStats';
 
 const TREE_INITIAL_VISIBLE_ROW_COUNT = 80;
 const TREE_OVERSCAN = 12;
@@ -32,6 +35,8 @@ type FileTreePanelProps = {
   selectedPath: string | null;
   reviewCommentCountByPath?: ReadonlyMap<string, number>;
   onSelectPath: (path: string) => void;
+  pullRequest: GitHubPullRequest;
+  reviewCommentCount: number;
 };
 
 const FILE_TREE_COMMENT_BADGE_CSS = `
@@ -180,6 +185,8 @@ export function FileTreePanel({
   selectedPath,
   reviewCommentCountByPath,
   onSelectPath,
+  pullRequest,
+  reviewCommentCount,
 }: FileTreePanelProps) {
   const treeThemeStyles = useTreeThemeStyles();
   const treeInput = useMemo(
@@ -313,6 +320,10 @@ export function FileTreePanel({
       className='gprv-tree-panel'
       style={treeThemeStyles}
     >
+      <SidebarPrStats
+        pullRequest={pullRequest}
+        reviewCommentCount={reviewCommentCount}
+      />
       <FileTreeSearchHeader
         inputRef={searchInputRef}
         matchingPaths={search.matchingPaths}
@@ -326,6 +337,7 @@ export function FileTreePanel({
         model={model}
         style={{ height: '100%' }}
       />
+      <SidebarPrInfo pullRequest={pullRequest} />
     </div>
   );
 }

@@ -217,9 +217,9 @@
     Consolas,
     Liberation Mono,
     monospace;
-  font-size: 11px;
+  font-size: 10px;
   max-width: 10rem;
-  padding: 3px 6px;
+  padding: 2px 4px;
 }
 
 .gprv-branch-arrow {
@@ -246,27 +246,6 @@
 .gprv-title span {
   color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
   font-size: 12px;
-}
-
-.gprv-header-meta-stack {
-  display: grid;
-  flex-shrink: 0;
-  gap: 6px;
-  justify-items: end;
-}
-
-.gprv-header-stats {
-  align-items: center;
-  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
-  border: 1px solid
-    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
-  border-radius: 8px;
-  display: inline-flex;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  gap: 8px;
-  line-height: 1;
-  padding: 7px 10px;
 }
 
 .gprv-review-load-error {
@@ -578,16 +557,6 @@
   color: var(--trees-theme-sidebar-fg, var(--gprv-text));
 }
 
-@media (max-width: 900px) {
-  .gprv-header-stats {
-    display: none;
-  }
-
-  .gprv-branches {
-    display: none;
-  }
-}
-
 @media (max-width: 640px) {
   .gprv-diff-header {
     align-items: flex-start;
@@ -624,7 +593,7 @@
 
 .gprv-tree-panel {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   min-height: 0;
 }
 
@@ -742,6 +711,99 @@
     var(--trees-theme-sidebar-header-fg, var(--gprv-muted)) 88%,
     transparent
   );
+}
+
+/* ── Sidebar PR stats bar (top) ── */
+
+.gprv-sidebar-pr-stats-bar {
+  align-items: center;
+  background: var(--trees-theme-sidebar-bg, var(--gprv-panel-bg));
+  border-bottom: 1px solid var(--trees-theme-sidebar-border, var(--gprv-border));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 12px;
+}
+
+/* ── Sidebar PR info footer ── */
+
+.gprv-sidebar-pr-info {
+  background: color-mix(
+    in srgb,
+    var(--trees-theme-sidebar-bg, var(--gprv-panel-bg)) 98%,
+    var(--trees-theme-sidebar-header-fg, var(--gprv-muted))
+  );
+  border-top: 1px solid var(--trees-theme-sidebar-border, var(--gprv-border));
+  padding: 10px 12px;
+}
+
+.gprv-sidebar-pr-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.gprv-sidebar-pr-table tr + tr td {
+  padding-top: 6px;
+}
+
+.gprv-pr-table-label {
+  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 0;
+  vertical-align: top;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.gprv-pr-table-label-inner {
+  align-items: center;
+  display: inline-flex;
+  gap: 5px;
+}
+
+.gprv-pr-table-value {
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 0 0 0 12px;
+  text-align: right;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.gprv-pr-table-author {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.gprv-pr-table-labels {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: -1px 0;
+  min-width: 0;
+}
+
+.gprv-sidebar-pr-stats {
+  align-items: center;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  gap: 8px;
+  line-height: 1;
+}
+
+.gprv-sidebar-pr-comments {
+  align-items: center;
+  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  display: inline-flex;
+  font-size: 12px;
+  gap: 4px;
+  line-height: 1.3;
 }
 
 .gprv-code-view-host {
@@ -1674,7 +1736,7 @@
 .gprv-pr-author {
   align-items: center;
   display: inline-flex;
-  font-size: 12px;
+  font-size: 10px;
   gap: 4px;
   min-width: 0;
   overflow: hidden;
@@ -1708,6 +1770,7 @@
 .gprv-state-merged {
   background: color-mix(in srgb, #a371f7 18%, transparent);
   color: #a371f7;
+  padding: 2px 4px;
 }
 
 .gprv-pr-draft-badge {

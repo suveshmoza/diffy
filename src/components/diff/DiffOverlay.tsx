@@ -782,6 +782,8 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
                     selectedPath={selectedPath}
                     reviewCommentCountByPath={reviewCommentCountByPath}
                     onSelectPath={handleTreeSelect}
+                    pullRequest={data.pullRequest}
+                    reviewCommentCount={liveReviewComments.length}
                   />
                 ) : (
                   <div className='gprv-state'>
