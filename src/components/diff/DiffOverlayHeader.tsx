@@ -117,23 +117,25 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           onChange={onDisplayPrefsChange}
         />
 
-        <button
-          className='gprv-header-icon-button'
-          type='button'
-          onClick={() => {
-            const url = browser.runtime.getURL(
-              `/overlay.html?pr=${encodeURIComponent(pullRequestUrl)}`,
-            );
-            window.open(url, '_blank');
-          }}
-          aria-label='Open in new tab'
-          title='Open in new tab'
-        >
-          <IconExternalLink
-            size={16}
-            stroke={2}
-          />
-        </button>
+        {window !== window.parent ? (
+          <button
+            className='gprv-header-icon-button'
+            type='button'
+            onClick={() => {
+              const url = browser.runtime.getURL(
+                `/overlay.html?pr=${encodeURIComponent(pullRequestUrl)}`,
+              );
+              window.open(url, '_blank');
+            }}
+            aria-label='Open in new tab'
+            title='Open in new tab'
+          >
+            <IconExternalLink
+              size={16}
+              stroke={2}
+            />
+          </button>
+        ) : null}
 
         <button
           className='gprv-close gprv-header-icon-button'
