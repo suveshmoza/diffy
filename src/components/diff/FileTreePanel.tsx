@@ -335,7 +335,7 @@ export function FileTreePanel({
       <FileTree
         className='gprv-tree'
         model={model}
-        style={{ height: '100%' }}
+        style={{ height: '100%', colorScheme: treeThemeStyles.colorScheme }}
       />
       <SidebarPrInfo pullRequest={pullRequest} />
     </div>
