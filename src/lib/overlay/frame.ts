@@ -1,4 +1,5 @@
 import { getOrCreateOverlayRoot, hideOverlayRoot, removeOverlayRoot } from '@/lib/github/page';
+import { lockPageScroll, unlockPageScroll } from '@/lib/github/scroll-lock';
 import {
   OVERLAY_PARENT_SOURCE,
   isOverlayFrameMessage,
@@ -120,6 +121,7 @@ export function prefetchOverlayFrame(pullRequestUrl: string): void {
 export function openOverlayFrame(pullRequestUrl: string): void {
   ensureFrame();
   getOrCreateOverlayRoot();
+  lockPageScroll();
   postToFrame({ source: OVERLAY_PARENT_SOURCE, type: 'mount', pullRequestUrl });
   state?.iframe.contentWindow?.focus();
 }
@@ -127,6 +129,7 @@ export function openOverlayFrame(pullRequestUrl: string): void {
 /** Hide the overlay but keep the worker pool alive in the iframe. */
 export function hideOverlayFrame(): void {
   hideOverlayRoot();
+  unlockPageScroll();
   if (state) {
     postToFrame({ source: OVERLAY_PARENT_SOURCE, type: 'unmount' });
   }
@@ -145,4 +148,5 @@ export function destroyOverlayFrame(): void {
   state?.iframe.remove();
   state = null;
   removeOverlayRoot();
+  unlockPageScroll();
 }

@@ -40,6 +40,18 @@
   visibility: hidden;
 }
 
+html.gprv-scroll-locked {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+html.gprv-scroll-locked body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  position: fixed;
+  width: 100%;
+}
+
 .gprv-backdrop {
   background: rgb(0 0 0 / 48%);
   inset: 0;
