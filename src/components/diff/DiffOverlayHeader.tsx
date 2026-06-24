@@ -98,7 +98,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           title={isSidebarCollapsed ? 'Show files' : 'Hide files'}
         >
           <IconLayoutSidebar
-            size={20}
+            size={16}
             stroke={2}
           />
         </button>
@@ -128,7 +128,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           title='Open in new tab'
         >
           <IconExternalLink
-            size={20}
+            size={16}
             stroke={2}
           />
         </button>
@@ -146,7 +146,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           title='Close'
         >
           <IconX
-            size={20}
+            size={16}
             stroke={2}
           />
         </button>

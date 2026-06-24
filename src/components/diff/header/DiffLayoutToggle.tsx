@@ -22,7 +22,7 @@ export function DiffLayoutToggle({ value, onChange }: DiffLayoutToggleProps) {
         title='Side by side'
       >
         <IconColumns
-          size={20}
+          size={16}
           stroke={2}
         />
       </button>
@@ -34,7 +34,7 @@ export function DiffLayoutToggle({ value, onChange }: DiffLayoutToggleProps) {
         title='Unified'
       >
         <IconLayoutRows
-          size={20}
+          size={16}
           stroke={2}
         />
       </button>

@@ -18,7 +18,7 @@ export function ThemePicker() {
     <HeaderPopoverListbox
       icon={
         <IconPaint
-          size={20}
+          size={16}
           stroke={2}
         />
       }
