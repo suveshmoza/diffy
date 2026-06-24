@@ -1,0 +1,203 @@
+diff --git a/dist/model/FileTreeController.js b/dist/model/FileTreeController.js
+index 37c5d1ffedd5aff0258dec41b1b5cedb240aa3a6..e3eec0fb2ec1c50e6ec6999b7335c755f3f10698 100644
+--- a/dist/model/FileTreeController.js
++++ b/dist/model/FileTreeController.js
+@@ -89,6 +89,7 @@ var FileTreeController = class {
+ 	#removeRenamingPathIfCanceled = false;
+ 	#searchMatchPathSet = /* @__PURE__ */ new Set();
+ 	#searchMatchingPaths = [];
++	#searchManualExpandOverrides = /* @__PURE__ */ new Map();
+ 	#searchMode;
+ 	#searchPreviousExpandedPaths = null;
+ 	#searchValue = null;
+@@ -330,6 +331,13 @@ var FileTreeController = class {
+ 	toggleMountedDirectoryFromInput(path) {
+ 		const directoryPath = this.resolveMountedDirectoryPathFromInput(path);
+ 		if (directoryPath == null) return;
++		if (this.#searchValue != null && this.#searchValue.length > 0) {
++			if (this.#searchManualExpandOverrides.has(directoryPath)) this.#searchManualExpandOverrides.delete(directoryPath);
++			else {
++				const willExpand = !this.#store.isExpanded(directoryPath);
++				this.#searchManualExpandOverrides.set(directoryPath, willExpand ? "expand" : "collapse");
++			}
++		}
+ 		this.#toggleDirectory(directoryPath);
+ 	}
+ 	selectAllVisiblePaths() {
+@@ -930,7 +938,6 @@ var FileTreeController = class {
+ 	}
+ 	#syncSearchVisibilityState() {
+ 		if (this.#searchValue == null || this.#searchValue.length === 0) {
+-			this.#searchMatchingPaths = [];
+ 			this.#searchVisibleIndices = null;
+ 			this.#searchVisiblePaths = null;
+ 			this.#searchVisibleIndexByPath = null;
+@@ -938,7 +945,6 @@ var FileTreeController = class {
+ 			return;
+ 		}
+ 		const currentVisiblePaths = this.#projectionPaths;
+-		this.#searchMatchingPaths = currentVisiblePaths.filter((path) => this.#searchMatchPathSet.has(path));
+ 		if (this.#searchMode !== "hide-non-matches" || this.#searchMatchPathSet.size === 0) {
+ 			this.#searchVisibleIndices = null;
+ 			this.#searchVisiblePaths = null;
+@@ -949,8 +955,26 @@ var FileTreeController = class {
+ 		const visibleIndices = [];
+ 		const visiblePaths = [];
+ 		const visibleIndexByPath = /* @__PURE__ */ new Map();
+-		for (const [index, path] of currentVisiblePaths.entries()) {
+-			if (this.#searchVisiblePathSet?.has(path) !== true) continue;
++		const overrideEntries = this.#searchManualExpandOverrides.size > 0 ? [...this.#searchManualExpandOverrides] : null;
++		const searchVisiblePathSet = this.#searchVisiblePathSet;
++		for (let index = 0; index < currentVisiblePaths.length; index += 1) {
++			const path = currentVisiblePaths[index];
++			let included = searchVisiblePathSet?.has(path) === true;
++			if (!included && overrideEntries != null) {
++				let deepestMatchLength = -1;
++				let deepestState = null;
++				for (let entryIndex = 0; entryIndex < overrideEntries.length; entryIndex += 1) {
++					const [overridePath, overrideState] = overrideEntries[entryIndex];
++					if (path === overridePath || path.length > overridePath.length && path.startsWith(overridePath)) {
++						if (overridePath.length > deepestMatchLength) {
++							deepestMatchLength = overridePath.length;
++							deepestState = overrideState;
++						}
++					}
++				}
++				if (deepestState === "expand") included = true;
++			}
++			if (!included) continue;
+ 			visibleIndexByPath.set(path, visiblePaths.length);
+ 			visibleIndices.push(index);
+ 			visiblePaths.push(path);
+@@ -990,14 +1014,18 @@ var FileTreeController = class {
+ 		if (previousSearch == null && normalizedValue != null) this.#searchPreviousExpandedPaths = this.#getExpandedDirectoryPaths();
+ 		this.#searchValue = normalizedValue;
+ 		if (normalizedValue == null) {
++			this.#searchManualExpandOverrides.clear();
+ 			this.#restoreSearchExpandedPaths(true);
+ 			this.#searchPreviousExpandedPaths = null;
+ 			this.#searchMatchPathSet.clear();
++			this.#searchMatchingPaths = [];
+ 			this.#searchVisiblePathSet = null;
+ 			this.#rebuildVisibleProjection(this.#focusedPath, true);
+ 		} else if (normalizedValue.length === 0) {
++			this.#searchManualExpandOverrides.clear();
+ 			this.#restoreSearchExpandedPaths(false);
+ 			this.#searchMatchPathSet.clear();
++			this.#searchMatchingPaths = [];
+ 			this.#searchVisiblePathSet = null;
+ 			this.#rebuildVisibleProjection(this.#focusedPath, true);
+ 		} else {
+@@ -1012,8 +1040,10 @@ var FileTreeController = class {
+ 	#refreshActiveSearchState() {
+ 		if (this.#searchValue == null || this.#searchValue.length === 0) {
+ 			this.#searchMatchPathSet.clear();
++			this.#searchMatchingPaths = [];
+ 			return this.#focusedPath;
+ 		}
++		this.#pruneStaleManualExpandOverrides();
+ 		const searchValue = this.#searchValue;
+ 		const listedPaths = this.#getListedPaths();
+ 		const listedPathsLowerCase = this.#getListedPathsLowerCase();
+@@ -1038,6 +1068,7 @@ var FileTreeController = class {
+ 			focusCandidate ??= path;
+ 		}
+ 		this.#searchMatchPathSet = matchingPathSet;
++		this.#searchMatchingPaths = matchingPaths;
+ 		const searchVisiblePathSet = this.#searchMode === "hide-non-matches" && matchingPaths.length > 0 ? /* @__PURE__ */ new Set() : null;
+ 		this.#searchVisiblePathSet = searchVisiblePathSet;
+ 		const expandedPaths = this.#searchMode === "expand-matches" ? new Set(this.#searchPreviousExpandedPaths ?? []) : /* @__PURE__ */ new Set();
+@@ -1049,6 +1080,23 @@ var FileTreeController = class {
+ 				if (searchVisiblePathSet != null) searchVisiblePathSet.add(ancestorPath);
+ 			}
+ 		}
++		for (const [overridePath, overrideState] of this.#searchManualExpandOverrides) {
++			if (overrideState === "expand") {
++				expandedPaths.add(overridePath);
++				if (searchVisiblePathSet != null) searchVisiblePathSet.add(overridePath);
++				for (const ancestorPath of getAncestorDirectoryPaths(overridePath)) {
++					if (this.#searchManualExpandOverrides.get(ancestorPath) === "collapse") break;
++					expandedPaths.add(ancestorPath);
++					if (searchVisiblePathSet != null) searchVisiblePathSet.add(ancestorPath);
++				}
++			} else if (overrideState === "collapse") {
++				expandedPaths.delete(overridePath);
++				if (searchVisiblePathSet != null) {
++					searchVisiblePathSet.add(overridePath);
++					for (const ancestorPath of getAncestorDirectoryPaths(overridePath)) searchVisiblePathSet.add(ancestorPath);
++				}
++			}
++		}
+ 		this.#setExpandedPaths(expandedPaths);
+ 		return focusCandidate ?? this.#focusedPath;
+ 	}
+@@ -1121,7 +1169,26 @@ var FileTreeController = class {
+ 		if (this.#hasFullProjection) return;
+ 		this.#rebuildVisibleProjection(this.#focusedPath, true);
+ 	}
++	#pruneStaleManualExpandOverrides() {
++		if (this.#searchManualExpandOverrides.size === 0) return;
++		for (const overridePath of [...this.#searchManualExpandOverrides.keys()]) {
++			if (this.resolveMountedDirectoryPathFromInput(overridePath) !== overridePath) this.#searchManualExpandOverrides.delete(overridePath);
++		}
++	}
++	#remapManualExpandOverridesThroughMutation(event) {
++		if (this.#searchManualExpandOverrides.size === 0) return;
++		const nextOverrides = /* @__PURE__ */ new Map();
++		for (const [overridePath, overrideState] of this.#searchManualExpandOverrides) {
++			const remappedPath = remapPathThroughMutation(overridePath, event);
++			if (remappedPath == null) continue;
++			const canonicalPath = this.#store.getPathInfo(remappedPath)?.path ?? null;
++			if (canonicalPath == null || !canonicalPath.endsWith("/")) continue;
++			nextOverrides.set(canonicalPath, overrideState);
++		}
++		this.#searchManualExpandOverrides = nextOverrides;
++	}
+ 	#applyMutationState(event) {
++		this.#remapManualExpandOverridesThroughMutation(event);
+ 		const nextRenamingPath = remapPathThroughMutation(this.#renamingPath, event);
+ 		if (nextRenamingPath == null && this.#renamingPath != null) this.#renamingValue = "";
+ 		this.#renamingPath = nextRenamingPath;
+@@ -1146,7 +1213,12 @@ var FileTreeController = class {
+ 			}
+ 			if (this.#dragSession != null && isPathMutationEvent(event)) this.#dragSession = null;
+ 			const focusPathCandidate = isPathMutationEvent(event) ? this.#applyMutationState(event) : this.#focusedPath;
+-			const searchFocusCandidate = this.#searchValue != null && this.#searchValue.length > 0 ? this.#refreshActiveSearchState() : this.#searchValue === "" ? this.#focusedPath : focusPathCandidate;
++			let searchFocusCandidate;
++			if (this.#searchValue != null && this.#searchValue.length > 0) {
++				const refreshedSearchFocusCandidate = this.#refreshActiveSearchState();
++				searchFocusCandidate = this.#focusedPath != null && this.#searchVisiblePathSet?.has(this.#focusedPath) === true ? this.#focusedPath : refreshedSearchFocusCandidate;
++			} else if (this.#searchValue === "") searchFocusCandidate = this.#focusedPath;
++			else searchFocusCandidate = focusPathCandidate;
+ 			const shouldBuildFullProjection = this.#searchValue != null || event.operation !== "expand" && event.operation !== "collapse";
+ 			this.#rebuildVisibleProjection(searchFocusCandidate, shouldBuildFullProjection);
+ 			this.#emit();
+diff --git a/dist/render/FileTreeView.js b/dist/render/FileTreeView.js
+index 648639b4b65c1dd797434e3afe189848426f4d53..061b03644a09f5c38de5e046f9f0a84fd3ccfd43 100644
+--- a/dist/render/FileTreeView.js
++++ b/dist/render/FileTreeView.js
+@@ -1063,11 +1063,6 @@ function FileTreeView({ composition, controller, gitStatusByPath, ignoredGitDire
+ 			} else if (event.key === "Enter") {
+ 				const currentFocusedPath = controller.getFocusedPath();
+ 				if (currentFocusedPath != null) controller.selectOnlyPath(currentFocusedPath);
+-				const scrollElement$1 = scrollRef.current;
+-				const viewportHeight = readMeasuredViewportHeight(scrollElement$1, resolvedViewportHeight);
+-				restoreTreeFocusViewportOffsetRef.current = focusedIndex < 0 || scrollElement$1 == null ? null : Math.max(0, Math.min(focusedIndex * itemHeight - scrollElement$1.scrollTop, Math.max(0, viewportHeight - itemHeight)));
+-				restoreTreeFocusAfterSearchCloseRef.current = true;
+-				controller.closeSearch();
+ 			} else if (event.key === "ArrowDown") controller.focusNextSearchMatch();
+ 			else if (event.key === "ArrowUp") controller.focusPreviousSearchMatch();
+ 			else return;
+diff --git a/dist/render/rowClickPlan.js b/dist/render/rowClickPlan.js
+index c859e97039c30bfcd8a9d8ae16ec2a46a19f5c92..5e2c536c51d8f13acdaf1314e372e991dc3095d8 100644
+--- a/dist/render/rowClickPlan.js
++++ b/dist/render/rowClickPlan.js
+@@ -8,7 +8,7 @@ function computeFileTreeRowClickPlan(input) {
+ 		kind: "range"
+ 	} : additive ? { kind: "toggle" } : { kind: "single" };
+ 	return {
+-		closeSearch: isSearchOpen,
++		closeSearch: false,
+ 		revealCanonical: mode === "sticky",
+ 		selection,
+ 		toggleDirectory: !hasModifier && isDirectory
