@@ -1,5 +1,6 @@
 import type { ResolvedDiffTheme } from '@/lib/diff/themes/resolve';
 import type { ThemeColorScheme } from '@/lib/theming/activeThemeSnapshot';
+import { sanitizeTreeThemeStyles } from '@/lib/theming/sanitizeTreeThemeStyles';
 import { treeThemeProps } from '@/lib/theming/treeThemeProps';
 
 export function buildTreeThemeStylesFromResolved(
@@ -11,8 +12,8 @@ export function buildTreeThemeStylesFromResolved(
     { reconcileForegroundFromChrome: true },
   );
 
-  return {
+  return sanitizeTreeThemeStyles({
     ...style,
     colorScheme,
-  };
+  });
 }

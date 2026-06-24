@@ -1,14 +1,7 @@
-import type { ReactNode } from 'react';
-
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 
-import {
-  DIFF_INDICATOR_OPTIONS,
-  HUNK_SEPARATOR_OPTIONS,
-  LINE_NUMBER_OPTIONS,
-  OVERFLOW_OPTIONS,
-} from './displaySettingsOptions';
-import { SegmentedControl } from './SegmentedControl';
+import { DIFF_INDICATOR_OPTIONS } from './displaySettingsOptions';
+import { SettingsSwitch } from './SettingsSwitch';
 
 type DisplaySettingsPanelProps = {
   id: string;
@@ -32,51 +25,46 @@ export default function DisplaySettingsPanel({
       role='dialog'
       aria-label='Display settings'
     >
-      <SettingsGroup label='Diff indicators'>
-        <SegmentedControl
-          ariaLabel='Diff indicators'
-          options={DIFF_INDICATOR_OPTIONS}
-          value={displayPrefs.diffIndicators}
-          onChange={(diffIndicators) => onChange({ diffIndicators })}
-        />
-      </SettingsGroup>
+      <div className='gprv-settings-row'>
+        <span className='gprv-settings-row-label'>Diff indicators</span>
+        <div
+          className='gprv-settings-icon-group'
+          role='group'
+          aria-label='Diff indicators'
+        >
+          {DIFF_INDICATOR_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type='button'
+              className='gprv-settings-icon-button'
+              data-active={displayPrefs.diffIndicators === option.value ? '' : undefined}
+              aria-pressed={displayPrefs.diffIndicators === option.value}
+              title={option.label}
+              onClick={() => onChange({ diffIndicators: option.value })}
+            >
+              {option.icon}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <SettingsGroup label='Hunk separators'>
-        <SegmentedControl
-          ariaLabel='Hunk separators'
-          options={HUNK_SEPARATOR_OPTIONS}
-          value={displayPrefs.hunkSeparators}
-          onChange={(hunkSeparators) => onChange({ hunkSeparators })}
-          wrap
+      <div className='gprv-settings-row'>
+        <span className='gprv-settings-row-label'>Line numbers</span>
+        <SettingsSwitch
+          label='Line numbers'
+          checked={!displayPrefs.disableLineNumbers}
+          onChange={(show) => onChange({ disableLineNumbers: !show })}
         />
-      </SettingsGroup>
+      </div>
 
-      <SettingsGroup label='Line numbers'>
-        <SegmentedControl
-          ariaLabel='Line numbers'
-          options={LINE_NUMBER_OPTIONS}
-          value={displayPrefs.disableLineNumbers ? 'hide' : 'show'}
-          onChange={(choice) => onChange({ disableLineNumbers: choice === 'hide' })}
+      <div className='gprv-settings-row'>
+        <span className='gprv-settings-row-label'>Word wrap</span>
+        <SettingsSwitch
+          label='Word wrap'
+          checked={displayPrefs.overflow === 'wrap'}
+          onChange={(wrap) => onChange({ overflow: wrap ? 'wrap' : 'scroll' })}
         />
-      </SettingsGroup>
-
-      <SettingsGroup label='Line overflow'>
-        <SegmentedControl
-          ariaLabel='Line overflow'
-          options={OVERFLOW_OPTIONS}
-          value={displayPrefs.overflow}
-          onChange={(overflow) => onChange({ overflow })}
-        />
-      </SettingsGroup>
-    </div>
-  );
-}
-
-function SettingsGroup({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className='gprv-settings-group'>
-      <span className='gprv-settings-label'>{label}</span>
-      {children}
+      </div>
     </div>
   );
 }

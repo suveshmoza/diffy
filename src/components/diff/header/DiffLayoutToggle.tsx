@@ -8,36 +8,29 @@ type DiffLayoutToggleProps = {
 };
 
 export function DiffLayoutToggle({ value, onChange }: DiffLayoutToggleProps) {
+  const isSideBySide = value === 'switched';
+  const nextLayout = isSideBySide ? 'stacked' : 'switched';
+  const nextLabel = isSideBySide ? 'unified diff' : 'side-by-side diff';
+
   return (
-    <div
-      className='gprv-layout-toggle'
-      role='group'
-      aria-label='Diff layout'
+    <button
+      type='button'
+      className='gprv-header-icon-button'
+      onClick={() => onChange(nextLayout)}
+      aria-label={`Switch to ${nextLabel}`}
+      title={`Switch to ${nextLabel}`}
     >
-      <button
-        type='button'
-        data-active={value === 'switched' ? '' : undefined}
-        onClick={() => onChange('switched')}
-        aria-label='Side-by-side diff'
-        title='Side by side'
-      >
+      {isSideBySide ? (
         <IconColumns
-          size={20}
+          size={16}
           stroke={2}
         />
-      </button>
-      <button
-        type='button'
-        data-active={value === 'stacked' ? '' : undefined}
-        onClick={() => onChange('stacked')}
-        aria-label='Unified diff'
-        title='Unified'
-      >
+      ) : (
         <IconLayoutRows
-          size={20}
+          size={16}
           stroke={2}
         />
-      </button>
-    </div>
+      )}
+    </button>
   );
 }

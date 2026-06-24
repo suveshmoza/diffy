@@ -43,7 +43,7 @@ export function DisplaySettingsMenu({ displayPrefs, onChange }: DisplaySettingsM
         onClick={() => setIsOpen((open) => !open)}
       >
         <IconSettings
-          size={20}
+          size={16}
           stroke={2}
         />
       </button>
