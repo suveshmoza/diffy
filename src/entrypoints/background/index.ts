@@ -39,6 +39,6 @@ export default defineBackground(() => {
     const overlayUrl = browser.runtime.getURL(
       `${OVERLAY_PATH}?pr=${encodeURIComponent(targetUrl)}`,
     );
-    browser.tabs.create({ url: overlayUrl });
+    browser.tabs.create({ url: overlayUrl, active: false });
   });
 });
