@@ -13,7 +13,7 @@ export const DISPLAY_PREFS_STORAGE_KEY = 'codeViewDisplayPrefs';
 
 export const DEFAULT_CODE_VIEW_DISPLAY_PREFS: CodeViewDisplayPrefs = {
   diffIndicators: 'bars',
-  hunkSeparators: 'simple',
+  hunkSeparators: 'line-info',
   disableLineNumbers: false,
   overflow: 'wrap',
 };
