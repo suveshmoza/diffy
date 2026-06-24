@@ -11,7 +11,7 @@ import type { CodeViewDisplayPrefs, HunkSeparatorStyle } from '@/lib/diff/displa
 
 import type { SegmentOption } from './SegmentedControl';
 
-const ICON_SIZE = 18;
+const ICON_SIZE = 16;
 
 export type LineNumberChoice = 'show' | 'hide';
 

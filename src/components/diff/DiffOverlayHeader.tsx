@@ -47,17 +47,19 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
     >
       <div className='gprv-header-leading'>
         <div className='gprv-title'>
-          <div className='gprv-title-row'>
+          <div className='gprv-title-stack'>
             <span className='gprv-pr-badge'>#{pullRequest.number}</span>
-            <strong title={pullRequest.title}>{pullRequest.title}</strong>
-          </div>
-          <div className='gprv-title-meta'>
-            <span
-              className='gprv-repo'
-              title={base.repo.full_name}
-            >
-              {base.repo.full_name}
-            </span>
+            <div className='gprv-title-content'>
+              <strong title={pullRequest.title}>{pullRequest.title}</strong>
+              <div className='gprv-title-meta'>
+                <span
+                  className='gprv-repo'
+                  title={base.repo.full_name}
+                >
+                  {base.repo.full_name}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -132,11 +134,6 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
             stroke={2}
           />
         </button>
-
-        <span
-          className='gprv-header-divider'
-          aria-hidden='true'
-        />
 
         <button
           className='gprv-close gprv-header-icon-button'
