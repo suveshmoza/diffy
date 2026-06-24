@@ -575,7 +575,7 @@
 
 .gprv-body {
   display: grid;
-  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  grid-template-columns: 345px minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
 }
@@ -589,6 +589,8 @@
   display: grid;
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .gprv-tree-panel {

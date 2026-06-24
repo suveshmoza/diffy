@@ -81,7 +81,7 @@ const FILE_TREE_PANEL_BASE_CSS = `
   }
 
   :host {
-    --trees-padding-inline-override: 0;
+    --trees-padding-inline-override: 12px;
   }
 
   ${FILE_TREE_COMMENT_BADGE_CSS}
