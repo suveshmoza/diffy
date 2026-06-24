@@ -92,8 +92,6 @@ type FileTreeSearchHeaderProps = {
   matchingPaths: readonly string[];
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
-  onFocusNextMatch: () => void;
-  onFocusPreviousMatch: () => void;
 };
 
 function FileTreeSearchHeader({
@@ -101,8 +99,6 @@ function FileTreeSearchHeader({
   matchingPaths,
   searchQuery,
   onSearchQueryChange,
-  onFocusNextMatch,
-  onFocusPreviousMatch,
 }: FileTreeSearchHeaderProps) {
   const hasQuery = searchQuery.trim().length > 0;
   const matchCount = matchingPaths.length;
@@ -113,16 +109,6 @@ function FileTreeSearchHeader({
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     stopGitHubKeybindings(event);
-
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      if (event.shiftKey) {
-        onFocusPreviousMatch();
-      } else {
-        onFocusNextMatch();
-      }
-      return;
-    }
 
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -173,7 +159,6 @@ function FileTreeSearchHeader({
           aria-live='polite'
         >
           {matchCount} {matchCount === 1 ? 'match' : 'matches'}
-          <span className='gprv-tree-search-hint'> · Enter ↓ Shift+Enter ↑</span>
         </p>
       ) : null}
     </div>
@@ -232,7 +217,6 @@ export function FileTreePanel({
   const { model } = useFileTree({
     preparedInput: treeInput.preparedInput,
     initialExpansion: 'open',
-    initialSelectedPaths: selectedPath ? [selectedPath] : [],
     icons: 'complete',
     gitStatus: treeInput.gitStatus,
     renderRowDecoration,
@@ -248,7 +232,11 @@ export function FileTreePanel({
   const search = useFileTreeSearch(model);
 
   useEffect(() => {
-    model.setSearch(searchQuery);
+    if (searchQuery) {
+      model.setSearch(searchQuery);
+    } else {
+      model.closeSearch();
+    }
   }, [model, searchQuery]);
 
   // Pierre auto-focuses a hidden internal search input when search opens.
@@ -329,8 +317,6 @@ export function FileTreePanel({
         matchingPaths={search.matchingPaths}
         searchQuery={searchQuery}
         onSearchQueryChange={handleSearchQueryChange}
-        onFocusNextMatch={search.focusNextMatch}
-        onFocusPreviousMatch={search.focusPreviousMatch}
       />
       <FileTree
         className='gprv-tree'
