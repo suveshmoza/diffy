@@ -1,11 +1,19 @@
-import { IconAlertTriangle, IconExternalLink, IconLayoutSidebar, IconX } from '@tabler/icons-react';
+import {
+  IconAlertTriangle,
+  IconExternalLink,
+  IconLayoutSidebar,
+  IconMessages,
+  IconX,
+} from '@tabler/icons-react';
 import { memo, type CSSProperties } from 'react';
 
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
+import type { ViewedProgress } from '@/lib/review/viewed-files';
 import { useSidebarContext } from '@/providers/SidebarContext';
 
+import { ReviewProgress } from '../review/ReviewProgress';
 import { DiffLayoutToggle } from './header/DiffLayoutToggle';
 import { DisplaySettingsMenu } from './header/DisplaySettingsMenu';
 import { ThemePicker } from './header/ThemePicker';
@@ -17,6 +25,13 @@ type DiffOverlayHeaderProps = {
   displayPrefs: CodeViewDisplayPrefs;
   reviewCommentsLoadError?: string | null;
   rateLimit?: RateLimitState | null;
+  reviewProgress?: ViewedProgress | null;
+  isBatchMode?: boolean;
+  queuedCount?: number;
+  canReview?: boolean;
+  onJumpToNextUnviewed?: () => void;
+  onToggleBatchMode?: () => void;
+  onOpenPublish?: () => void;
   onDiffLayoutChange: (layout: DiffLayout) => void;
   onDisplayPrefsChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
   onClose: () => void;
@@ -30,6 +45,13 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   displayPrefs,
   reviewCommentsLoadError,
   rateLimit,
+  reviewProgress,
+  isBatchMode = false,
+  queuedCount = 0,
+  canReview = false,
+  onJumpToNextUnviewed,
+  onToggleBatchMode,
+  onOpenPublish,
   onDiffLayoutChange,
   onDisplayPrefsChange,
   onClose,
@@ -88,9 +110,49 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
             {isRateLimitExhausted ? 'API limit exhausted' : `${rateLimit.remaining} req remaining`}
           </p>
         ) : null}
+
+        {reviewProgress && onJumpToNextUnviewed ? (
+          <ReviewProgress
+            viewed={reviewProgress.viewed}
+            total={reviewProgress.total}
+            onJumpToNextUnviewed={onJumpToNextUnviewed}
+          />
+        ) : null}
       </div>
 
       <div className='gprv-header-toolbar'>
+        {canReview ? (
+          <>
+            <button
+              className={`gprv-review-cta${isBatchMode ? ' gprv-review-cta-active' : ''}`}
+              type='button'
+              onClick={onToggleBatchMode}
+              aria-pressed={isBatchMode}
+              title={
+                isBatchMode
+                  ? 'Comments are collected into one review. Click to stop collecting.'
+                  : 'Collect comments into a single review before publishing'
+              }
+            >
+              <IconMessages
+                size={15}
+                stroke={2}
+              />
+              {isBatchMode ? 'Reviewing' : 'Start Review'}
+            </button>
+            {isBatchMode && queuedCount > 0 ? (
+              <button
+                className='gprv-publish-cta'
+                type='button'
+                onClick={onOpenPublish}
+                title='Review and publish queued comments'
+              >
+                Publish ({queuedCount})
+              </button>
+            ) : null}
+          </>
+        ) : null}
+
         <button
           className='gprv-header-icon-button'
           type='button'
