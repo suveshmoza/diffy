@@ -11,8 +11,10 @@ type ReviewCommentComposerProps = {
   range: SelectedLineRange;
   pullRequestRef: GitHubPullRequestRef;
   commitId: string;
+  isBatchMode?: boolean;
   onCancel: () => void;
   onSuccess: (comment: GitHubPullRequestReviewComment) => void;
+  onQueue?: (body: string) => void;
 };
 
 export function ReviewCommentComposer({
@@ -20,8 +22,10 @@ export function ReviewCommentComposer({
   range,
   pullRequestRef,
   commitId,
+  isBatchMode = false,
   onCancel,
   onSuccess,
+  onQueue,
 }: ReviewCommentComposerProps) {
   const { viewerUser, hasToken } = useGitHubAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -45,6 +49,11 @@ export function ReviewCommentComposer({
       return;
     }
 
+    if (isBatchMode && onQueue) {
+      onQueue(trimmed);
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -65,7 +74,7 @@ export function ReviewCommentComposer({
     } finally {
       setIsSubmitting(false);
     }
-  }, [body, commitId, hasToken, onSuccess, path, pullRequestRef, range]);
+  }, [body, commitId, hasToken, isBatchMode, onQueue, onSuccess, path, pullRequestRef, range]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -149,7 +158,7 @@ export function ReviewCommentComposer({
                 onClick={() => void handleSubmit()}
                 disabled={isSubmitting || !body.trim()}
               >
-                {isSubmitting ? 'Posting…' : 'Comment'}
+                {isBatchMode ? 'Add to review' : isSubmitting ? 'Posting…' : 'Comment'}
               </button>
             </div>
           </div>
