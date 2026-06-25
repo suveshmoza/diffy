@@ -13,6 +13,7 @@ import {
   toAnnotationSide,
   type ReviewAnnotationMetadata,
   type ReviewDraftMetadata,
+  type ReviewQueuedMetadata,
   type ReviewThreadMetadata,
 } from '@/lib/review/comments';
 
@@ -128,6 +129,93 @@ export function replaceDraftWithThreadAnnotation(
   );
 
   return withAnnotations(withoutDraft, [...getAnnotations(withoutDraft), annotation]);
+}
+
+export function replaceDraftWithQueuedAnnotation(
+  item: CodeViewItem<ReviewAnnotationMetadata>,
+  draftId: string,
+  range: SelectedLineRange,
+  body: string,
+): { item: CodeViewItem<ReviewAnnotationMetadata>; queuedId: string } {
+  const withoutDraft = removeDraftAnnotation(item, draftId);
+  const queuedId = crypto.randomUUID();
+  const metadata: ReviewQueuedMetadata = { kind: 'queued', queuedId, range, body };
+  const annotation = createAnnotationForMetadata(
+    withoutDraft,
+    range.end,
+    range.endSide ?? range.side,
+    metadata,
+  );
+
+  return {
+    item: withAnnotations(withoutDraft, [...getAnnotations(withoutDraft), annotation]),
+    queuedId,
+  };
+}
+
+export function updateQueuedAnnotationBody(
+  item: CodeViewItem<ReviewAnnotationMetadata>,
+  queuedId: string,
+  body: string,
+): CodeViewItem<ReviewAnnotationMetadata> {
+  const annotations = getAnnotations(item);
+  let changed = false;
+
+  const nextAnnotations = annotations.map((annotation) => {
+    const metadata = annotation.metadata;
+    if (metadata?.kind !== 'queued' || metadata.queuedId !== queuedId) {
+      return annotation;
+    }
+
+    changed = true;
+    return { ...annotation, metadata: { ...metadata, body } };
+  });
+
+  if (!changed) {
+    return item;
+  }
+
+  return withAnnotations(item, nextAnnotations);
+}
+
+export function removeQueuedAnnotation(
+  item: CodeViewItem<ReviewAnnotationMetadata>,
+  queuedId: string,
+): CodeViewItem<ReviewAnnotationMetadata> {
+  const annotations = getAnnotations(item).filter(
+    (annotation) =>
+      !(annotation.metadata?.kind === 'queued' && annotation.metadata.queuedId === queuedId),
+  );
+
+  if (annotations.length === getAnnotations(item).length) {
+    return item;
+  }
+
+  return withAnnotations(item, annotations);
+}
+
+export function addThreadAnnotationForComment(
+  item: CodeViewItem<ReviewAnnotationMetadata>,
+  comment: GitHubPullRequestReviewComment,
+): CodeViewItem<ReviewAnnotationMetadata> {
+  const threadMetadata: ReviewThreadMetadata = {
+    kind: 'thread',
+    comments: [comment],
+    orphaned: false,
+  };
+  const line = getCommentAnchorLine(comment);
+  if (line == null) {
+    return item;
+  }
+
+  const annotation = createAnnotationForMetadata(
+    item,
+    line,
+    toAnnotationSide(comment.side),
+    threadMetadata,
+  );
+
+  return withAnnotations(item, [...getAnnotations(item), annotation]);
 }
 
 function sortCommentsByCreatedAt(
