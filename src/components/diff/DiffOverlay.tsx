@@ -8,25 +8,38 @@ import type {
 } from '@pierre/diffs';
 import { CodeView, useStableCallback, type CodeViewHandle } from '@pierre/diffs/react';
 import { IconChevronDown, IconCircleX, IconLoader, IconX } from '@tabler/icons-react';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
 import { pickTreeThemeCustomProperties, useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
+import { useViewedFiles } from '@/hooks/useViewedFiles';
 import {
   getCodeViewItemIdForFile,
   invalidateCodeViewItemsCache,
 } from '@/lib/code-view/build-items';
 import {
   addDraftAnnotation,
+  addThreadAnnotationForComment,
   appendReplyToThreadAnnotation,
   hasAnyDraftAnnotation,
   hasDraftAnnotation,
   removeCommentFromAnnotation,
   removeDraftAnnotation,
+  removeQueuedAnnotation,
+  replaceDraftWithQueuedAnnotation,
   replaceDraftWithThreadAnnotation,
   updateCommentInAnnotation,
+  updateQueuedAnnotationBody,
 } from '@/lib/code-view/review-mutations';
 import {
   deferCodeViewControlledSync,
@@ -45,6 +58,7 @@ import {
   type DiffLayout,
 } from '@/lib/diff/layout-prefs';
 import {
+  fetchPullRequestReviewComments,
   getRateLimitState,
   subscribeToRateLimitChanges,
   type GitHubPullRequestReviewComment,
@@ -53,14 +67,18 @@ import {
 import {
   deleteReviewComment,
   GitHubReviewWriteError,
+  publishBatchedReview,
   updateReviewComment,
+  type ReviewEvent,
 } from '@/lib/github/review-write';
+import { toBatchedReviewComments, type QueuedComment } from '@/lib/review/comment-queue';
 import {
   buildReviewCommentCountByPath,
   getItemPath,
   type ReviewAnnotationMetadata,
   type ReviewThreadMetadata,
 } from '@/lib/review/comments';
+import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
 import {
   bindReplySession,
   closeAllReplyComposers,
@@ -70,7 +88,9 @@ import {
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
 import { useSidebarContext } from '@/providers/SidebarContext';
 
+import { FileViewedCheckbox } from '../review/FileViewedCheckbox';
 import { OrphanedReviewCommentsBadge } from '../review/OrphanedReviewCommentsBadge';
+import { PublishReviewDialog } from '../review/PublishReviewDialog';
 import { ReviewCommentComposer } from '../review/ReviewCommentComposer';
 import { getReviewReplyKey, ReviewCommentThread } from '../review/ReviewCommentThread';
 import { DiffOverlayHeader } from './DiffOverlayHeader';
@@ -89,6 +109,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
   const selectedLinesRef = useRef<CodeViewLineSelection | null>(null);
   const hoveredThreadSelectionRef = useRef<CodeViewLineSelection | null>(null);
   const isOpeningDraftRef = useRef(false);
+  const handleTreeSelectRef = useRef<((path: string) => void) | null>(null);
   const orphanedThreadsByItemIdRef = useRef<
     ReadonlyMap<string, ReviewThreadMetadata[]> | undefined
   >(undefined);
@@ -102,9 +123,15 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
   );
   const [liveReviewComments, setLiveReviewComments] = useState(data.reviewComments);
   const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [queue, setQueue] = useState<QueuedComment[]>([]);
+  const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
 
   selectedLinesRef.current = selectedLines;
   hoveredThreadSelectionRef.current = hoveredThreadSelection;
+
+  const orderedPaths = useMemo(() => data.files.map((file) => file.filename), [data.files]);
+  const viewedFiles = useViewedFiles(data.ref, orderedPaths);
 
   useEffect(() => {
     const modal = modalRef.current;
@@ -518,6 +545,237 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     [codeViewItems],
   );
 
+  const setItemCollapsed = useCallback((itemId: string, collapsed: boolean) => {
+    const viewer = viewerRef.current;
+    const item = viewer?.getItem(itemId);
+    if (!viewer || !item || item.collapsed === collapsed) {
+      return;
+    }
+
+    viewer.updateItem({
+      ...item,
+      collapsed,
+      version: item.version != null ? item.version + 1 : 1,
+    });
+  }, []);
+
+  const handleToggleViewed = useCallback(
+    (path: string, next: boolean) => {
+      viewedFiles.toggleViewed(path, next);
+
+      if (next && codeViewItems) {
+        const file = codeViewItems.fileByPath.get(path);
+        if (file) {
+          setItemCollapsed(getCodeViewItemIdForFile(file, codeViewItems.diffPathSet), true);
+        }
+      }
+    },
+    [codeViewItems, setItemCollapsed, viewedFiles],
+  );
+
+  const didInitialViewedCollapseRef = useRef(false);
+  useEffect(() => {
+    if (
+      didInitialViewedCollapseRef.current ||
+      !isCodeViewMounted ||
+      !codeViewItems ||
+      !viewedFiles.isReady
+    ) {
+      return;
+    }
+
+    didInitialViewedCollapseRef.current = true;
+    for (const [path, state] of viewedFiles.viewedByPath) {
+      if (state !== 'VIEWED') {
+        continue;
+      }
+      const file = codeViewItems.fileByPath.get(path);
+      if (file) {
+        setItemCollapsed(getCodeViewItemIdForFile(file, codeViewItems.diffPathSet), true);
+      }
+    }
+  }, [
+    isCodeViewMounted,
+    codeViewItems,
+    viewedFiles.isReady,
+    viewedFiles.viewedByPath,
+    setItemCollapsed,
+  ]);
+
+  const handleJumpToNextUnviewed = useCallback(() => {
+    const next = viewedFiles.nextUnviewedPath(selectedPath);
+    if (next) {
+      handleTreeSelectRef.current?.(next);
+    }
+  }, [selectedPath, viewedFiles]);
+
+  const handleQueueComment = useCallback(
+    (itemId: string, path: string, draftId: string, range: SelectedLineRange, body: string) => {
+      const viewer = viewerRef.current;
+      if (!viewer || !codeViewItems) {
+        return;
+      }
+
+      const item = viewer.getItem(itemId);
+      if (!item) {
+        return;
+      }
+
+      runCodeViewMutationPreservingScroll(
+        viewer,
+        () => {
+          const { item: nextItem, queuedId } = replaceDraftWithQueuedAnnotation(
+            item,
+            draftId,
+            range,
+            body,
+          );
+          viewer.updateItem(nextItem);
+          setQueue((current) => [...current, { queuedId, itemId, path, range, body }]);
+        },
+        () => {
+          if (!hasAnyDraftAnnotation(viewer, codeViewItems.items)) {
+            viewer.clearSelectedLines();
+            setSelectedLines(null);
+            setHoveredThreadSelection(null);
+          }
+        },
+      );
+    },
+    [codeViewItems],
+  );
+
+  const handleRemoveQueued = useCallback((queuedId: string, itemId: string) => {
+    const viewer = viewerRef.current;
+    setQueue((current) => current.filter((entry) => entry.queuedId !== queuedId));
+
+    if (viewer) {
+      const item = viewer.getItem(itemId);
+      if (item) {
+        runCodeViewMutationPreservingScroll(viewer, () => {
+          viewer.updateItem(removeQueuedAnnotation(item, queuedId));
+        });
+      }
+    }
+  }, []);
+
+  const handleEditQueued = useCallback((queuedId: string, itemId: string, body: string) => {
+    const viewer = viewerRef.current;
+    setQueue((current) =>
+      current.map((entry) => (entry.queuedId === queuedId ? { ...entry, body } : entry)),
+    );
+
+    if (viewer) {
+      const item = viewer.getItem(itemId);
+      if (item) {
+        runCodeViewMutationPreservingScroll(viewer, () => {
+          viewer.updateItem(updateQueuedAnnotationBody(item, queuedId, body));
+        });
+      }
+    }
+  }, []);
+
+  const handlePublishReview = useCallback(
+    async (event: ReviewEvent, body: string) => {
+      await publishBatchedReview(data.ref, {
+        commitId: data.pullRequest.head.sha,
+        event,
+        body,
+        comments: toBatchedReviewComments(queue),
+      });
+
+      const viewer = viewerRef.current;
+      const queuedSnapshot = queue;
+
+      let fresh: GitHubPullRequestReviewComment[] = [];
+      try {
+        fresh = await fetchPullRequestReviewComments(data.ref);
+      } catch {
+        // Comments published; reflecting them inline is best-effort.
+      }
+
+      if (fresh.length > 0) {
+        const knownIds = new Set(liveReviewComments.map((comment) => comment.id));
+        const added = fresh.filter((comment) => !knownIds.has(comment.id));
+        setLiveReviewComments(fresh);
+
+        if (viewer && codeViewItems && added.length > 0) {
+          runCodeViewMutationPreservingScroll(viewer, () => {
+            for (const comment of added) {
+              const file = codeViewItems.fileByPath.get(comment.path);
+              if (!file) {
+                continue;
+              }
+              const id = getCodeViewItemIdForFile(file, codeViewItems.diffPathSet);
+              const item = viewer.getItem(id);
+              if (item) {
+                viewer.updateItem(addThreadAnnotationForComment(item, comment));
+              }
+            }
+          });
+        }
+      }
+
+      if (viewer) {
+        runCodeViewMutationPreservingScroll(viewer, () => {
+          for (const entry of queuedSnapshot) {
+            const item = viewer.getItem(entry.itemId);
+            if (item) {
+              viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
+            }
+          }
+        });
+      }
+
+      setQueue([]);
+      setIsPublishDialogOpen(false);
+      setIsBatchMode(false);
+      refreshCodeViewLayout();
+    },
+    [
+      codeViewItems,
+      data.pullRequest.head.sha,
+      data.ref,
+      liveReviewComments,
+      queue,
+      refreshCodeViewLayout,
+    ],
+  );
+
+  const handleDiscardQueue = useCallback(() => {
+    const viewer = viewerRef.current;
+    if (viewer) {
+      runCodeViewMutationPreservingScroll(viewer, () => {
+        for (const entry of queue) {
+          const item = viewer.getItem(entry.itemId);
+          if (item) {
+            viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
+          }
+        }
+      });
+    }
+
+    setQueue([]);
+    setIsPublishDialogOpen(false);
+  }, [queue]);
+
+  const handleToggleBatchMode = useCallback(() => {
+    setIsBatchMode((current) => !current);
+  }, []);
+
+  const handleCloseOverlay = useCallback(() => {
+    if (queue.length > 0) {
+      const confirmed = window.confirm(
+        `Discard ${queue.length} queued review ${queue.length === 1 ? 'comment' : 'comments'}? They have not been published to GitHub.`,
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    onClose();
+  }, [onClose, queue.length]);
+
   const codeViewStyle = useMemo(
     () => ({ height: '100%', colorScheme: codeViewThemeType }),
     [codeViewThemeType],
@@ -567,6 +825,8 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     },
     [codeViewItems],
   );
+
+  handleTreeSelectRef.current = handleTreeSelect;
 
   const handleSelectedLinesChange = useStableCallback((selection: CodeViewLineSelection | null) => {
     const viewer = viewerRef.current;
@@ -639,10 +899,28 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
             range={metadata.range}
             pullRequestRef={data.ref}
             commitId={data.pullRequest.head.sha}
+            isBatchMode={isBatchMode}
             onCancel={() => handleCancelDraft(item.id, metadata.draftId, metadata.range)}
             onSuccess={(comment) =>
               handleImmediateCommentSuccess(item.id, comment, metadata.draftId, metadata.range)
             }
+            onQueue={(body) =>
+              handleQueueComment(item.id, getItemPath(item), metadata.draftId, metadata.range, body)
+            }
+          />
+        );
+      }
+
+      if (metadata.kind === 'queued') {
+        return (
+          <QueuedCommentCard
+            key={metadata.queuedId}
+            body={metadata.body}
+            range={metadata.range}
+            onRemove={() => handleRemoveQueued(metadata.queuedId, item.id)}
+            onEdit={(body) => handleEditQueued(metadata.queuedId, item.id, body)}
+            onHighlight={() => handleThreadHighlight({ id: item.id, range: metadata.range })}
+            onClearHighlight={handleThreadHighlightClear}
           />
         );
       }
@@ -668,37 +946,50 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
       handleCancelDraft,
       handleCommentDelete,
       handleCommentEdit,
+      handleEditQueued,
       handleImmediateCommentSuccess,
+      handleQueueComment,
+      handleRemoveQueued,
       handleReplyClose,
       handleReplyOpen,
       handleReplySuccess,
       handleThreadHighlight,
       handleThreadHighlightClear,
+      isBatchMode,
     ],
   );
 
   const renderReviewHeaderMetadata = useCallback(
     (item: NonNullable<typeof codeViewItems>['items'][number]) => {
       const orphanedThreads = orphanedThreadsByItemIdRef.current?.get(item.id);
-      if (!orphanedThreads?.length) {
-        return null;
-      }
+      const path = getItemPath(item);
 
       return (
-        <OrphanedReviewCommentsBadge
-          threads={orphanedThreads}
-          itemId={item.id}
-          pullRequestRef={data.ref}
-          onReplyOpen={handleReplyOpen}
-          onReplyClose={handleReplyClose}
-          onReplySuccess={(comment, replyKey) =>
-            handleReplySuccess(item.id, comment, replyKey, true)
-          }
-          onDelete={(comment) => handleCommentDelete(item.id, comment, true)}
-          onEdit={(comment, body) => handleCommentEdit(item.id, comment, body, true)}
-          onHighlightRange={handleThreadHighlight}
-          onClearHighlight={handleThreadHighlightClear}
-        />
+        <span className='gprv-file-header-meta'>
+          {orphanedThreads?.length ? (
+            <OrphanedReviewCommentsBadge
+              threads={orphanedThreads}
+              itemId={item.id}
+              pullRequestRef={data.ref}
+              onReplyOpen={handleReplyOpen}
+              onReplyClose={handleReplyClose}
+              onReplySuccess={(comment, replyKey) =>
+                handleReplySuccess(item.id, comment, replyKey, true)
+              }
+              onDelete={(comment) => handleCommentDelete(item.id, comment, true)}
+              onEdit={(comment, body) => handleCommentEdit(item.id, comment, body, true)}
+              onHighlightRange={handleThreadHighlight}
+              onClearHighlight={handleThreadHighlightClear}
+            />
+          ) : null}
+          {viewedFiles.hasToken ? (
+            <FileViewedCheckbox
+              state={viewedFiles.viewedByPath.get(path)}
+              disabled={!viewedFiles.isReady}
+              onToggle={(next) => handleToggleViewed(path, next)}
+            />
+          ) : null}
+        </span>
       );
     },
     [
@@ -710,6 +1001,10 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
       handleReplySuccess,
       handleThreadHighlight,
       handleThreadHighlightClear,
+      handleToggleViewed,
+      viewedFiles.hasToken,
+      viewedFiles.isReady,
+      viewedFiles.viewedByPath,
     ],
   );
 
@@ -726,7 +1021,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     <>
       <div
         className='gprv-backdrop'
-        onClick={onClose}
+        onClick={handleCloseOverlay}
       />
       <section
         ref={modalRef}
@@ -746,11 +1041,33 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
           displayPrefs={displayPrefs}
           reviewCommentsLoadError={data.reviewCommentsLoadError}
           rateLimit={rateLimit}
+          reviewProgress={viewedFiles.hasToken ? viewedFiles.progress : null}
+          onJumpToNextUnviewed={handleJumpToNextUnviewed}
+          isBatchMode={isBatchMode}
+          queuedCount={queue.length}
+          canReview={viewedFiles.hasToken}
+          onToggleBatchMode={handleToggleBatchMode}
+          onOpenPublish={() => setIsPublishDialogOpen(true)}
           onDiffLayoutChange={updateDiffLayout}
           onDisplayPrefsChange={updateDisplayPrefs}
-          onClose={onClose}
+          onClose={handleCloseOverlay}
           themeStyle={treeThemeStyles}
         />
+
+        {isPublishDialogOpen ? (
+          <PublishReviewDialog
+            queue={queue}
+            onRemoveQueued={(queuedId) => {
+              const entry = queue.find((item) => item.queuedId === queuedId);
+              if (entry) {
+                handleRemoveQueued(queuedId, entry.itemId);
+              }
+            }}
+            onPublish={handlePublishReview}
+            onDiscardAll={handleDiscardQueue}
+            onClose={() => setIsPublishDialogOpen(false)}
+          />
+        ) : null}
 
         <GitHubAuthProvider>
           {notificationError ? (
@@ -858,6 +1175,127 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
         </GitHubAuthProvider>
       </section>
     </>
+  );
+}
+
+function QueuedCommentCard({
+  body,
+  range,
+  onRemove,
+  onEdit,
+  onHighlight,
+  onClearHighlight,
+}: {
+  body: string;
+  range: SelectedLineRange;
+  onRemove: () => void;
+  onEdit: (body: string) => void;
+  onHighlight: () => void;
+  onClearHighlight: () => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(body);
+  const editRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isEditing) {
+      editRef.current?.focus({ preventScroll: true });
+    }
+  }, [isEditing]);
+
+  const startEdit = useCallback(() => {
+    setDraft(body);
+    setIsEditing(true);
+  }, [body]);
+
+  const save = useCallback(() => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== body) {
+      onEdit(trimmed);
+    }
+    setIsEditing(false);
+  }, [body, draft, onEdit]);
+
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+      event.stopPropagation();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsEditing(false);
+      } else if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        save();
+      }
+    },
+    [save],
+  );
+
+  return (
+    <div className='gprv-review-thread-shell'>
+      <div
+        className='gprv-review-thread gprv-review-queued'
+        onMouseEnter={onHighlight}
+        onMouseLeave={onClearHighlight}
+      >
+        <p className='gprv-review-line-range'>{formatSelectedLineRangeLabel(range)}</p>
+        <div className='gprv-review-queued-header'>
+          <span className='gprv-queued-badge'>Queued</span>
+          {!isEditing ? (
+            <div className='gprv-review-comment-actions'>
+              <button
+                type='button'
+                className='gprv-review-comment-action'
+                onClick={startEdit}
+                aria-label='Edit queued comment'
+                title='Edit queued comment'
+              >
+                Edit
+              </button>
+              <button
+                type='button'
+                className='gprv-review-comment-action'
+                onClick={onRemove}
+                aria-label='Delete queued comment'
+                title='Delete queued comment'
+              >
+                Delete
+              </button>
+            </div>
+          ) : null}
+        </div>
+        {isEditing ? (
+          <div className='gprv-review-queued-edit'>
+            <textarea
+              ref={editRef}
+              className='gprv-review-composer-input'
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={3}
+            />
+            <div className='gprv-review-composer-actions'>
+              <button
+                type='button'
+                className='gprv-review-composer-button gprv-review-composer-button-secondary'
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type='button'
+                className='gprv-review-composer-button gprv-review-composer-button-primary'
+                onClick={save}
+                disabled={!draft.trim()}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className='gprv-review-queued-body'>{body}</p>
+        )}
+      </div>
+    </div>
   );
 }
 

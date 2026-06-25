@@ -7,6 +7,7 @@ export type GitHubPullRequestRef = {
 
 export type GitHubPullRequest = {
   html_url: string;
+  node_id: string;
   title: string;
   number: number;
   state: string;
@@ -450,10 +451,12 @@ function isGitHubDiffTooLargeError(error: unknown): boolean {
   return error.message.includes('406') && error.message.includes('too_large');
 }
 
-function createGitHubHeaders(token: string | null): Record<string, string> {
+export const GITHUB_API_VERSION = '2022-11-28';
+
+export function createGitHubHeaders(token: string | null): Record<string, string> {
   return {
     Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
+    'X-GitHub-Api-Version': GITHUB_API_VERSION,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -464,6 +467,16 @@ async function fetchAllPullRequestFiles(
   onProgress?: (loaded: number) => void,
 ): Promise<GitHubPullRequestFile[]> {
   return fetchAllPaginated<GitHubPullRequestFile>(url, headers, onProgress);
+}
+
+/** Re-fetch all review comments for a PR (e.g. after publishing a batched review). */
+export async function fetchPullRequestReviewComments(
+  ref: GitHubPullRequestRef,
+): Promise<GitHubPullRequestReviewComment[]> {
+  const token = await getGitHubToken();
+  const headers = createGitHubHeaders(token);
+  const apiBase = `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/${ref.pullNumber}`;
+  return fetchAllPaginated<GitHubPullRequestReviewComment>(`${apiBase}/comments`, headers);
 }
 
 async function fetchAllPullRequestReviewComments(

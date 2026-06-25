@@ -190,6 +190,83 @@ export function selectedRangeToCommentPayload(
   return payload;
 }
 
+/** Build a single entry for the `comments[]` array of a batched review (no commit_id per comment). */
+export function rangeToReviewComment(
+  path: string,
+  range: SelectedLineRange,
+  body: string,
+): Record<string, unknown> {
+  const endSide = toGitHubSide(range.endSide ?? range.side);
+  const startSide = toGitHubSide(range.side);
+  const isMultiLine = range.start !== range.end;
+
+  const payload: Record<string, unknown> = {
+    path,
+    body,
+    line: range.end,
+    side: endSide,
+  };
+
+  if (isMultiLine) {
+    payload.start_line = range.start;
+    payload.start_side = startSide;
+  }
+
+  return payload;
+}
+
+export type ReviewEvent = 'COMMENT' | 'APPROVE' | 'REQUEST_CHANGES';
+
+export type BatchedReviewComment = {
+  path: string;
+  range: SelectedLineRange;
+  body: string;
+};
+
+export type PublishBatchedReviewInput = {
+  commitId: string;
+  event: ReviewEvent;
+  body: string;
+  comments: BatchedReviewComment[];
+};
+
+export type GitHubPullRequestReview = {
+  id: number;
+  state: string;
+  body: string;
+  html_url: string;
+  submitted_at: string | null;
+};
+
+/** Publish all queued inline comments + a verdict in a single `POST /reviews` request. */
+export async function publishBatchedReview(
+  ref: GitHubPullRequestRef,
+  input: PublishBatchedReviewInput,
+): Promise<GitHubPullRequestReview> {
+  try {
+    const token = await requireToken();
+    const payload: Record<string, unknown> = {
+      commit_id: input.commitId,
+      event: input.event,
+      comments: input.comments.map((comment) =>
+        rangeToReviewComment(comment.path, comment.range, comment.body),
+      ),
+    };
+
+    if (input.body.trim()) {
+      payload.body = input.body.trim();
+    }
+
+    return await postJson<GitHubPullRequestReview>(
+      `${pullRequestApiBase(ref)}/reviews`,
+      token,
+      payload,
+    );
+  } catch (error: unknown) {
+    throw toGitHubReviewWriteError(error);
+  }
+}
+
 export async function fetchGitHubViewer(): Promise<GitHubViewer | null> {
   const token = await getGitHubToken();
   if (!token) {

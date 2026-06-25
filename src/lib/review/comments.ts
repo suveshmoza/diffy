@@ -33,7 +33,17 @@ export type ReviewDraftMetadata = {
   range: SelectedLineRange;
 };
 
-export type ReviewAnnotationMetadata = ReviewThreadMetadata | ReviewDraftMetadata;
+export type ReviewQueuedMetadata = {
+  kind: 'queued';
+  queuedId: string;
+  range: SelectedLineRange;
+  body: string;
+};
+
+export type ReviewAnnotationMetadata =
+  | ReviewThreadMetadata
+  | ReviewDraftMetadata
+  | ReviewQueuedMetadata;
 
 export type ReviewCommentItemMaps = {
   inlineByItemId: Map<
