@@ -1800,7 +1800,7 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-line-range {
-  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  color: color-mix(in srgb, currentColor 65%, transparent);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.4;
@@ -2036,4 +2036,403 @@ html.gprv-scroll-locked body {
 
 .gprv-code-view-collapse-icon-collapsed {
   transform: rotate(-90deg);
+}
+
+/* ── Review flow: viewed progress + checkbox ── */
+
+.gprv-review-composer-button-danger {
+  background: transparent;
+  border-color: var(--gprv-danger);
+  color: var(--gprv-danger);
+}
+
+.gprv-review-progress {
+  align-items: center;
+  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
+  border: 1px solid
+    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  padding: 5px 10px;
+}
+
+.gprv-review-progress:disabled {
+  cursor: default;
+}
+
+.gprv-review-progress-complete {
+  border-color: var(--trees-theme-git-added-fg, var(--gprv-success));
+}
+
+.gprv-review-progress-track {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 999px;
+  display: block;
+  height: 4px;
+  overflow: hidden;
+  width: 56px;
+}
+
+.gprv-review-progress-fill {
+  background: color-mix(in srgb, currentColor 72%, transparent);
+  display: block;
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.gprv-review-progress-complete .gprv-review-progress-fill {
+  background: var(--trees-theme-git-added-fg, var(--gprv-success));
+}
+
+.gprv-review-progress-label {
+  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.gprv-file-header-meta {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.gprv-viewed-control {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.gprv-viewed-checkbox {
+  align-items: center;
+  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 5px;
+  line-height: 1;
+  user-select: none;
+}
+
+.gprv-viewed-checkbox input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gprv-viewed-checkbox-box {
+  align-items: center;
+  background: transparent;
+  border: 1.5px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #fff;
+  display: inline-flex;
+  flex: none;
+  height: 16px;
+  justify-content: center;
+  width: 16px;
+}
+
+.gprv-viewed-checkbox-box svg {
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.gprv-viewed-checkbox-checked {
+  color: var(--trees-theme-sidebar-fg, currentColor);
+}
+
+.gprv-viewed-checkbox-checked .gprv-viewed-checkbox-box {
+  background: var(--trees-theme-git-added-fg, var(--gprv-success));
+  border-color: var(--trees-theme-git-added-fg, var(--gprv-success));
+}
+
+.gprv-viewed-checkbox-checked .gprv-viewed-checkbox-box svg {
+  opacity: 1;
+}
+
+.gprv-file-dismissed-badge {
+  align-items: center;
+  color: var(--trees-theme-git-deleted-fg, var(--gprv-danger));
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 600;
+  gap: 3px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── Review flow: start-review CTA + publish CTA ── */
+
+.gprv-review-cta {
+  align-items: center;
+  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
+  border: 1px solid
+    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  border-radius: 8px;
+  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 6px;
+  line-height: 1;
+  padding: 7px 11px;
+  white-space: nowrap;
+}
+
+.gprv-review-cta:hover {
+  border-color: var(--trees-theme-focus-ring, var(--gprv-accent));
+}
+
+.gprv-review-cta-active {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  border-color: color-mix(in srgb, currentColor 45%, transparent);
+  color: currentColor;
+}
+
+.gprv-publish-cta {
+  background: var(--trees-theme-focus-ring, var(--gprv-accent));
+  border: 1px solid var(--trees-theme-focus-ring, var(--gprv-accent));
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 7px 12px;
+  white-space: nowrap;
+}
+
+.gprv-publish-cta:hover {
+  filter: brightness(1.08);
+}
+
+/* ── Review flow: queued comment card ── */
+
+.gprv-review-queued {
+  border: 1px dashed color-mix(in srgb, currentColor 32%, transparent);
+}
+
+.gprv-review-queued-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.gprv-queued-badge {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 6px;
+  color: currentColor;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+  padding: 3px 7px;
+  text-transform: uppercase;
+}
+
+.gprv-review-queued-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gprv-review-queued-body {
+  color: currentColor;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Review flow: publish dialog ── */
+
+.gprv-publish-overlay {
+  inset: 0;
+  position: fixed;
+  z-index: 2147483647;
+}
+
+.gprv-publish-backdrop {
+  background: rgb(0 0 0 / 55%);
+  inset: 0;
+  position: absolute;
+}
+
+.gprv-publish-dialog {
+  background: var(--gprv-bg);
+  border: 1px solid var(--gprv-border);
+  border-radius: 12px;
+  box-shadow: var(--gprv-shadow);
+  color: var(--gprv-text);
+  display: flex;
+  flex-direction: column;
+  left: 50%;
+  max-height: 80vh;
+  max-width: 560px;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 48px);
+}
+
+.gprv-publish-header {
+  align-items: center;
+  border-bottom: 1px solid var(--gprv-border);
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.gprv-publish-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.gprv-publish-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.gprv-publish-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gprv-publish-section-label {
+  color: var(--gprv-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gprv-publish-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gprv-publish-queue-item {
+  background: var(--gprv-panel-bg);
+  border: 1px solid var(--gprv-border);
+  border-radius: 8px;
+  padding: 10px 34px 10px 10px;
+  position: relative;
+}
+
+.gprv-publish-queue-meta {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.gprv-publish-queue-path {
+  color: var(--gprv-text);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gprv-publish-queue-range {
+  color: var(--gprv-muted);
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.gprv-publish-queue-body {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--gprv-text);
+  display: -webkit-box;
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.gprv-publish-queue-remove {
+  background: transparent;
+  border: none;
+  color: var(--gprv-muted);
+  cursor: pointer;
+  padding: 2px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+}
+
+.gprv-publish-queue-remove:hover {
+  color: var(--gprv-text);
+}
+
+.gprv-publish-empty {
+  color: var(--gprv-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.gprv-publish-verdict {
+  display: flex;
+  gap: 8px;
+}
+
+.gprv-publish-verdict-option {
+  align-items: center;
+  background: var(--gprv-control-bg);
+  border: 1px solid var(--gprv-border);
+  border-radius: 8px;
+  color: var(--gprv-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 5px;
+  padding: 7px 10px;
+}
+
+.gprv-publish-verdict-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gprv-publish-verdict-option-active {
+  background: var(--gprv-accent-subtle);
+  border-color: var(--gprv-accent);
+  color: var(--gprv-accent);
+}
+
+.gprv-publish-footer {
+  align-items: center;
+  border-top: 1px solid var(--gprv-border);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px;
+}
+
+.gprv-publish-footer-primary {
+  display: inline-flex;
+  gap: 8px;
 }
