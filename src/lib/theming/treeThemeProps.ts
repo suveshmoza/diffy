@@ -1,7 +1,7 @@
 import { themeToTreeStyles, type TreeThemeInput, type TreeThemeStyles } from '@pierre/trees';
 
 import type { ActiveThemeSnapshot } from '@/lib/theming/activeThemeSnapshot';
-import { pickTreeForeground } from '@/lib/theming/pickTreeForeground';
+import { deriveChromeTokens } from '@/lib/theming/deriveChromeTokens';
 
 export interface TreeThemePropsOptions {
   reconcileForegroundFromChrome?: boolean;
@@ -17,7 +17,7 @@ export function treeThemeProps<TTheme extends TreeThemeInput>(
   const treeStyles = themeToTreeStyles(theme);
   if (options.reconcileForegroundFromChrome === true) {
     const colors = theme.colors ?? {};
-    const primaryFg = pickTreeForeground(theme);
+    const primaryFg = deriveChromeTokens(theme)?.fg;
     if (primaryFg != null && primaryFg !== colors['sideBar.foreground'] && primaryFg !== '') {
       treeStyles.color = primaryFg;
       treeStyles['--trees-theme-sidebar-fg'] = primaryFg;

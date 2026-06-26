@@ -1,10 +1,11 @@
-import type { ResolvedDiffTheme } from '@/lib/diff/themes/resolve';
+import type { ThemeLike } from '@pierre/theming';
+
 import type { ThemeColorScheme } from '@/lib/theming/activeThemeSnapshot';
 import { sanitizeTreeThemeStyles } from '@/lib/theming/sanitizeTreeThemeStyles';
 import { treeThemeProps } from '@/lib/theming/treeThemeProps';
 
 export function buildTreeThemeStylesFromResolved(
-  resolved: ResolvedDiffTheme,
+  resolved: ThemeLike,
   colorScheme: ThemeColorScheme,
 ): Record<string, string> {
   const { style } = treeThemeProps(
