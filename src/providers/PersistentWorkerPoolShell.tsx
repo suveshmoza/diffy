@@ -4,9 +4,9 @@ import { useMemo, type ReactNode } from 'react';
 
 import { DIFF_LANG_IDS } from '@/lib/diff/lang-ids';
 import { workerFactory } from '@/lib/diff/worker';
-import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
-
-import { WorkerPoolRenderOptionsSync } from './WorkerPoolRenderOptionsSync';
+import { useThemeControllerReady } from '@/providers/theming/ThemeControllerProvider';
+import { useDiffThemeProps } from '@/providers/theming/useDiffThemeProps';
+import { useWorkerDiffTheme } from '@/providers/theming/useWorkerDiffTheme';
 
 setCustomExtension('mts', 'typescript');
 setCustomExtension('cts', 'typescript');
@@ -21,8 +21,15 @@ type PersistentWorkerPoolShellProps = {
   children: ReactNode;
 };
 
+function WorkerPoolThemeSync() {
+  const diffTheme = useDiffThemeProps();
+  useWorkerDiffTheme(diffTheme.theme, false);
+  return null;
+}
+
 export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShellProps) {
-  const { theme, isReady: isThemeReady } = useDiffThemeContext();
+  const { isReady: isThemeReady } = useThemeControllerReady();
+  const diffTheme = useDiffThemeProps();
 
   const poolOptions = useMemo(
     () => ({
@@ -35,14 +42,12 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
 
   const highlighterOptions = useMemo(
     () => ({
-      theme,
+      theme: diffTheme.theme,
       langs: [...DIFF_LANG_IDS],
     }),
-    [theme],
+    [diffTheme.theme],
   );
 
-  // Defer creating the singleton pool until the stored theme has hydrated so it
-  // is born with the correct theme (avoids a dark-on-light flash at cold open).
   if (!isThemeReady) {
     return children;
   }
@@ -52,7 +57,7 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
       poolOptions={poolOptions}
       highlighterOptions={highlighterOptions}
     >
-      <WorkerPoolRenderOptionsSync theme={theme} />
+      <WorkerPoolThemeSync />
       {children}
     </WorkerPoolContextProvider>
   );

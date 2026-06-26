@@ -2,9 +2,8 @@ import { createRoot, type Root } from 'react-dom/client';
 
 import { App } from '@/components/app/App';
 import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github/api';
-import { DiffThemeProvider } from '@/providers/DiffThemeProvider';
 import { PersistentWorkerPoolShell } from '@/providers/PersistentWorkerPoolShell';
-import { ResolvedThemeProvider } from '@/providers/ResolvedThemeProvider';
+import { ThemeControllerProvider } from '@/providers/theming/ThemeControllerProvider';
 
 export type MountOverlayOptions = {
   container: HTMLElement;
@@ -19,19 +18,17 @@ type OverlayRuntimeProps = {
 
 function OverlayRuntime({ pullRequestUrl, onClose }: OverlayRuntimeProps) {
   return (
-    <DiffThemeProvider>
-      <ResolvedThemeProvider>
-        <PersistentWorkerPoolShell>
-          {pullRequestUrl ? (
-            <App
-              key={pullRequestUrl}
-              pullRequestUrl={pullRequestUrl}
-              onClose={onClose}
-            />
-          ) : null}
-        </PersistentWorkerPoolShell>
-      </ResolvedThemeProvider>
-    </DiffThemeProvider>
+    <ThemeControllerProvider>
+      <PersistentWorkerPoolShell>
+        {pullRequestUrl ? (
+          <App
+            key={pullRequestUrl}
+            pullRequestUrl={pullRequestUrl}
+            onClose={onClose}
+          />
+        ) : null}
+      </PersistentWorkerPoolShell>
+    </ThemeControllerProvider>
   );
 }
 

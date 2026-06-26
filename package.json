@@ -22,7 +22,10 @@
   },
   "dependencies": {
     "@pierre/diffs": "1.2.11",
+    "@pierre/theme": "1.0.3",
+    "@pierre/theming": "0.0.1",
     "@pierre/trees": "1.0.0-beta.4",
+    "@shikijs/themes": "^4.3.0",
     "@tabler/icons-react": "^3.44.0",
     "markdown-to-jsx": "^9.8.2",
     "react": "19.2.7",
@@ -39,7 +42,7 @@
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
     "patch-package": "^8.0.1",
-    "shiki": "^4.2.0",
+    "shiki": "^4.3.0",
     "typescript": "6.0.3",
     "vite": "^8.0.16",
     "wxt": "^0.20.26"

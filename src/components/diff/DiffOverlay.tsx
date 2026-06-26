@@ -85,8 +85,10 @@ import {
   closeReplyComposer,
   openReplySession,
 } from '@/lib/review/reply-session';
+import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
 import { useSidebarContext } from '@/providers/SidebarContext';
+import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
 
 import { FileViewedCheckbox } from '../review/FileViewedCheckbox';
 import { OrphanedReviewCommentsBadge } from '../review/OrphanedReviewCommentsBadge';
@@ -190,6 +192,15 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
   const treeThemeVars = useMemo(
     () => pickTreeThemeCustomProperties(treeThemeStyles),
     [treeThemeStyles],
+  );
+  const { style: chromeStyle } = useChromeThemeProps(diffyChromeMapping);
+  const modalStyle = useMemo(
+    () => ({
+      ...chromeStyle,
+      ...treeThemeVars,
+      colorScheme: codeViewThemeType,
+    }),
+    [chromeStyle, treeThemeVars, codeViewThemeType],
   );
 
   const {
@@ -1026,8 +1037,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
       <section
         ref={modalRef}
         className='gprv-modal'
-        data-theme={codeViewThemeType}
-        style={treeThemeVars}
+        style={modalStyle}
         role='dialog'
         aria-modal='true'
         aria-label='Pull request diff'
@@ -1050,8 +1060,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
           onOpenPublish={() => setIsPublishDialogOpen(true)}
           onDiffLayoutChange={updateDiffLayout}
           onDisplayPrefsChange={updateDisplayPrefs}
-          onClose={handleCloseOverlay}
-          themeStyle={treeThemeStyles}
+          onClose={onClose}
         />
 
         {isPublishDialogOpen ? (

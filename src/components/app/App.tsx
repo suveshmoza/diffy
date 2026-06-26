@@ -10,8 +10,9 @@ import {
   subscribeToLoadProgress,
   type PullRequestDiffData,
 } from '@/lib/github/api';
-import { useResolvedThemeContext } from '@/providers/ResolvedThemeProvider';
 import { SidebarProvider } from '@/providers/SidebarContext';
+import { useThemeControllerReady } from '@/providers/theming/ThemeControllerProvider';
+import { useThemeSource } from '@/providers/theming/useThemeSource';
 
 import { DiffOverlay } from '../diff/DiffOverlay';
 import { ErrorOverlay } from './ErrorOverlay';
@@ -30,7 +31,10 @@ type AppProps = {
 export function App({ pullRequestUrl, onClose }: AppProps) {
   const [state, setState] = useState<OverlayState>({ status: 'loading' });
   const [retryCount, setRetryCount] = useState(0);
-  const { isResolvedThemeReady, error: themeError } = useResolvedThemeContext();
+  const { isReady: isThemeStorageReady, resolutionError: themeError } = useThemeControllerReady();
+  const { activeTheme } = useThemeSource();
+  const isResolvedThemeReady =
+    isThemeStorageReady && activeTheme.theme != null && themeError == null;
   const loadProgress = useSyncExternalStore(subscribeToLoadProgress, getLoadProgress);
 
   const retry = useCallback(() => {

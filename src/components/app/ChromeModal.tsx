@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 
-import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
+import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
+import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
+import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
 
 type ChromeModalProps = {
   title: string;
@@ -9,7 +11,15 @@ type ChromeModalProps = {
 };
 
 export function ChromeModal({ title, children, onClose }: ChromeModalProps) {
-  const { colorScheme } = useDiffThemeContext();
+  const colorScheme = useThemeColorScheme();
+  const { style: chromeStyle } = useChromeThemeProps(diffyChromeMapping);
+  const modalStyle = useMemo(
+    () => ({
+      ...chromeStyle,
+      colorScheme,
+    }),
+    [chromeStyle, colorScheme],
+  );
 
   return (
     <>
@@ -19,7 +29,7 @@ export function ChromeModal({ title, children, onClose }: ChromeModalProps) {
       />
       <section
         className='gprv-modal'
-        data-theme={colorScheme}
+        style={modalStyle}
         role='dialog'
         aria-modal='true'
         aria-label={title}
