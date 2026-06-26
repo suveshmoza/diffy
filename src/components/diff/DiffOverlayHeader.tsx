@@ -5,7 +5,7 @@ import {
   IconMessages,
   IconX,
 } from '@tabler/icons-react';
-import { memo, type CSSProperties } from 'react';
+import { memo } from 'react';
 
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
@@ -35,7 +35,6 @@ type DiffOverlayHeaderProps = {
   onDiffLayoutChange: (layout: DiffLayout) => void;
   onDisplayPrefsChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
   onClose: () => void;
-  themeStyle?: CSSProperties;
 };
 
 export const DiffOverlayHeader = memo(function DiffOverlayHeader({
@@ -55,7 +54,6 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   onDiffLayoutChange,
   onDisplayPrefsChange,
   onClose,
-  themeStyle,
 }: DiffOverlayHeaderProps) {
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
   const { base } = pullRequest;
@@ -65,7 +63,6 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   return (
     <header
       className={`gprv-header gprv-diff-header${isRateLimitExhausted ? ' gprv-diff-header-rate-limited' : ''}`}
-      style={themeStyle}
     >
       <div className='gprv-header-leading'>
         <div className='gprv-title'>

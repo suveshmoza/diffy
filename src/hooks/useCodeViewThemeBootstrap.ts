@@ -3,10 +3,14 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
-import { diffThemeType } from '@/lib/diff/themes/prefs';
-import { getCodeViewUnsafeCss, getFallbackCodeViewUnsafeCss } from '@/lib/diff/themes/resolve';
+import {
+  buildCodeViewUnsafeCss,
+  buildFallbackCodeViewUnsafeCss,
+} from '@/lib/diff/themes/unsafe-css';
 import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
-import { useDiffThemeContext } from '@/providers/DiffThemeProvider';
+import { useThemeControllerReady } from '@/providers/theming/ThemeControllerProvider';
+import { useDiffThemeProps } from '@/providers/theming/useDiffThemeProps';
+import { useThemeSource } from '@/providers/theming/useThemeSource';
 
 type UseCodeViewThemeBootstrapOptions = {
   diffLayout: DiffLayout;
@@ -17,23 +21,22 @@ export function useCodeViewThemeBootstrap({
   diffLayout,
   displayPrefs,
 }: UseCodeViewThemeBootstrapOptions) {
-  const { theme, isReady: isThemeReady } = useDiffThemeContext();
-  const [unsafeCss, setUnsafeCss] = useState(() => getFallbackCodeViewUnsafeCss(theme));
+  const { isReady: isThemeReady } = useThemeControllerReady();
+  const { activeTheme } = useThemeSource();
+  const diffTheme = useDiffThemeProps();
+  const [unsafeCss, setUnsafeCss] = useState(() =>
+    buildFallbackCodeViewUnsafeCss(activeTheme.colorScheme),
+  );
 
   useEffect(() => {
-    setUnsafeCss(getFallbackCodeViewUnsafeCss(theme));
+    setUnsafeCss(buildFallbackCodeViewUnsafeCss(activeTheme.colorScheme));
 
-    let isCancelled = false;
-    void getCodeViewUnsafeCss(theme).then((resolved) => {
-      if (!isCancelled) {
-        setUnsafeCss(resolved);
-      }
-    });
+    if (activeTheme.theme == null) {
+      return;
+    }
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [theme]);
+    setUnsafeCss(buildCodeViewUnsafeCss(activeTheme.theme, activeTheme.colorScheme));
+  }, [activeTheme.theme, activeTheme.colorScheme]);
 
   const diffStyle = diffLayout === 'switched' ? ('split' as const) : ('unified' as const);
 
@@ -41,8 +44,8 @@ export function useCodeViewThemeBootstrap({
 
   const codeViewOptions = useMemo((): CodeViewOptions<ReviewAnnotationMetadata> => {
     return {
-      theme,
-      themeType: diffThemeType(theme),
+      theme: diffTheme.theme,
+      themeType: diffTheme.themeType,
       diffStyle,
       stickyHeaders: true,
       unsafeCSS: unsafeCss,
@@ -52,14 +55,20 @@ export function useCodeViewThemeBootstrap({
       disableLineNumbers,
       overflow,
     };
-  }, [theme, unsafeCss, diffStyle, diffIndicators, hunkSeparators, disableLineNumbers, overflow]);
-
-  const codeViewThemeType = diffThemeType(theme);
+  }, [
+    diffTheme.theme,
+    diffTheme.themeType,
+    unsafeCss,
+    diffStyle,
+    diffIndicators,
+    hunkSeparators,
+    disableLineNumbers,
+    overflow,
+  ]);
 
   return {
-    theme,
     isThemeReady,
     codeViewOptions,
-    codeViewThemeType,
+    codeViewThemeType: diffTheme.themeType,
   };
 }

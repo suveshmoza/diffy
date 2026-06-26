@@ -1,19 +1,18 @@
 import { useMemo } from 'react';
 
 import { buildTreeThemeStylesFromResolved } from '@/lib/theming/buildTreeThemeStyles';
-import { useResolvedThemeContext } from '@/providers/ResolvedThemeProvider';
+import { useThemeSource } from '@/providers/theming/useThemeSource';
 
 export function useTreeThemeStyles(): Record<string, string> {
-  const { resolvedThemeDisplay } = useResolvedThemeContext();
+  const { activeTheme } = useThemeSource();
 
   return useMemo(() => {
-    if (resolvedThemeDisplay == null) {
+    if (activeTheme.theme == null) {
       return {};
     }
 
-    const { resolved, colorScheme } = resolvedThemeDisplay;
-    return buildTreeThemeStylesFromResolved(resolved, colorScheme);
-  }, [resolvedThemeDisplay]);
+    return buildTreeThemeStylesFromResolved(activeTheme.theme, activeTheme.colorScheme);
+  }, [activeTheme.theme, activeTheme.colorScheme]);
 }
 
 /** CSS custom properties only — safe to apply on a parent without overriding surface bg/color. */
