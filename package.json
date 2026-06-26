@@ -22,7 +22,10 @@
   },
   "dependencies": {
     "@pierre/diffs": "1.2.11",
+    "@pierre/theme": "1.0.3",
+    "@pierre/theming": "0.0.1",
     "@pierre/trees": "1.0.0-beta.4",
+    "@shikijs/themes": "^4.2.0",
     "@tabler/icons-react": "^3.44.0",
     "markdown-to-jsx": "^9.8.2",
     "react": "19.2.7",
