@@ -7,10 +7,10 @@
 
 <strong>The missing PR review experience on GitHub</strong>
 
-<p>Full-screen diffs, searchable file tree, inline comments, split/unified layout, 100+ languages, and 12 themes.</p>
+<p>Full-screen diffs, searchable file tree, inline comments, split/unified layout, 100+ languages, and 50+ themes.</p>
 </div>
 
-**diffy** adds a **View Diff** button to GitHub pull requests so you can review the entire change set in one fast, full-screen view - with a searchable file tree, inline review comments, split or unified layout, syntax highlighting for 100+ languages, and 12 themes. Powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com).
+**diffy** adds a **View Diff** button to GitHub pull requests so you can review the entire change set in one fast, full-screen view - with a searchable file tree, inline review comments, split or unified layout, syntax highlighting for 100+ languages, and 50+ themes with separate light/dark picks. Powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com).
 
 <https://github.com/user-attachments/assets/0a37798f-da98-46e1-a200-187290414452>
 
@@ -28,7 +28,7 @@
 - **Comment from the diff** - leave inline comments and reply without leaving the viewer
 - **Split or unified layout** - switch between side-by-side and stacked views
 - **Syntax highlighting** - 100+ languages with clear, colorized diffs and sticky file headers
-- **12 themes** - Pierre dark/light, GitHub, Catppuccin, Dracula, Nord, Tokyo Night, and more
+- **50+ themes** - Auto/Light/Dark mode with separate light and dark theme picks (Pierre, GitHub, Catppuccin, Dracula, Nord, Tokyo Night, and more)
 - **Private repo support** - add a GitHub token in the extension popup when needed
 
 ## Why diffy?
@@ -57,28 +57,36 @@ GitHub's **Files changed** tab works well for most pull requests. It starts to b
 diffy/
 ├── src/
 │   ├── assets/                  # Extension icon source (logo.png)
-│   ├── components/              # React UI for the diff overlay
-│   │   ├── app/                 # App shell: loading, error, and error-modal states
-│   │   ├── diff/                # Main viewer, file tree, header controls
+│   ├── components/              # React UI
+│   │   ├── app/                 # App shell: loading, error, and chrome modal states
+│   │   ├── diff/                # Diff overlay, file tree, sidebar, PR metadata
+│   │   │   └── header/          # Theme picker, layout toggle, display settings
 │   │   └── review/              # Inline comment threads, composers, reply UI
 │   ├── entrypoints/
-│   │   ├── github-pr.content/   # Content script entry (button injection, prefetch)
-│   │   │   ├── index.tsx        # Page lifecycle, overlay mount/unmount
-│   │   │   └── overlay.tsx      # React root for the overlay (ESM bundle target)
+│   │   ├── background/          # Service worker (extension lifecycle)
+│   │   ├── github-pr.content/   # Content script (View Diff button, overlay mount)
+│   │   │   ├── index.tsx        # Page lifecycle, prefetch, button injection
+│   │   │   ├── overlay.tsx      # React overlay runtime (themes, worker pool)
+│   │   │   └── style.css        # Overlay chrome styles (CSS variables)
+│   │   ├── overlay/             # Standalone iframe page (open PR diff in new tab)
 │   │   └── popup/               # Extension popup (GitHub token settings)
-│   ├── hooks/                   # React hooks (CodeView, themes, worker pool readiness)
+│   ├── hooks/                   # React hooks (CodeView, themes, popover dismiss)
 │   ├── lib/                     # Core logic
-│   │   ├── github/              # GitHub API, page integration, comment rendering
+│   │   ├── code-view/           # PR patches → Pierre CodeView items, scroll anchor
+│   │   ├── diff/                # Shiki worker, layout/display prefs, lang allowlist
+│   │   │   └── themes/          # CodeView unsafe CSS from resolved themes
+│   │   ├── file-tree/           # File tree input, comment badges/icons
+│   │   ├── github/              # GitHub API, page integration, review writes
 │   │   ├── overlay/             # Content script ↔ iframe messaging
-│   │   ├── diff/                # Worker, languages, themes, layout prefs
-│   │   ├── code-view/           # PR patches → Pierre CodeView items
-│   │   ├── review/              # Review threads, formatting, reply UI
-│   │   ├── file-tree/           # File tree panel helpers
-│   │   └── theming/             # Tree chrome theme resolution
+│   │   ├── review/              # Review threads, formatting, reply sessions
+│   │   └── theming/             # @pierre/theming: catalog, persistence, chrome tokens
 │   ├── modules/
-│   │   └── shiki-pruner.ts      # Prunes unused Shiki chunks after production builds
-│   ├── providers/               # React context and providers (themes, auth, worker pool, sidebar)
+│   │   └── shiki-pruner.ts      # Regenerates lang allowlist; prunes unused grammar chunks
+│   ├── providers/               # React context providers
+│   │   └── theming/             # Theme controller, selection, CodeView/worker themes
+│   ├── reducers/                # Popup state reducer
 │   └── types/                   # Ambient type declarations
+├── patches/                     # patch-package overrides (@pierre/trees)
 └── wxt.config.ts                # Manifest, permissions, Vite plugins
 ```
 
@@ -185,15 +193,11 @@ The new language is included in `src/lib/diff/lang-ids.json`, loaded by the diff
 2. **Add** the language id to the array.
 3. Rebuild with `pnpm build` and reload the extension.
 
-Removing a language shrinks the zip; keeping the blocklist lean helps stay under the Chrome Web Store size limit (2MB).
+Removing a language shrinks the zip. Helps in reducing the size of the extension.
 
 ### Themes
 
-Syntax **themes** are configured separately in `src/lib/diff/themes/ids.json`. The theme picker currently exposes **12 themes**:
-
-`pierre-dark`, `pierre-light`, `github-dark`, `github-light`, `catppuccin-mocha`, `catppuccin-latte`, `dracula`, `one-dark-pro`, `nord`, `tokyo-night`, `everforest-dark`, `everforest-light`
-
-To add or remove a theme, edit `src/lib/diff/themes/ids.json` and rebuild. Theme changes do not go through the language blocklist.
+Syntax **themes** use [`@pierre/theming`](https://www.npmjs.com/package/@pierre/theming) (same catalog as [diffshub](https://diffs.com)). The overlay theme picker exposes **50+ Shiki and Pierre themes**, with **Auto / Light / Dark** mode and separate light and dark theme selections.
 
 ## Development scripts
 

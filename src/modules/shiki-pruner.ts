@@ -5,7 +5,6 @@ import { bundledLanguages, bundledThemes } from 'shiki';
 import { defineWxtModule } from 'wxt/modules';
 
 import blockedLangIds from '../lib/diff/blocked-lang-ids.json' with { type: 'json' };
-import themeIds from '../lib/diff/themes/ids.json' with { type: 'json' };
 
 /** Shiki chunk stems that alias to a canonical lang id. */
 const DIFF_LANG_ALIASES: Record<string, string> = {
@@ -19,10 +18,7 @@ function resolveLangCanonical(stem: string): string {
 }
 
 const BLOCKED_SHIKI_LANGS = new Set<string>(blockedLangIds);
-const ALLOWED_SHIKI_THEMES = new Set<string>(themeIds);
-const BLOCKED_SHIKI_THEME_STEMS = new Set(
-  Object.keys(bundledThemes).filter((id) => !ALLOWED_SHIKI_THEMES.has(id)),
-);
+const BUNDLED_THEME_STEMS = new Set(Object.keys(bundledThemes));
 const ALIAS_LANG_KEYS = new Set(Object.keys(DIFF_LANG_ALIASES));
 
 /** Vite app chunks that are not Shiki grammars/themes — always keep. */
@@ -55,12 +51,8 @@ function isShikiChunkToKeep(stem: string): boolean {
     return true;
   }
 
-  if (ALLOWED_SHIKI_THEMES.has(stem)) {
+  if (BUNDLED_THEME_STEMS.has(stem)) {
     return true;
-  }
-
-  if (BLOCKED_SHIKI_THEME_STEMS.has(stem)) {
-    return false;
   }
 
   return !isBlockedLangStem(stem);

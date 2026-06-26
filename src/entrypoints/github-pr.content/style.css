@@ -60,6 +60,7 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-modal {
+  /* Pre-resolve fallbacks — overridden by inline chrome style from diffyChromeMapping */
   font-family: 'Open Sans', sans-serif;
   --diffs-header-font-family: 'Open Sans', sans-serif;
   --trees-font-family-override: 'Open Sans', sans-serif;
@@ -92,24 +93,6 @@ html.gprv-scroll-locked body {
   z-index: 2147483647;
 }
 
-.gprv-modal[data-theme='light'] {
-  --gprv-bg: #ffffff;
-  --gprv-panel-bg: #f6f8fa;
-  --gprv-control-bg: #f3f4f6;
-  --gprv-control-active-bg: rgb(0 0 0 / 8%);
-  --gprv-border: #d0d7de;
-  --gprv-text: #1f2328;
-  --gprv-muted: #656d76;
-  --gprv-state: #424a53;
-  --gprv-error: #cc0000;
-  --gprv-accent: #0969da;
-  --gprv-accent-subtle: rgb(9 105 218 / 12%);
-  --gprv-success: #1a7f37;
-  --gprv-danger: #cf222e;
-  --gprv-shadow: 0 24px 80px rgb(0 0 0 / 18%);
-  color-scheme: light;
-}
-
 .gprv-header {
   align-items: center;
   border-bottom: 1px solid var(--gprv-border);
@@ -120,35 +103,9 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-diff-header {
-  --gprv-header-control-bg: color-mix(
-    in srgb,
-    var(--trees-theme-sidebar-fg, var(--gprv-text)) 7%,
-    var(--trees-theme-sidebar-bg, var(--gprv-bg))
-  );
-  --gprv-header-control-border: color-mix(
-    in srgb,
-    var(--trees-theme-sidebar-fg, var(--gprv-text)) 16%,
-    var(--trees-theme-sidebar-border, var(--gprv-border))
-  );
-  --gprv-header-control-hover-bg: color-mix(
-    in srgb,
-    var(--trees-theme-sidebar-fg, var(--gprv-text)) 11%,
-    var(--trees-theme-sidebar-bg, var(--gprv-bg))
-  );
-  --gprv-header-control-active-bg: color-mix(
-    in srgb,
-    var(--trees-theme-sidebar-fg, var(--gprv-text)) 15%,
-    var(--trees-theme-sidebar-bg, var(--gprv-bg))
-  );
-  --gprv-popover-surface: color-mix(
-    in srgb,
-    var(--trees-theme-sidebar-fg, var(--gprv-text)) 6%,
-    var(--trees-theme-sidebar-bg, var(--gprv-bg))
-  );
-
-  background: var(--trees-theme-sidebar-bg, var(--gprv-bg));
-  border-bottom-color: var(--trees-theme-sidebar-border, var(--gprv-border));
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  background: var(--gprv-bg);
+  border-bottom-color: var(--gprv-border);
+  color: var(--gprv-text);
   gap: 16px;
   min-height: 45px;
   padding: 4px 8px;
@@ -194,15 +151,10 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-pr-badge {
-  background: color-mix(
-    in srgb,
-    var(--trees-theme-focus-ring, var(--gprv-accent)) 16%,
-    transparent
-  );
-  border: 1px solid
-    color-mix(in srgb, var(--trees-theme-focus-ring, var(--gprv-accent)) 28%, transparent);
+  background: color-mix(in srgb, var(--gprv-accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gprv-accent) 28%, transparent);
   border-radius: 999px;
-  color: var(--trees-theme-focus-ring, var(--gprv-accent));
+  color: var(--gprv-accent);
   flex-shrink: 0;
   font-size: 11px;
   font-weight: 600;
@@ -212,7 +164,7 @@ html.gprv-scroll-locked body {
 
 .gprv-title-meta {
   align-items: center;
-  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  color: var(--gprv-muted);
   display: flex;
   font-size: 12px;
   gap: 6px;
@@ -337,18 +289,18 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-header-popover-trigger:focus-visible {
-  border-color: var(--trees-theme-focus-ring, var(--gprv-accent));
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--trees-theme-focus-ring, var(--gprv-accent)) 30%, transparent);
+  border-color: var(--gprv-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gprv-accent) 30%, transparent);
   outline: none;
 }
 
 .gprv-header-popover-menu {
-  background: var(--gprv-popover-surface, var(--trees-theme-input-bg, var(--gprv-control-bg)));
-  border: 1px solid
-    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  background: var(--gprv-popover-bg);
+  border: 1px solid var(--gprv-popover-border, var(--gprv-border));
   border-radius: 8px;
-  box-shadow: var(--gprv-shadow, 0 10px 30px rgb(0 0 0 / 0.18));
+  box-shadow: var(--gprv-popover-shadow, var(--gprv-shadow, 0 10px 30px rgb(0 0 0 / 0.18)));
+  box-sizing: border-box;
+  color: var(--gprv-popover-fg, var(--gprv-text));
   box-sizing: border-box;
   list-style: none;
   margin: 6px 0 0;
@@ -372,7 +324,7 @@ html.gprv-scroll-locked body {
   border: 0;
   border-radius: 6px;
   box-sizing: border-box;
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-text);
   cursor: pointer;
   display: block;
   font: inherit;
@@ -384,50 +336,87 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-header-popover-option:hover {
-  background: var(
-    --gprv-header-control-hover-bg,
-    var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg))
-  );
+  background: var(--gprv-popover-hover-bg, var(--gprv-header-control-hover-bg));
 }
 
 .gprv-header-popover-option[data-selected] {
-  background: color-mix(
-    in srgb,
-    var(--trees-theme-focus-ring, var(--gprv-accent)) 16%,
-    transparent
-  );
-  color: var(--trees-theme-focus-ring, var(--gprv-accent));
+  background: var(--gprv-popover-selected-bg, var(--gprv-header-control-active-bg));
+  color: var(--gprv-text);
   font-weight: 600;
 }
 
 .gprv-header-popover-option:focus-visible {
-  outline: 2px solid var(--trees-theme-focus-ring, var(--gprv-accent));
+  outline: 2px solid var(--gprv-accent);
   outline-offset: -2px;
+}
+
+.gprv-theme-picker-menu {
+  max-height: 360px;
+  min-width: 16rem;
+  padding: 8px;
+}
+
+.gprv-theme-picker-section {
+  margin-bottom: 8px;
+}
+
+.gprv-theme-picker-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.gprv-theme-picker-row-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.gprv-theme-picker-row-value {
+  color: var(--gprv-muted);
+  font-size: 12px;
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gprv-theme-picker-back {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.gprv-theme-picker-list {
+  list-style: none;
+  margin: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.gprv-theme-picker-reset {
+  color: var(--gprv-muted);
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: center;
 }
 
 .gprv-settings-menu {
   --gprv-switch-track-off: color-mix(
     in srgb,
-    var(--trees-theme-sidebar-fg, var(--gprv-text)) 14%,
-    var(--trees-theme-input-bg, var(--gprv-control-bg))
+    var(--gprv-text) 14%,
+    var(--gprv-popover-bg, var(--gprv-control-bg))
   );
-  --gprv-switch-track-on: var(--trees-theme-focus-ring, var(--gprv-accent));
-  --gprv-switch-thumb: color-mix(
-    in srgb,
-    white 90%,
-    var(--trees-theme-sidebar-fg, var(--gprv-text))
-  );
-  --gprv-switch-thumb-on: color-mix(
-    in srgb,
-    white 94%,
-    var(--trees-theme-focus-ring, var(--gprv-accent))
-  );
+  --gprv-switch-track-on: var(--gprv-accent);
+  --gprv-switch-thumb: color-mix(in srgb, white 90%, var(--gprv-text));
+  --gprv-switch-thumb-on: color-mix(in srgb, white 94%, var(--gprv-accent));
 
-  background: var(--gprv-popover-surface, var(--trees-theme-input-bg, var(--gprv-control-bg)));
-  border: 1px solid
-    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  background: var(--gprv-popover-bg);
+  border: 1px solid var(--gprv-popover-border, var(--gprv-border));
   border-radius: 10px;
-  box-shadow: var(--gprv-shadow, 0 10px 30px rgb(0 0 0 / 0.18));
+  box-shadow: var(--gprv-popover-shadow, var(--gprv-shadow, 0 10px 30px rgb(0 0 0 / 0.18)));
+  color: var(--gprv-popover-fg, var(--gprv-text));
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -450,7 +439,7 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-settings-row-label {
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-text);
   flex-shrink: 0;
   font-size: 13px;
   font-weight: 500;
@@ -608,7 +597,7 @@ html.gprv-scroll-locked body {
 
 .gprv-segmented {
   align-items: stretch;
-  background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
+  background: var(--gprv-segmented-bg, var(--gprv-control-active-bg));
   border-radius: 8px;
   display: flex;
   gap: 2px;
@@ -624,7 +613,7 @@ html.gprv-scroll-locked body {
   background: transparent;
   border: 0;
   border-radius: 6px;
-  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  color: var(--gprv-muted);
   cursor: pointer;
   display: inline-flex;
   flex: 1 1 0;
@@ -643,7 +632,7 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-segmented-button:hover {
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-text);
 }
 
 .gprv-segmented-icon {
@@ -652,21 +641,16 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-segmented-button[data-active] {
-  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
+  background: var(--gprv-segmented-active-bg, var(--gprv-control-bg));
   box-shadow:
     0 1px 2px rgb(0 0 0 / 0.12),
-    inset 0 0 0 1px
-      color-mix(
-        in srgb,
-        var(--trees-theme-sidebar-border, var(--gprv-border)) 70%,
-        var(--trees-theme-sidebar-fg, var(--gprv-text))
-      );
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+    inset 0 0 0 1px color-mix(in srgb, var(--gprv-border) 70%, var(--gprv-text));
+  color: var(--gprv-text);
   font-weight: 600;
 }
 
 .gprv-segmented-button:focus-visible {
-  outline: 2px solid var(--trees-theme-focus-ring, var(--gprv-accent));
+  outline: 2px solid var(--gprv-accent);
   outline-offset: -2px;
 }
 
@@ -674,7 +658,7 @@ html.gprv-scroll-locked body {
 .gprv-diff-header .gprv-close {
   background: var(--gprv-header-control-bg);
   border-color: var(--gprv-header-control-border);
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-text);
   height: 32px;
   width: 32px;
 }
@@ -682,11 +666,7 @@ html.gprv-scroll-locked body {
 .gprv-diff-header .gprv-header-icon-button:hover,
 .gprv-diff-header .gprv-close:hover {
   background: var(--gprv-header-control-hover-bg);
-  border-color: color-mix(
-    in srgb,
-    var(--trees-theme-sidebar-fg, var(--gprv-text)) 22%,
-    var(--trees-theme-sidebar-border, var(--gprv-border))
-  );
+  border-color: var(--gprv-header-control-border);
 }
 
 .gprv-diff-header .gprv-header-icon-button:active,
@@ -730,21 +710,15 @@ html.gprv-scroll-locked body {
 
 .gprv-diff-header .gprv-header-icon-button[aria-pressed='true'] {
   background: var(--gprv-header-control-active-bg);
-  border-color: color-mix(
-    in srgb,
-    var(--trees-theme-sidebar-fg, var(--gprv-text)) 22%,
-    var(--trees-theme-sidebar-border, var(--gprv-border))
-  );
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--trees-theme-sidebar-fg, var(--gprv-text)) 10%, transparent);
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  border-color: var(--gprv-header-control-border);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gprv-text) 10%, transparent);
+  color: var(--gprv-text);
 }
 
 .gprv-diff-header .gprv-header-icon-button:focus-visible,
 .gprv-diff-header .gprv-close:focus-visible {
-  border-color: var(--trees-theme-focus-ring, var(--gprv-accent));
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--trees-theme-focus-ring, var(--gprv-accent)) 30%, transparent);
+  border-color: var(--gprv-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gprv-accent) 30%, transparent);
   outline: none;
 }
 
