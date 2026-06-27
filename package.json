@@ -21,6 +21,7 @@
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
+    "@octokit/request-error": "^7.1.0",
     "@octokit/rest": "^22.0.1",
     "@pierre/diffs": "1.2.11",
     "@pierre/theme": "1.0.3",
