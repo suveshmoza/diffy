@@ -45,9 +45,6 @@ importers:
         specifier: 19.2.7
         version: 19.2.7(react@19.2.7)
     devDependencies:
-      '@octokit/types':
-        specifier: ^16.0.0
-        version: 16.0.0
       '@types/chrome':
         specifier: 0.2.0
         version: 0.2.0
