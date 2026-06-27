@@ -1,3 +1,9 @@
+import { RequestError } from '@octokit/request-error';
+import type { Octokit } from '@octokit/rest';
+import type { RestEndpointMethodTypes } from '@octokit/rest';
+
+import { addRateLimitListener, getOctokitClient, resetOctokitClients } from './octokit';
+
 export type GitHubPullRequestRef = {
   owner: string;
   repo: string;
@@ -5,67 +11,22 @@ export type GitHubPullRequestRef = {
   url: string;
 };
 
-export type GitHubPullRequest = {
-  html_url: string;
-  node_id: string;
-  title: string;
-  number: number;
-  state: string;
-  draft: boolean;
-  user?: { login: string; avatar_url?: string };
-  base: { ref: string; sha: string; repo: { full_name: string } };
-  head: { ref: string; sha: string; repo: { full_name: string } | null };
-  additions: number;
-  deletions: number;
-  changed_files: number;
-  created_at: string;
-  merged_at: string | null;
-  body: string | null;
-  labels: Array<{
-    name: string;
-    color: string;
-    description?: string;
-  }>;
-};
+export type GitHubPullRequest = RestEndpointMethodTypes['pulls']['get']['response']['data'];
 
-export type GitHubPullRequestReviewComment = {
-  id: number;
-  path: string;
-  body: string;
-  html_url: string;
-  user: { login: string; avatar_url?: string };
-  created_at: string;
-  updated_at: string;
-  line: number | null;
-  original_line: number | null;
-  start_line: number | null;
-  original_start_line: number | null;
-  side: 'LEFT' | 'RIGHT' | null;
-  in_reply_to_id: number | null;
-  pull_request_review_id?: number | null;
-  is_minimized?: boolean;
-  minimized_reason?: string | null;
-  hidden?: boolean;
-};
+export type GitHubPullRequestReviewComment =
+  RestEndpointMethodTypes['pulls']['listReviewComments']['response']['data'][number] & {
+    is_minimized?: boolean;
+    hidden?: boolean;
+    minimized_reason?: string | null;
+  };
 
 type ReviewCommentsFetchResult = {
   comments: GitHubPullRequestReviewComment[];
   loadError: string | null;
 };
 
-export type GitHubPullRequestFile = {
-  sha: string;
-  filename: string;
-  status: 'added' | 'removed' | 'modified' | 'renamed' | 'copied' | 'changed' | 'unchanged';
-  additions: number;
-  deletions: number;
-  changes: number;
-  blob_url: string;
-  raw_url: string;
-  contents_url: string;
-  patch?: string;
-  previous_filename?: string;
-};
+export type GitHubPullRequestFile =
+  RestEndpointMethodTypes['pulls']['listFiles']['response']['data'][number];
 
 export type PullRequestDiffData = {
   ref: GitHubPullRequestRef;
@@ -117,17 +78,10 @@ let githubTokenPromise: Promise<string | null> | null = null;
 let latestRateLimitState: RateLimitState | null = null;
 const rateLimitListeners = new Set<() => void>();
 
-function updateRateLimitFromResponse(response: Response): void {
-  const remaining = response.headers.get('x-ratelimit-remaining');
-  const reset = response.headers.get('x-ratelimit-reset');
-  if (remaining !== null && reset !== null) {
-    latestRateLimitState = {
-      remaining: parseInt(remaining, 10),
-      reset: parseInt(reset, 10),
-    };
-    rateLimitListeners.forEach((fn) => fn());
-  }
-}
+addRateLimitListener((state) => {
+  latestRateLimitState = state;
+  rateLimitListeners.forEach((fn) => fn());
+});
 
 export function getRateLimitState(): RateLimitState | null {
   return latestRateLimitState;
@@ -141,12 +95,18 @@ export function subscribeToRateLimitChanges(listener: () => void): () => void {
 }
 
 export function isGitHubRateLimitError(error: unknown): boolean {
+  if (error instanceof RequestError) {
+    return error.status === 429;
+  }
+
   if (typeof error === 'string' && error.includes('429')) {
     return true;
   }
+
   if (error instanceof Error && error.message.includes('429')) {
     return true;
   }
+
   return false;
 }
 
@@ -186,6 +146,7 @@ if (browser?.storage?.onChanged) {
     if (area === 'sync' && changes.githubToken) {
       cachedGitHubToken = undefined;
       githubTokenPromise = null;
+      resetOctokitClients();
     }
   });
 }
@@ -256,21 +217,31 @@ export function fetchCachedPullRequestDiffData(
   return promise;
 }
 
+async function getOctokit(): Promise<Octokit> {
+  const token = await getGitHubToken();
+  return getOctokitClient(token ?? undefined);
+}
+
+function pullParams(ref: GitHubPullRequestRef) {
+  return {
+    owner: ref.owner,
+    repo: ref.repo,
+    pull_number: ref.pullNumber,
+  };
+}
+
 async function fetchPullRequestDiffDataCached(
   ref: GitHubPullRequestRef,
 ): Promise<PullRequestDiffData> {
-  const token = await getGitHubToken();
-  const headers = createGitHubHeaders(token);
-  const apiBase = `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/${ref.pullNumber}`;
-
-  const pullRequest = await fetchJson<GitHubPullRequest>(apiBase, headers);
+  const octokit = await getOctokit();
+  const { data: pullRequest } = await octokit.rest.pulls.get(pullParams(ref));
   const cacheKey = getPullRequestContentCacheKey(ref, pullRequest.head.sha);
   const cached = pullRequestDiffCache.get(cacheKey);
   if (cached) {
     return cached;
   }
 
-  const promise = fetchPullRequestDiffDataBody(ref, pullRequest, headers, apiBase).catch(
+  const promise = fetchPullRequestDiffDataBody(ref, pullRequest, octokit).catch(
     (error: unknown) => {
       pullRequestDiffCache.delete(cacheKey);
       throw error;
@@ -283,22 +254,22 @@ async function fetchPullRequestDiffDataCached(
 async function fetchPullRequestDiffDataBody(
   ref: GitHubPullRequestRef,
   pullRequest: GitHubPullRequest,
-  headers: Record<string, string>,
-  apiBase: string,
+  octokit: Octokit,
 ): Promise<PullRequestDiffData> {
   const fileTotal = pullRequest.changed_files;
+  const params = { ...pullParams(ref), per_page: 100 };
 
   updateLoadProgress({ phase: 'files', loaded: 0, total: fileTotal });
 
   const [files, reviewCommentsResult] = await Promise.all([
-    fetchAllPullRequestFiles(`${apiBase}/files`, headers, (loaded) => {
+    paginatePullFiles(octokit, params, (loaded) => {
       updateLoadProgress({ phase: 'files', loaded, total: fileTotal });
     }),
-    fetchAllPullRequestReviewComments(`${apiBase}/comments`, headers),
+    fetchAllPullRequestReviewComments(octokit, params),
   ]);
 
   updateLoadProgress({ phase: 'diff', loaded: 0, total: 1 });
-  const patch = await fetchAggregatePullRequestPatch(ref, apiBase, headers, pullRequest, files);
+  const patch = await fetchAggregatePullRequestPatch(ref, octokit, pullRequest, files);
 
   return {
     ref,
@@ -310,47 +281,124 @@ async function fetchPullRequestDiffDataBody(
   };
 }
 
+async function paginatePullFiles(
+  octokit: Octokit,
+  params: { owner: string; repo: string; pull_number: number; per_page: number },
+  onProgress?: (loaded: number) => void,
+): Promise<GitHubPullRequestFile[]> {
+  const files: GitHubPullRequestFile[] = [];
+
+  for await (const response of octokit.paginate.iterator(octokit.rest.pulls.listFiles, params)) {
+    files.push(...response.data);
+    onProgress?.(files.length);
+  }
+
+  return files;
+}
+
+async function paginateReviewComments(
+  octokit: Octokit,
+  params: { owner: string; repo: string; pull_number: number; per_page: number },
+): Promise<GitHubPullRequestReviewComment[]> {
+  const comments: GitHubPullRequestReviewComment[] = [];
+
+  for await (const response of octokit.paginate.iterator(
+    octokit.rest.pulls.listReviewComments,
+    params,
+  )) {
+    comments.push(...response.data);
+  }
+
+  return comments;
+}
+
+/** Re-fetch all review comments for a PR (e.g. after publishing a batched review). */
+export async function fetchPullRequestReviewComments(
+  ref: GitHubPullRequestRef,
+): Promise<GitHubPullRequestReviewComment[]> {
+  const octokit = await getOctokit();
+  return paginateReviewComments(octokit, { ...pullParams(ref), per_page: 100 });
+}
+
+async function fetchAllPullRequestReviewComments(
+  octokit: Octokit,
+  params: { owner: string; repo: string; pull_number: number; per_page: number },
+): Promise<ReviewCommentsFetchResult> {
+  try {
+    return {
+      comments: await paginateReviewComments(octokit, params),
+      loadError: null,
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      comments: [],
+      loadError: message,
+    };
+  }
+}
+
 async function fetchAggregatePullRequestPatch(
   ref: GitHubPullRequestRef,
-  apiBase: string,
-  headers: Record<string, string>,
+  octokit: Octokit,
   pullRequest: GitHubPullRequest,
   files: GitHubPullRequestFile[],
 ): Promise<string> {
   const fallback = () => buildPatchFromFiles(files);
-  const diffHeaders = { ...headers, Accept: 'application/vnd.github.v3.diff' };
+  const diffParams = {
+    ...pullParams(ref),
+    mediaType: { format: 'diff' as const },
+  };
 
   if (pullRequest.changed_files > GITHUB_MAX_AGGREGATE_DIFF_FILES) {
     return (
-      (await fetchFullPullRequestDiffWithFallbacks(ref, apiBase, diffHeaders, pullRequest)) ??
+      (await fetchFullPullRequestDiffWithFallbacks(ref, octokit, diffParams, pullRequest)) ??
       fallback()
     );
   }
 
   try {
-    return await fetchText(apiBase, diffHeaders);
+    return await fetchPullRequestDiff(octokit, diffParams);
   } catch (error) {
     if (!isGitHubDiffTooLargeError(error)) {
       throw error;
     }
 
     return (
-      (await fetchFullPullRequestDiffWithFallbacks(ref, apiBase, diffHeaders, pullRequest)) ??
+      (await fetchFullPullRequestDiffWithFallbacks(ref, octokit, diffParams, pullRequest)) ??
       fallback()
     );
   }
 }
 
+async function fetchPullRequestDiff(
+  octokit: Octokit,
+  params: {
+    owner: string;
+    repo: string;
+    pull_number: number;
+    mediaType: { format: 'diff' };
+  },
+): Promise<string> {
+  const { data } = await octokit.rest.pulls.get(params);
+  return data as unknown as string;
+}
+
 async function fetchFullPullRequestDiffWithFallbacks(
   ref: GitHubPullRequestRef,
-  apiBase: string,
-  diffHeaders: Record<string, string>,
+  octokit: Octokit,
+  diffParams: {
+    owner: string;
+    repo: string;
+    pull_number: number;
+    mediaType: { format: 'diff' };
+  },
   pullRequest: GitHubPullRequest,
 ): Promise<string | null> {
   const attempts = [
-    () => fetchComparePullRequestDiff(ref, diffHeaders, pullRequest),
+    () => fetchComparePullRequestDiff(ref, octokit, pullRequest),
     () => fetchWebPullRequestDiff(ref),
-    () => fetchText(apiBase, diffHeaders),
+    () => fetchPullRequestDiff(octokit, diffParams),
   ];
 
   for (const attempt of attempts) {
@@ -369,18 +417,23 @@ async function fetchFullPullRequestDiffWithFallbacks(
 
 async function fetchComparePullRequestDiff(
   ref: GitHubPullRequestRef,
-  headers: Record<string, string>,
+  octokit: Octokit,
   pullRequest: GitHubPullRequest,
 ): Promise<string> {
-  const compareUrl = `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/compare/${pullRequest.base.sha}...${pullRequest.head.sha}`;
-  return fetchText(compareUrl, headers);
+  const { data } = await octokit.rest.repos.compareCommitsWithBasehead({
+    owner: ref.owner,
+    repo: ref.repo,
+    basehead: `${pullRequest.base.sha}...${pullRequest.head.sha}`,
+    mediaType: { format: 'diff' },
+  });
+  return data as unknown as string;
 }
 
 async function fetchWebPullRequestDiff(ref: GitHubPullRequestRef): Promise<string> {
   const url = `https://github.com/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pull/${ref.pullNumber}.diff`;
   const response = await fetch(url, { credentials: 'include' });
   if (!response.ok) {
-    throw await createGitHubError(response);
+    throw await createFetchError(response);
   }
 
   return response.text();
@@ -444,6 +497,18 @@ function wrapGitHubFilePatch(file: GitHubPullRequestFile): string {
 }
 
 function isGitHubDiffTooLargeError(error: unknown): boolean {
+  if (error instanceof RequestError) {
+    if (error.status !== 406) {
+      return false;
+    }
+
+    const body =
+      typeof error.response?.data === 'string'
+        ? error.response.data
+        : JSON.stringify(error.response?.data ?? '');
+    return body.includes('too_large');
+  }
+
   if (!(error instanceof Error)) {
     return false;
   }
@@ -451,107 +516,7 @@ function isGitHubDiffTooLargeError(error: unknown): boolean {
   return error.message.includes('406') && error.message.includes('too_large');
 }
 
-export const GITHUB_API_VERSION = '2022-11-28';
-
-export function createGitHubHeaders(token: string | null): Record<string, string> {
-  return {
-    Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': GITHUB_API_VERSION,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function fetchAllPullRequestFiles(
-  url: string,
-  headers: Record<string, string>,
-  onProgress?: (loaded: number) => void,
-): Promise<GitHubPullRequestFile[]> {
-  return fetchAllPaginated<GitHubPullRequestFile>(url, headers, onProgress);
-}
-
-/** Re-fetch all review comments for a PR (e.g. after publishing a batched review). */
-export async function fetchPullRequestReviewComments(
-  ref: GitHubPullRequestRef,
-): Promise<GitHubPullRequestReviewComment[]> {
-  const token = await getGitHubToken();
-  const headers = createGitHubHeaders(token);
-  const apiBase = `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/${ref.pullNumber}`;
-  return fetchAllPaginated<GitHubPullRequestReviewComment>(`${apiBase}/comments`, headers);
-}
-
-async function fetchAllPullRequestReviewComments(
-  url: string,
-  headers: Record<string, string>,
-): Promise<ReviewCommentsFetchResult> {
-  try {
-    return {
-      comments: await fetchAllPaginated<GitHubPullRequestReviewComment>(url, headers),
-      loadError: null,
-    };
-  } catch (error: unknown) {
-    // Review comments are optional; keep the diff usable when this endpoint fails.
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      comments: [],
-      loadError: message,
-    };
-  }
-}
-
-async function fetchAllPaginated<T>(
-  url: string,
-  headers: Record<string, string>,
-  onProgress?: (loaded: number) => void,
-): Promise<T[]> {
-  const items: T[] = [];
-  let nextUrl: string | null = `${url}?per_page=100`;
-
-  while (nextUrl) {
-    const response = await fetch(nextUrl, { headers });
-    if (!response.ok) {
-      throw await createGitHubError(response);
-    }
-
-    updateRateLimitFromResponse(response);
-    items.push(...((await response.json()) as T[]));
-    nextUrl = getNextLink(response.headers.get('Link'));
-    onProgress?.(items.length);
-  }
-
-  return items;
-}
-
-async function fetchJson<T>(url: string, headers: Record<string, string>): Promise<T> {
-  const response = await fetch(url, { headers });
-  if (!response.ok) {
-    throw await createGitHubError(response);
-  }
-
-  updateRateLimitFromResponse(response);
-  return (await response.json()) as T;
-}
-
-async function fetchText(url: string, headers: Record<string, string>): Promise<string> {
-  const response = await fetch(url, { headers });
-  if (!response.ok) {
-    throw await createGitHubError(response);
-  }
-
-  updateRateLimitFromResponse(response);
-  return response.text();
-}
-
-function getNextLink(linkHeader: string | null): string | null {
-  if (!linkHeader) {
-    return null;
-  }
-
-  const nextPart = linkHeader.split(',').find((part) => part.includes('rel="next"'));
-  const match = nextPart?.match(/<([^>]+)>/);
-  return match?.[1] ?? null;
-}
-
-async function createGitHubError(response: Response): Promise<Error> {
+async function createFetchError(response: Response): Promise<Error> {
   const body = await response.text().catch(() => '');
   const message = body
     ? `${response.status} ${response.statusText}: ${body}`
