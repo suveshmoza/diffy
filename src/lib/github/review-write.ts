@@ -1,3 +1,5 @@
+import { RequestError } from '@octokit/request-error';
+import type { RestEndpointMethodTypes } from '@octokit/rest';
 import type { SelectedLineRange, SelectionSide } from '@pierre/diffs';
 
 import {
@@ -5,6 +7,7 @@ import {
   type GitHubPullRequestRef,
   type GitHubPullRequestReviewComment,
 } from './api';
+import { getOctokitClient } from './octokit';
 
 export type GitHubViewer = {
   login: string;
@@ -36,18 +39,15 @@ type CreateReviewCommentInput = {
   range: SelectedLineRange;
 };
 
-function createGitHubHeaders(token: string | null): Record<string, string> {
-  return {
-    Accept: 'application/vnd.github+json',
-    'Content-Type': 'application/json',
-    'X-GitHub-Api-Version': '2022-11-28',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-function pullRequestApiBase(ref: GitHubPullRequestRef): string {
-  return `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/${ref.pullNumber}`;
-}
+type ReviewCommentBody = {
+  body: string;
+  commit_id: string;
+  path: string;
+  line: number;
+  side: 'LEFT' | 'RIGHT';
+  start_line?: number;
+  start_side?: 'LEFT' | 'RIGHT';
+};
 
 async function requireToken(): Promise<string> {
   const token = await getGitHubToken();
@@ -66,30 +66,35 @@ function toGitHubReviewWriteError(error: unknown): GitHubReviewWriteError {
     return error;
   }
 
+  if (error instanceof RequestError) {
+    switch (error.status) {
+      case 401:
+        return new GitHubReviewWriteError(
+          'GitHub rejected the token (401). Check your token.',
+          'unauthorized',
+        );
+      case 403:
+        return new GitHubReviewWriteError(
+          'You do not have permission to comment on this pull request (403).',
+          'forbidden',
+        );
+      case 422:
+        return new GitHubReviewWriteError(
+          'GitHub could not place this comment on the selected lines (422).',
+          'validation',
+        );
+      case 429:
+        return new GitHubReviewWriteError(
+          'GitHub rate limit reached. Try again shortly.',
+          'rate_limit',
+        );
+      default:
+        return new GitHubReviewWriteError(error.message, 'unknown');
+    }
+  }
+
   const message = error instanceof Error ? error.message : String(error);
-
-  if (message.includes('401')) {
-    return new GitHubReviewWriteError(
-      'GitHub rejected the token (401). Check your token.',
-      'unauthorized',
-    );
-  }
-
-  if (message.includes('403')) {
-    return new GitHubReviewWriteError(
-      'You do not have permission to comment on this pull request (403).',
-      'forbidden',
-    );
-  }
-
-  if (message.includes('422')) {
-    return new GitHubReviewWriteError(
-      'GitHub could not place this comment on the selected lines (422).',
-      'validation',
-    );
-  }
-
-  if (message.includes('429') || message.toLowerCase().includes('rate limit')) {
+  if (message.toLowerCase().includes('rate limit')) {
     return new GitHubReviewWriteError(
       'GitHub rate limit reached. Try again shortly.',
       'rate_limit',
@@ -99,82 +104,16 @@ function toGitHubReviewWriteError(error: unknown): GitHubReviewWriteError {
   return new GitHubReviewWriteError(message, 'unknown');
 }
 
-async function postJson<T>(url: string, token: string, body: unknown): Promise<T> {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: createGitHubHeaders(token),
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => '');
-    const message = detail
-      ? `${response.status} ${response.statusText}: ${detail}`
-      : `${response.status} ${response.statusText}`;
-    throw new Error(message);
-  }
-
-  return (await response.json()) as T;
-}
-
-async function patchJson<T>(url: string, token: string, body: unknown): Promise<T> {
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: createGitHubHeaders(token),
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => '');
-    const message = detail
-      ? `${response.status} ${response.statusText}: ${detail}`
-      : `${response.status} ${response.statusText}`;
-    throw new Error(message);
-  }
-
-  return (await response.json()) as T;
-}
-
-async function deleteRequest(url: string, token: string): Promise<void> {
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers: createGitHubHeaders(token),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => '');
-    const message = detail
-      ? `${response.status} ${response.statusText}: ${detail}`
-      : `${response.status} ${response.statusText}`;
-    throw new Error(message);
-  }
-}
-
-async function fetchJson<T>(url: string, token: string): Promise<T> {
-  const response = await fetch(url, { headers: createGitHubHeaders(token) });
-  if (!response.ok) {
-    const detail = await response.text().catch(() => '');
-    const message = detail
-      ? `${response.status} ${response.statusText}: ${detail}`
-      : `${response.status} ${response.statusText}`;
-    throw new Error(message);
-  }
-
-  return (await response.json()) as T;
-}
-
 export function toGitHubSide(side?: SelectionSide): 'LEFT' | 'RIGHT' {
   return side === 'deletions' ? 'LEFT' : 'RIGHT';
 }
 
-export function selectedRangeToCommentPayload(
-  input: CreateReviewCommentInput,
-): Record<string, unknown> {
+export function selectedRangeToCommentPayload(input: CreateReviewCommentInput): ReviewCommentBody {
   const endSide = toGitHubSide(input.range.endSide ?? input.range.side);
   const startSide = toGitHubSide(input.range.side);
   const isMultiLine = input.range.start !== input.range.end;
 
-  const payload: Record<string, unknown> = {
+  const payload: ReviewCommentBody = {
     body: input.body,
     commit_id: input.commitId,
     path: input.path,
@@ -190,17 +129,21 @@ export function selectedRangeToCommentPayload(
   return payload;
 }
 
+type BatchReviewCommentEntry = NonNullable<
+  RestEndpointMethodTypes['pulls']['createReview']['parameters']['comments']
+>[number];
+
 /** Build a single entry for the `comments[]` array of a batched review (no commit_id per comment). */
 export function rangeToReviewComment(
   path: string,
   range: SelectedLineRange,
   body: string,
-): Record<string, unknown> {
+): BatchReviewCommentEntry {
   const endSide = toGitHubSide(range.endSide ?? range.side);
   const startSide = toGitHubSide(range.side);
   const isMultiLine = range.start !== range.end;
 
-  const payload: Record<string, unknown> = {
+  const payload: BatchReviewCommentEntry = {
     path,
     body,
     line: range.end,
@@ -230,13 +173,8 @@ export type PublishBatchedReviewInput = {
   comments: BatchedReviewComment[];
 };
 
-export type GitHubPullRequestReview = {
-  id: number;
-  state: string;
-  body: string;
-  html_url: string;
-  submitted_at: string | null;
-};
+export type GitHubPullRequestReview =
+  RestEndpointMethodTypes['pulls']['createReview']['response']['data'];
 
 /** Publish all queued inline comments + a verdict in a single `POST /reviews` request. */
 export async function publishBatchedReview(
@@ -245,23 +183,19 @@ export async function publishBatchedReview(
 ): Promise<GitHubPullRequestReview> {
   try {
     const token = await requireToken();
-    const payload: Record<string, unknown> = {
+    const body = input.body.trim();
+    const { data } = await getOctokitClient(token).rest.pulls.createReview({
+      owner: ref.owner,
+      repo: ref.repo,
+      pull_number: ref.pullNumber,
       commit_id: input.commitId,
       event: input.event,
+      ...(body ? { body } : {}),
       comments: input.comments.map((comment) =>
         rangeToReviewComment(comment.path, comment.range, comment.body),
       ),
-    };
-
-    if (input.body.trim()) {
-      payload.body = input.body.trim();
-    }
-
-    return await postJson<GitHubPullRequestReview>(
-      `${pullRequestApiBase(ref)}/reviews`,
-      token,
-      payload,
-    );
+    });
+    return data;
   } catch (error: unknown) {
     throw toGitHubReviewWriteError(error);
   }
@@ -274,7 +208,8 @@ export async function fetchGitHubViewer(): Promise<GitHubViewer | null> {
   }
 
   try {
-    return await fetchJson<GitHubViewer>('https://api.github.com/user', token);
+    const { data } = await getOctokitClient(token).rest.users.getAuthenticated();
+    return { login: data.login, avatar_url: data.avatar_url ?? undefined };
   } catch {
     return null;
   }
@@ -286,11 +221,13 @@ export async function createImmediateReviewComment(
 ): Promise<GitHubPullRequestReviewComment> {
   try {
     const token = await requireToken();
-    return await postJson<GitHubPullRequestReviewComment>(
-      `${pullRequestApiBase(ref)}/comments`,
-      token,
-      selectedRangeToCommentPayload(input),
-    );
+    const { data } = await getOctokitClient(token).rest.pulls.createReviewComment({
+      owner: ref.owner,
+      repo: ref.repo,
+      pull_number: ref.pullNumber,
+      ...selectedRangeToCommentPayload(input),
+    });
+    return data;
   } catch (error: unknown) {
     throw toGitHubReviewWriteError(error);
   }
@@ -302,14 +239,14 @@ export async function createReviewCommentReply(
 ): Promise<GitHubPullRequestReviewComment> {
   try {
     const token = await requireToken();
-    return await postJson<GitHubPullRequestReviewComment>(
-      `${pullRequestApiBase(ref)}/comments`,
-      token,
-      {
-        body: input.body,
-        in_reply_to: input.inReplyToId,
-      },
-    );
+    const { data } = await getOctokitClient(token).rest.pulls.createReplyForReviewComment({
+      owner: ref.owner,
+      repo: ref.repo,
+      pull_number: ref.pullNumber,
+      comment_id: input.inReplyToId,
+      body: input.body,
+    });
+    return data;
   } catch (error: unknown) {
     throw toGitHubReviewWriteError(error);
   }
@@ -322,11 +259,13 @@ export async function updateReviewComment(
 ): Promise<GitHubPullRequestReviewComment> {
   try {
     const token = await requireToken();
-    return await patchJson<GitHubPullRequestReviewComment>(
-      `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/comments/${commentId}`,
-      token,
-      { body },
-    );
+    const { data } = await getOctokitClient(token).rest.pulls.updateReviewComment({
+      owner: ref.owner,
+      repo: ref.repo,
+      comment_id: commentId,
+      body,
+    });
+    return data;
   } catch (error: unknown) {
     throw toGitHubReviewWriteError(error);
   }
@@ -338,10 +277,11 @@ export async function deleteReviewComment(
 ): Promise<void> {
   try {
     const token = await requireToken();
-    await deleteRequest(
-      `https://api.github.com/repos/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pulls/comments/${commentId}`,
-      token,
-    );
+    await getOctokitClient(token).rest.pulls.deleteReviewComment({
+      owner: ref.owner,
+      repo: ref.repo,
+      comment_id: commentId,
+    });
   } catch (error: unknown) {
     throw toGitHubReviewWriteError(error);
   }
