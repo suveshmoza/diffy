@@ -52,6 +52,11 @@ export const diffyChromeMapping: ChromeMapping = (chrome, theme) => {
   style['--gprv-card-bg'] = `color-mix(in srgb, ${fg} 6%, ${base})`;
   style['--gprv-card-hover-bg'] = `color-mix(in srgb, ${fg} 12%, ${base})`;
   style['--gprv-card-border'] = `color-mix(in srgb, ${fg} 12%, ${base})`;
+  style['--gprv-annotation-bg'] = chrome.surface;
+  style['--gprv-annotation-fg'] = fg;
+  style['--gprv-annotation-border'] = chrome.surfaceBorder;
+  style['--gprv-annotation-hover-border'] = `color-mix(in srgb, ${fg} 28%, ${base})`;
+  style['--gprv-annotation-shadow'] = chrome.surfaceShadow;
   style['--gprv-diff-separator'] = chrome.separator;
   style['--color-foreground'] = fg;
   style['--foreground'] = fg;

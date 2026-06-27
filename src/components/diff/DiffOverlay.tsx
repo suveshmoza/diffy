@@ -85,6 +85,7 @@ import {
   closeReplyComposer,
   openReplySession,
 } from '@/lib/review/reply-session';
+import { buildAnnotationThemeStyle } from '@/lib/theming/buildAnnotationThemeStyle';
 import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
 import { useSidebarContext } from '@/providers/SidebarContext';
@@ -194,6 +195,14 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     [treeThemeStyles],
   );
   const { style: chromeStyle } = useChromeThemeProps(diffyChromeMapping);
+  const themeChromeStyle = useMemo(
+    () => (Object.keys(chromeStyle).length > 0 ? chromeStyle : undefined),
+    [chromeStyle],
+  );
+  const annotationThemeStyle = useMemo(
+    () => buildAnnotationThemeStyle(themeChromeStyle),
+    [themeChromeStyle],
+  );
   const modalStyle = useMemo(
     () => ({
       ...chromeStyle,
@@ -788,8 +797,12 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
   }, [onClose, queue.length]);
 
   const codeViewStyle = useMemo(
-    () => ({ height: '100%', colorScheme: codeViewThemeType }),
-    [codeViewThemeType],
+    () => ({
+      height: '100%',
+      colorScheme: codeViewThemeType,
+      ...annotationThemeStyle,
+    }),
+    [codeViewThemeType, annotationThemeStyle],
   );
 
   useEffect(() => {

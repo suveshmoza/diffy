@@ -1002,6 +1002,9 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-code-view diffs-container {
+  box-shadow:
+    0 -1px 0 var(--gprv-diff-separator, var(--gprv-border)),
+    0 1px 0 var(--gprv-diff-separator, var(--gprv-border));
   contain: layout paint style;
   overflow: clip;
 }
@@ -1138,6 +1141,7 @@ html.gprv-scroll-locked body {
 /* Match Pierre annotations demo: capped width, normal text flow, single thread card. */
 .gprv-review-thread-shell {
   box-sizing: border-box;
+  color: var(--gprv-annotation-fg, var(--gprv-text));
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji';
@@ -1150,13 +1154,12 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-thread {
-  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
-  border: 1px solid
-    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  background: var(--gprv-annotation-bg, var(--gprv-popover-bg, var(--gprv-control-bg)));
+  border: 1px solid var(--gprv-annotation-border, var(--gprv-popover-border, var(--gprv-border)));
   border-radius: 10px;
-  box-shadow: 0 2px 4px
-    color-mix(in srgb, var(--trees-theme-sidebar-fg, var(--gprv-text)) 4%, transparent);
+  box-shadow: var(--gprv-annotation-shadow, 0 2px 4px rgb(0 0 0 / 0.08));
   box-sizing: border-box;
+  color: var(--gprv-annotation-fg, var(--gprv-text));
   max-width: 90%;
   min-width: 0;
   padding: 16px 18px;
@@ -1197,7 +1200,7 @@ html.gprv-scroll-locked body {
   background: transparent;
   border: 0;
   border-radius: 6px;
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-annotation-fg, var(--gprv-text));
   cursor: pointer;
   display: inline-flex;
   font: inherit;
@@ -1218,8 +1221,8 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-reply-trigger:hover {
-  background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  background: var(--gprv-popover-hover-bg, var(--gprv-control-active-bg));
+  color: var(--gprv-annotation-fg, var(--gprv-text));
 }
 
 .gprv-review-reply-trigger:hover .gprv-review-reply-trigger-label {
@@ -1254,13 +1257,9 @@ html.gprv-scroll-locked body {
 
 .gprv-review-comment-avatar {
   align-items: center;
-  background: color-mix(
-    in srgb,
-    var(--trees-theme-focus-ring, var(--gprv-accent)) 16%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--gprv-accent) 16%, transparent);
   border-radius: 999px;
-  color: var(--trees-theme-focus-ring, var(--gprv-accent));
+  color: var(--gprv-accent);
   display: inline-flex;
   flex-shrink: 0;
   font-size: 11px;
@@ -1294,14 +1293,14 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-comment-meta strong {
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-annotation-fg, var(--gprv-text));
   font-size: 13px;
   font-weight: 600;
   line-height: 1.3;
 }
 
 .gprv-review-comment-meta time {
-  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  color: var(--gprv-popover-muted-fg, var(--gprv-muted));
   font-size: 12px;
   line-height: 1.3;
 }
@@ -1318,7 +1317,7 @@ html.gprv-scroll-locked body {
   background: transparent;
   border: 0;
   border-radius: 6px;
-  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  color: var(--gprv-popover-muted-fg, var(--gprv-muted));
   cursor: pointer;
   font: inherit;
   font-size: 12px;
@@ -1327,8 +1326,8 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-comment-action:hover:not(:disabled) {
-  background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  background: var(--gprv-popover-hover-bg, var(--gprv-control-active-bg));
+  color: var(--gprv-annotation-fg, var(--gprv-text));
 }
 
 .gprv-review-comment-action:disabled {
@@ -1343,7 +1342,7 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-comment-hidden-note {
-  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  color: var(--gprv-popover-muted-fg, var(--gprv-muted));
   font-size: 12px;
   font-style: italic;
   margin: 4px 0 0;
@@ -1358,7 +1357,7 @@ html.gprv-scroll-locked body {
 .gprv-review-comment-link {
   align-items: center;
   border-radius: 6px;
-  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  color: var(--gprv-popover-muted-fg, var(--gprv-muted));
   display: inline-flex;
   font-size: 12px;
   height: 20px;
@@ -1368,12 +1367,12 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-comment-link:hover {
-  background: var(--trees-theme-list-hover-bg, var(--gprv-control-active-bg));
-  color: var(--trees-theme-focus-ring, var(--gprv-accent));
+  background: var(--gprv-popover-hover-bg, var(--gprv-control-active-bg));
+  color: var(--gprv-accent);
 }
 
 .gprv-review-comment-text {
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-annotation-fg, var(--gprv-text));
   display: flex;
   flex-direction: column;
   font-size: 13px;
@@ -1424,7 +1423,7 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-strikethrough {
-  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  color: var(--gprv-popover-muted-fg, var(--gprv-muted));
   text-decoration: line-through;
 }
 
@@ -1451,7 +1450,7 @@ html.gprv-scroll-locked body {
 
 .gprv-review-divider {
   border: 0;
-  border-top: 1px solid var(--trees-theme-sidebar-border, var(--gprv-border));
+  border-top: 1px solid var(--gprv-annotation-border, var(--gprv-border));
   margin: 4px 0;
 }
 
@@ -1715,17 +1714,13 @@ html.gprv-scroll-locked body {
 .gprv-review-orphaned-badge {
   background: color-mix(
     in srgb,
-    var(--trees-theme-focus-ring, var(--gprv-accent)) 12%,
-    var(--trees-theme-input-bg, var(--gprv-control-bg))
+    var(--gprv-accent) 12%,
+    var(--gprv-annotation-bg, var(--gprv-control-bg))
   );
   border: 1px solid
-    color-mix(
-      in srgb,
-      var(--trees-theme-focus-ring, var(--gprv-accent)) 28%,
-      var(--trees-theme-sidebar-border, var(--gprv-border))
-    );
+    color-mix(in srgb, var(--gprv-accent) 28%, var(--gprv-annotation-border, var(--gprv-border)));
   border-radius: 999px;
-  color: var(--trees-theme-focus-ring, var(--gprv-accent));
+  color: var(--gprv-accent);
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
@@ -1745,12 +1740,11 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-composer-input {
-  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
-  border: 1px solid
-    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  background: var(--gprv-popover-hover-bg, var(--gprv-control-bg));
+  border: 1px solid var(--gprv-annotation-border, var(--gprv-border));
   border-radius: 8px;
   box-sizing: border-box;
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-annotation-fg, var(--gprv-text));
   font: inherit;
   line-height: 1.45;
   max-width: 100%;
@@ -1761,9 +1755,8 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-composer-input:focus {
-  border-color: var(--trees-theme-focus-ring, var(--gprv-accent));
-  outline: 2px solid
-    color-mix(in srgb, var(--trees-theme-focus-ring, var(--gprv-accent)) 30%, transparent);
+  border-color: var(--gprv-annotation-hover-border, var(--gprv-accent));
+  outline: 2px solid color-mix(in srgb, var(--gprv-accent) 30%, transparent);
   outline-offset: 1px;
 }
 
@@ -1789,7 +1782,7 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-composer-hint {
-  color: var(--trees-theme-sidebar-header-fg, var(--gprv-muted));
+  color: var(--gprv-popover-muted-fg, var(--gprv-muted));
 }
 
 .gprv-review-composer-error {
@@ -1805,11 +1798,10 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-composer-button {
-  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
-  border: 1px solid
-    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  background: var(--gprv-popover-hover-bg, var(--gprv-control-bg));
+  border: 1px solid var(--gprv-annotation-border, var(--gprv-border));
   border-radius: 8px;
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-annotation-fg, var(--gprv-text));
   cursor: pointer;
   font: inherit;
   font-size: 13px;
@@ -1825,9 +1817,9 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-composer-button-primary {
-  background: var(--trees-theme-focus-ring, var(--gprv-accent));
-  border-color: var(--trees-theme-focus-ring, var(--gprv-accent));
-  color: #fff;
+  background: var(--gprv-accent);
+  border-color: var(--gprv-accent);
+  color: var(--gprv-bg);
 }
 
 .gprv-review-composer-button-secondary {
@@ -2022,10 +2014,10 @@ html.gprv-scroll-locked body {
 
 .gprv-review-progress {
   align-items: center;
-  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
-  border: 1px solid
-    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  background: var(--gprv-header-control-bg, var(--gprv-control-bg));
+  border: 1px solid var(--gprv-header-control-border, var(--gprv-border));
   border-radius: 8px;
+  color: var(--gprv-text);
   cursor: pointer;
   display: inline-flex;
   gap: 8px;
@@ -2037,7 +2029,7 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-progress-complete {
-  border-color: var(--trees-theme-git-added-fg, var(--gprv-success));
+  border-color: var(--gprv-success);
 }
 
 .gprv-review-progress-track {
@@ -2057,11 +2049,11 @@ html.gprv-scroll-locked body {
 }
 
 .gprv-review-progress-complete .gprv-review-progress-fill {
-  background: var(--trees-theme-git-added-fg, var(--gprv-success));
+  background: var(--gprv-success);
 }
 
 .gprv-review-progress-label {
-  color: var(--trees-theme-sidebar-fg, var(--gprv-text));
+  color: var(--gprv-text);
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
@@ -2192,7 +2184,8 @@ html.gprv-scroll-locked body {
 /* ── Review flow: queued comment card ── */
 
 .gprv-review-queued {
-  border: 1px dashed color-mix(in srgb, currentColor 32%, transparent);
+  border: 1px dashed
+    var(--gprv-annotation-hover-border, color-mix(in srgb, currentColor 32%, transparent));
 }
 
 .gprv-review-queued-header {
