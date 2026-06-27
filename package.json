@@ -24,8 +24,8 @@
     "@octokit/request-error": "^7.1.0",
     "@octokit/rest": "^22.0.1",
     "@pierre/diffs": "1.2.11",
-    "@pierre/theme": "1.0.3",
-    "@pierre/theming": "0.0.1",
+    "@pierre/theme": "1.1.0",
+    "@pierre/theming": "0.0.2",
     "@pierre/trees": "1.0.0-beta.4",
     "@shikijs/themes": "^4.3.0",
     "@tabler/icons-react": "^3.44.0",
@@ -46,8 +46,8 @@
     "patch-package": "^8.0.1",
     "shiki": "^4.3.0",
     "typescript": "6.0.3",
-    "vite": "^8.0.16",
-    "wxt": "^0.20.26"
+    "vite": "^8.1.0",
+    "wxt": "^0.20.27"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
