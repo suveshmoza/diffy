@@ -1506,8 +1506,8 @@ packages:
       picomatch:
         optional: true
 
-  filesize@11.0.18:
-    resolution: {integrity: sha512-d/SiIKVaIP7DqL14JfADiSi/TFoo3bmNJYQ6wR5d52/e9Nd/tEsooP/0RD4pgzrjNO6cFOQvSmsWSs84M9OFAw==}
+  filesize@11.0.19:
+    resolution: {integrity: sha512-9Q2itINBvCHwFw9v5X7czZm855yAiFIYlnugrh7+8tYO4ITHZMzV91m35q2FngL9hoZwwjSTQACFF/W52OzJZQ==}
     engines: {node: '>= 10.8.0'}
 
   fill-range@7.1.1:
@@ -3844,7 +3844,7 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.4
 
-  filesize@11.0.18: {}
+  filesize@11.0.19: {}
 
   fill-range@7.1.1:
     dependencies:
@@ -5110,7 +5110,7 @@ snapshots:
       defu: 6.1.7
       dotenv-expand: 12.0.3
       esbuild: 0.27.7
-      filesize: 11.0.18
+      filesize: 11.0.19
       get-port-please: 3.2.0
       giget: 3.3.0
       hookable: 6.1.1

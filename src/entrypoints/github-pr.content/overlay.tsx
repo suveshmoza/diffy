@@ -1,6 +1,7 @@
 import { createRoot, type Root } from 'react-dom/client';
 
 import { App } from '@/components/app/App';
+import { PreloadHighlighter } from '@/components/theming/PreloadHighlighter';
 import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github/api';
 import { PersistentWorkerPoolShell } from '@/providers/PersistentWorkerPoolShell';
 import { ThemeControllerProvider } from '@/providers/theming/ThemeControllerProvider';
@@ -28,6 +29,7 @@ function OverlayRuntime({ pullRequestUrl, onClose }: OverlayRuntimeProps) {
           />
         ) : null}
       </PersistentWorkerPoolShell>
+      <PreloadHighlighter />
     </ThemeControllerProvider>
   );
 }

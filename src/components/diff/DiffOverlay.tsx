@@ -6,7 +6,7 @@ import type {
   LineAnnotation,
   SelectedLineRange,
 } from '@pierre/diffs';
-import { CodeView, useStableCallback, type CodeViewHandle } from '@pierre/diffs/react';
+import { useStableCallback, type CodeViewHandle } from '@pierre/diffs/react';
 import { IconChevronDown, IconCircleX, IconLoader, IconX } from '@tabler/icons-react';
 import {
   useCallback,
@@ -18,6 +18,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 
+import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewReviewMutations } from '@/hooks/useCodeViewReviewMutations';
@@ -58,6 +59,7 @@ import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
 import { useSidebarContext } from '@/providers/SidebarContext';
 import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
+import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
 
 import { FileViewedCheckbox } from '../review/FileViewedCheckbox';
 import { OrphanedReviewCommentsBadge } from '../review/OrphanedReviewCommentsBadge';
@@ -151,10 +153,11 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
     [data, liveReviewComments],
   );
 
-  const { isThemeReady, codeViewOptions, codeViewThemeType } = useCodeViewThemeBootstrap({
+  const { isThemeReady, codeViewOptions } = useCodeViewThemeBootstrap({
     diffLayout,
     displayPrefs,
   });
+  const colorScheme = useThemeColorScheme();
   const treeThemeStyles = useTreeThemeStyles();
   const treeThemeVars = useMemo(
     () => pickTreeThemeCustomProperties(treeThemeStyles),
@@ -173,9 +176,9 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
     () => ({
       ...chromeStyle,
       ...treeThemeVars,
-      colorScheme: codeViewThemeType,
+      colorScheme,
     }),
-    [chromeStyle, treeThemeVars, codeViewThemeType],
+    [chromeStyle, treeThemeVars, colorScheme],
   );
 
   const {
@@ -417,10 +420,10 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
   const codeViewStyle = useMemo(
     () => ({
       height: '100%',
-      colorScheme: codeViewThemeType,
+      colorScheme,
       ...annotationThemeStyle,
     }),
-    [codeViewThemeType, annotationThemeStyle],
+    [colorScheme, annotationThemeStyle],
   );
 
   const updateDiffLayout = useCallback((nextLayout: DiffLayout) => {
@@ -773,7 +776,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
                   </div>
                 </div>
               ) : isCodeViewMounted && codeViewItems ? (
-                <CodeView<ReviewAnnotationMetadata>
+                <ThemedCodeView<ReviewAnnotationMetadata>
                   ref={viewerRef}
                   containerRef={handleCodeViewContainer}
                   initialItems={codeViewItems.items}

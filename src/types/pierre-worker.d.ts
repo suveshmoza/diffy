@@ -7,3 +7,9 @@ declare module '@pierre/diffs/dist/style.js' {
   const css: string;
   export default css;
 }
+
+declare module '@pierre/diffs/theme-resolver' {
+  import type { ThemeResolver } from '@pierre/theming';
+
+  export const themeResolver: ThemeResolver;
+}

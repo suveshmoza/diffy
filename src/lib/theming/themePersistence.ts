@@ -66,18 +66,37 @@ export async function readThemeSelection(): Promise<ThemeSelection | null> {
 
     return {
       mode: isLight ? 'light' : 'dark',
-      lightThemeName: isLight ? legacyTheme : diffyThemeCatalog.defaultLightThemeName,
-      darkThemeName: isLight ? diffyThemeCatalog.defaultDarkThemeName : legacyTheme,
+      lightThemeName: isLight
+        ? diffyThemeCatalog.hasTheme(legacyTheme)
+          ? legacyTheme
+          : diffyThemeCatalog.defaultLightThemeName
+        : diffyThemeCatalog.hasTheme(legacyTheme)
+          ? legacyTheme
+          : diffyThemeCatalog.defaultLightThemeName,
+      darkThemeName: isLight
+        ? diffyThemeCatalog.defaultDarkThemeName
+        : diffyThemeCatalog.hasTheme(legacyTheme)
+          ? legacyTheme
+          : diffyThemeCatalog.defaultDarkThemeName,
     };
   }
 
   const validMode: ColorMode =
     mode === 'light' || mode === 'dark' || mode === 'system' ? mode : 'system';
 
+  const lightThemeName =
+    typeof light === 'string' && diffyThemeCatalog.hasTheme(light)
+      ? light
+      : diffyThemeCatalog.defaultLightThemeName;
+  const darkThemeName =
+    typeof dark === 'string' && diffyThemeCatalog.hasTheme(dark)
+      ? dark
+      : diffyThemeCatalog.defaultDarkThemeName;
+
   return {
     mode: validMode,
-    lightThemeName: typeof light === 'string' ? light : diffyThemeCatalog.defaultLightThemeName,
-    darkThemeName: typeof dark === 'string' ? dark : diffyThemeCatalog.defaultDarkThemeName,
+    lightThemeName,
+    darkThemeName,
   };
 }
 

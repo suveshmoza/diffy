@@ -124,6 +124,10 @@ export default defineConfig({
           import.meta.dirname,
           'node_modules/@pierre/diffs/dist/style.js',
         ),
+        '@pierre/diffs/theme-resolver': resolve(
+          import.meta.dirname,
+          'node_modules/@pierre/diffs/dist/highlighter/themes/themeResolver.js',
+        ),
       },
     },
     worker: {
