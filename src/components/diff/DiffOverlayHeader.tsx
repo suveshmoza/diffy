@@ -3,6 +3,7 @@ import {
   IconExternalLink,
   IconLayoutSidebar,
   IconMessages,
+  IconRefresh,
   IconX,
 } from '@tabler/icons-react';
 import { memo } from 'react';
@@ -35,6 +36,7 @@ type DiffOverlayHeaderProps = {
   onOpenPublish?: () => void;
   onDiffLayoutChange: (layout: DiffLayout) => void;
   onDisplayPrefsChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
+  onRefresh?: () => void;
   onClose: () => void;
 };
 
@@ -55,6 +57,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   onOpenPublish,
   onDiffLayoutChange,
   onDisplayPrefsChange,
+  onRefresh,
   onClose,
 }: DiffOverlayHeaderProps) {
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
@@ -194,6 +197,21 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           displayPrefs={displayPrefs}
           onChange={onDisplayPrefsChange}
         />
+
+        {onRefresh ? (
+          <button
+            className='gprv-header-icon-button'
+            type='button'
+            onClick={onRefresh}
+            aria-label='Refresh pull request data'
+            title='Refresh'
+          >
+            <IconRefresh
+              size={16}
+              stroke={2}
+            />
+          </button>
+        ) : null}
 
         {window !== window.parent ? (
           <button

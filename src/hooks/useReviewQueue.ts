@@ -205,18 +205,25 @@ export function useReviewQueue({
     setIsBatchMode((current) => !current);
   }, []);
 
-  const handleCloseOverlay = useCallback(() => {
-    if (queue.length > 0) {
-      const confirmed = window.confirm(
-        `Discard ${queue.length} queued review ${queue.length === 1 ? 'comment' : 'comments'}? They have not been published to GitHub.`,
-      );
-      if (!confirmed) {
-        return;
+  const withQueueConfirm = useCallback(
+    (action: () => void) => {
+      if (queue.length > 0) {
+        const confirmed = window.confirm(
+          `Discard ${queue.length} queued review ${queue.length === 1 ? 'comment' : 'comments'}? They have not been published to GitHub.`,
+        );
+        if (!confirmed) {
+          return;
+        }
       }
-    }
 
-    onClose();
-  }, [onClose, queue.length]);
+      action();
+    },
+    [queue.length],
+  );
+
+  const handleCloseOverlay = useCallback(() => {
+    withQueueConfirm(onClose);
+  }, [onClose, withQueueConfirm]);
 
   return {
     isBatchMode,
@@ -230,5 +237,6 @@ export function useReviewQueue({
     handleDiscardQueue,
     handleToggleBatchMode,
     handleCloseOverlay,
+    withQueueConfirm,
   };
 }

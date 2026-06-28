@@ -131,6 +131,7 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
             data={state.data}
             pullRequestUrl={pullRequestUrl}
             onClose={onClose}
+            onRefresh={retry}
           />
         </SidebarProvider>
       );

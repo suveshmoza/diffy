@@ -72,9 +72,10 @@ type DiffOverlayProps = {
   data: PullRequestDiffData;
   pullRequestUrl: string;
   onClose: () => void;
+  onRefresh: () => void;
 };
 
-export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps) {
+export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOverlayProps) {
   const viewerRef = useRef<CodeViewHandle<ReviewAnnotationMetadata>>(null);
   const codeViewHostRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLElement>(null);
@@ -239,6 +240,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     handleDiscardQueue,
     handleToggleBatchMode,
     handleCloseOverlay,
+    withQueueConfirm,
   } = useReviewQueue({
     viewerRef,
     codeViewItems,
@@ -250,6 +252,10 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     clearSelectionIfNoDrafts,
     onClose,
   });
+
+  const handleRefresh = useCallback(() => {
+    withQueueConfirm(onRefresh);
+  }, [onRefresh, withQueueConfirm]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -681,6 +687,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
           onOpenPublish={() => setIsPublishDialogOpen(true)}
           onDiffLayoutChange={updateDiffLayout}
           onDisplayPrefsChange={updateDisplayPrefs}
+          onRefresh={handleRefresh}
           onClose={handleCloseOverlay}
         />
 
