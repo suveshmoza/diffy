@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useState } from 'react';
 
 import { fetchGitHubViewer, GitHubViewer } from '@/lib/github/review-write';
+import { shouldShowReviewFlowTokenWarning } from '@/lib/github/token-hints';
 import { popupReducer } from '@/reducers/popup-reducer';
 
 export function usePopup() {
@@ -107,5 +108,12 @@ export function usePopup() {
     dispatch({ type: 'SET_TOKEN' });
   }
 
-  return { state, tokenInput, handleSave, handleClear, handleTokenChange };
+  return {
+    state,
+    tokenInput,
+    showReviewFlowWarning: shouldShowReviewFlowTokenWarning(tokenInput),
+    handleSave,
+    handleClear,
+    handleTokenChange,
+  };
 }
