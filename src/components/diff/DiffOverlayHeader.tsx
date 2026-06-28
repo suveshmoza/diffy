@@ -25,6 +25,7 @@ type DiffOverlayHeaderProps = {
   displayPrefs: CodeViewDisplayPrefs;
   reviewCommentsLoadError?: string | null;
   rateLimit?: RateLimitState | null;
+  viewedFilesError?: string | null;
   reviewProgress?: ViewedProgress | null;
   isBatchMode?: boolean;
   queuedCount?: number;
@@ -44,6 +45,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   displayPrefs,
   reviewCommentsLoadError,
   rateLimit,
+  viewedFilesError,
   reviewProgress,
   isBatchMode = false,
   queuedCount = 0,
@@ -105,6 +107,19 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
               style={{ flexShrink: 0 }}
             />
             {isRateLimitExhausted ? 'API limit exhausted' : `${rateLimit.remaining} req remaining`}
+          </p>
+        ) : null}
+        {viewedFilesError ? (
+          <p
+            className='gprv-viewed-files-error'
+            title={viewedFilesError}
+          >
+            <IconAlertTriangle
+              size={12}
+              stroke={2}
+              style={{ flexShrink: 0 }}
+            />
+            Viewed sync failed
           </p>
         ) : null}
 

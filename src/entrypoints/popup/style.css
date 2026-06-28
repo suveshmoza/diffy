@@ -60,16 +60,6 @@ h1 {
   font-size: 0.875rem;
 }
 
-.intro {
-  color: #8b949e;
-  font-size: 0.875rem;
-}
-
-.intro strong {
-  color: #e6edf3;
-  font-weight: 600;
-}
-
 .card {
   background: #161b22;
   border: 1px solid #30363d;
@@ -254,10 +244,22 @@ button:disabled {
   margin-top: 2px;
 }
 
-.hint {
-  color: #8b949e;
-  font-size: 0.875rem;
-  line-height: 1.5;
+.token-warning {
+  align-items: center;
+  background: rgb(210 153 34 / 10%);
+  border: 1px solid rgb(210 153 34 / 30%);
+  border-radius: 8px;
+  color: #d29922;
+  display: flex;
+  font-size: 0.8125rem;
+  gap: 6px;
+  line-height: 1.4;
+  margin: 0;
+  padding: 8px 10px;
+}
+
+.token-warning svg {
+  flex-shrink: 0;
 }
 
 .popup-spinner {

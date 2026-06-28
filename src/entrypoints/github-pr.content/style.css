@@ -1847,6 +1847,21 @@ html.gprv-scroll-locked body {
   font-weight: 600;
 }
 
+.gprv-viewed-files-error {
+  align-items: center;
+  color: #d29922;
+  display: inline-flex;
+  font-size: 11px;
+  gap: 4px;
+  line-height: 1.2;
+  margin: 0;
+  max-width: 12rem;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── Error notification bar ── */
 
 .gprv-notification-error {

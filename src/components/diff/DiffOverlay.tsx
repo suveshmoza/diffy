@@ -71,6 +71,7 @@ import {
   updateReviewComment,
   type ReviewEvent,
 } from '@/lib/github/review-write';
+import { formatViewedFilesError } from '@/lib/github/token-hints';
 import { toBatchedReviewComments, type QueuedComment } from '@/lib/review/comment-queue';
 import {
   buildReviewCommentCountByPath,
@@ -1064,6 +1065,11 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
           displayPrefs={displayPrefs}
           reviewCommentsLoadError={data.reviewCommentsLoadError}
           rateLimit={rateLimit}
+          viewedFilesError={
+            viewedFiles.hasToken && viewedFiles.error
+              ? formatViewedFilesError(viewedFiles.error)
+              : null
+          }
           reviewProgress={viewedFiles.hasToken ? viewedFiles.progress : null}
           onJumpToNextUnviewed={handleJumpToNextUnviewed}
           isBatchMode={isBatchMode}
