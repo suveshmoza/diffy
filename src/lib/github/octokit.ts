@@ -63,3 +63,15 @@ export function getOctokitClient(auth?: string): Octokit {
 export function resetOctokitClients(): void {
   clientByToken.clear();
 }
+
+export function updateRateLimitFromResponse(response: Response): void {
+  const headers: Record<string, string> = {};
+  response.headers.forEach((value, key) => {
+    headers[key.toLowerCase()] = value;
+  });
+
+  const state = readRateLimitHeaders(headers);
+  if (state) {
+    notifyRateLimit(state);
+  }
+}

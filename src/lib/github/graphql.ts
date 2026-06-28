@@ -1,8 +1,48 @@
 import { getGitHubToken, type GitHubPullRequestRef } from './api';
+import type {
+  FileViewedState,
+  MarkViewedMutation,
+  MarkViewedMutationVariables,
+  UnmarkViewedMutation,
+  UnmarkViewedMutationVariables,
+  ViewedFilesQuery,
+  ViewedFilesQueryVariables,
+} from './graphql.generated';
+import { updateRateLimitFromResponse } from './octokit';
 
 const GITHUB_GRAPHQL_URL = 'https://api.github.com/graphql';
 
-export type FileViewedState = 'VIEWED' | 'UNVIEWED' | 'DISMISSED';
+const viewedFilesQuery = `query ViewedFiles($owner: String!, $name: String!, $number: Int!, $after: String) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      id
+      files(first: 100, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          path
+          viewerViewedState
+        }
+      }
+    }
+  }
+}`;
+
+const markViewedMutation = `mutation MarkViewed($pullRequestId: ID!, $path: String!) {
+  markFileAsViewed(input: { pullRequestId: $pullRequestId, path: $path }) {
+    clientMutationId
+  }
+}`;
+
+const unmarkViewedMutation = `mutation UnmarkViewed($pullRequestId: ID!, $path: String!) {
+  unmarkFileAsViewed(input: { pullRequestId: $pullRequestId, path: $path }) {
+    clientMutationId
+  }
+}`;
+
+export type { FileViewedState };
 
 export type ViewedFileState = {
   path: string;
@@ -16,12 +56,15 @@ export class GitHubGraphQLError extends Error {
   }
 }
 
-type GraphQLResponse<T> = {
-  data?: T;
+type GraphQLResponse<TData> = {
+  data?: TData;
   errors?: Array<{ message: string }>;
 };
 
-async function graphqlRequest<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+async function graphqlRequest<TData, TVariables extends Record<string, unknown>>(
+  query: string,
+  variables: TVariables,
+): Promise<TData> {
   const token = await getGitHubToken();
   if (!token) {
     throw new GitHubGraphQLError('Add a GitHub token in the diffy extension popup.');
@@ -37,6 +80,8 @@ async function graphqlRequest<T>(query: string, variables: Record<string, unknow
     body: JSON.stringify({ query, variables }),
   });
 
+  updateRateLimitFromResponse(response);
+
   if (!response.ok) {
     const detail = await response.text().catch(() => '');
     throw new GitHubGraphQLError(
@@ -46,7 +91,7 @@ async function graphqlRequest<T>(query: string, variables: Record<string, unknow
     );
   }
 
-  const payload = (await response.json()) as GraphQLResponse<T>;
+  const payload = (await response.json()) as GraphQLResponse<TData>;
   if (payload.errors?.length) {
     throw new GitHubGraphQLError(payload.errors.map((error) => error.message).join('; '));
   }
@@ -57,31 +102,6 @@ async function graphqlRequest<T>(query: string, variables: Record<string, unknow
 
   return payload.data;
 }
-
-const VIEWED_FILES_QUERY = `
-query ViewedFiles($owner: String!, $name: String!, $number: Int!, $after: String) {
-  repository(owner: $owner, name: $name) {
-    pullRequest(number: $number) {
-      id
-      files(first: 100, after: $after) {
-        pageInfo { hasNextPage endCursor }
-        nodes { path viewerViewedState }
-      }
-    }
-  }
-}`;
-
-type ViewedFilesQueryResult = {
-  repository: {
-    pullRequest: {
-      id: string;
-      files: {
-        pageInfo: { hasNextPage: boolean; endCursor: string | null };
-        nodes: ViewedFileState[];
-      };
-    } | null;
-  } | null;
-};
 
 export type ViewedFilesResult = {
   pullRequestId: string;
@@ -95,9 +115,16 @@ export async function fetchViewedFiles(ref: GitHubPullRequestRef): Promise<Viewe
   let pullRequestId = '';
 
   do {
-    const data: ViewedFilesQueryResult = await graphqlRequest<ViewedFilesQueryResult>(
-      VIEWED_FILES_QUERY,
-      { owner: ref.owner, name: ref.repo, number: ref.pullNumber, after },
+    const variables: ViewedFilesQueryVariables = {
+      owner: ref.owner,
+      name: ref.repo,
+      number: ref.pullNumber,
+      after,
+    };
+
+    const data = await graphqlRequest<ViewedFilesQuery, ViewedFilesQueryVariables>(
+      viewedFilesQuery,
+      variables,
     );
 
     const pullRequest = data.repository?.pullRequest;
@@ -106,32 +133,32 @@ export async function fetchViewedFiles(ref: GitHubPullRequestRef): Promise<Viewe
     }
 
     pullRequestId = pullRequest.id;
-    files.push(...pullRequest.files.nodes);
 
-    after = pullRequest.files.pageInfo.hasNextPage ? pullRequest.files.pageInfo.endCursor : null;
+    for (const node of pullRequest.files?.nodes ?? []) {
+      if (node?.path && node.viewerViewedState) {
+        files.push({ path: node.path, viewerViewedState: node.viewerViewedState });
+      }
+    }
+
+    const pageInfo = pullRequest.files?.pageInfo;
+    after = pageInfo?.hasNextPage ? (pageInfo.endCursor ?? null) : null;
   } while (after);
 
   return { pullRequestId, files };
 }
 
-const MARK_FILE_VIEWED_MUTATION = `
-mutation MarkViewed($pullRequestId: ID!, $path: String!) {
-  markFileAsViewed(input: { pullRequestId: $pullRequestId, path: $path }) {
-    clientMutationId
-  }
-}`;
-
-const UNMARK_FILE_VIEWED_MUTATION = `
-mutation UnmarkViewed($pullRequestId: ID!, $path: String!) {
-  unmarkFileAsViewed(input: { pullRequestId: $pullRequestId, path: $path }) {
-    clientMutationId
-  }
-}`;
-
 export async function markFileAsViewed(pullRequestId: string, path: string): Promise<void> {
-  await graphqlRequest(MARK_FILE_VIEWED_MUTATION, { pullRequestId, path });
+  const variables: MarkViewedMutationVariables = { pullRequestId, path };
+  await graphqlRequest<MarkViewedMutation, MarkViewedMutationVariables>(
+    markViewedMutation,
+    variables,
+  );
 }
 
 export async function unmarkFileAsViewed(pullRequestId: string, path: string): Promise<void> {
-  await graphqlRequest(UNMARK_FILE_VIEWED_MUTATION, { pullRequestId, path });
+  const variables: UnmarkViewedMutationVariables = { pullRequestId, path };
+  await graphqlRequest<UnmarkViewedMutation, UnmarkViewedMutationVariables>(
+    unmarkViewedMutation,
+    variables,
+  );
 }
