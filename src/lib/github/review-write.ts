@@ -61,6 +61,58 @@ async function requireToken(): Promise<string> {
   return token;
 }
 
+const GENERIC_GITHUB_ERROR_MESSAGES = new Set([
+  'bad credentials',
+  'forbidden',
+  'not found',
+  'unprocessable entity',
+  'validation failed',
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function extractGitHubErrorMessage(data: unknown): string | null {
+  if (!isRecord(data)) {
+    return null;
+  }
+
+  const errors = data.errors;
+  if (Array.isArray(errors) && errors.length > 0) {
+    const messages = errors
+      .map((entry) => {
+        if (typeof entry === 'string') {
+          return entry.trim();
+        }
+
+        if (isRecord(entry) && typeof entry.message === 'string') {
+          return entry.message.trim();
+        }
+
+        return null;
+      })
+      .filter((message): message is string => Boolean(message));
+
+    if (messages.length > 0) {
+      return messages.join('; ');
+    }
+  }
+
+  if (typeof data.message === 'string') {
+    const message = data.message.trim();
+    if (message && !GENERIC_GITHUB_ERROR_MESSAGES.has(message.toLowerCase())) {
+      return message;
+    }
+  }
+
+  return null;
+}
+
+function resolveRequestErrorMessage(error: RequestError, fallback: string): string {
+  return extractGitHubErrorMessage(error.response?.data) ?? fallback;
+}
+
 function toGitHubReviewWriteError(error: unknown): GitHubReviewWriteError {
   if (error instanceof GitHubReviewWriteError) {
     return error;
@@ -70,22 +122,25 @@ function toGitHubReviewWriteError(error: unknown): GitHubReviewWriteError {
     switch (error.status) {
       case 401:
         return new GitHubReviewWriteError(
-          'GitHub rejected the token (401). Check your token.',
+          resolveRequestErrorMessage(error, 'GitHub rejected the token (401). Check your token.'),
           'unauthorized',
         );
       case 403:
         return new GitHubReviewWriteError(
-          'You do not have permission to comment on this pull request (403).',
+          resolveRequestErrorMessage(
+            error,
+            'You do not have permission to comment on this pull request (403).',
+          ),
           'forbidden',
         );
       case 422:
         return new GitHubReviewWriteError(
-          'GitHub could not place this comment on the selected lines (422).',
+          resolveRequestErrorMessage(error, 'GitHub rejected this request (422).'),
           'validation',
         );
       case 429:
         return new GitHubReviewWriteError(
-          'GitHub rate limit reached. Try again shortly.',
+          resolveRequestErrorMessage(error, 'GitHub rate limit reached. Try again shortly.'),
           'rate_limit',
         );
       default:
