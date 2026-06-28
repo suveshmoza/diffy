@@ -251,6 +251,36 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     onClose,
   });
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || isPublishDialogOpen) {
+        return;
+      }
+
+      const modal = modalRef.current;
+      if (!modal) {
+        return;
+      }
+
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLElement &&
+        modal.contains(active) &&
+        (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      handleCloseOverlay();
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, [handleCloseOverlay, isPublishDialogOpen]);
+
   const reviewCommentCountByPath = useMemo(() => {
     if (!codeViewItems) {
       return new Map<string, number>();
@@ -651,7 +681,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
           onOpenPublish={() => setIsPublishDialogOpen(true)}
           onDiffLayoutChange={updateDiffLayout}
           onDisplayPrefsChange={updateDisplayPrefs}
-          onClose={onClose}
+          onClose={handleCloseOverlay}
         />
 
         {isPublishDialogOpen ? (

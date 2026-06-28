@@ -57,6 +57,10 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
         return;
       }
 
+      if (state.status === 'loaded' && isResolvedThemeReady) {
+        return;
+      }
+
       const active = document.activeElement;
       if (
         active instanceof HTMLElement &&
@@ -74,7 +78,7 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
 
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [onClose]);
+  }, [isResolvedThemeReady, onClose, state.status]);
 
   useEffect(() => {
     let isCancelled = false;
