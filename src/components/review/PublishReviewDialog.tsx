@@ -19,6 +19,18 @@ const EVENT_OPTIONS: ReadonlyArray<{ value: ReviewEvent; label: string }> = [
   { value: 'REQUEST_CHANGES', label: 'Request changes' },
 ];
 
+function canPublishReview(event: ReviewEvent, queuedCount: number, body: string): boolean {
+  if (event === 'APPROVE') {
+    return true;
+  }
+
+  if (event === 'REQUEST_CHANGES') {
+    return Boolean(body.trim());
+  }
+
+  return queuedCount > 0 || Boolean(body.trim());
+}
+
 export function PublishReviewDialog({
   queue,
   onRemoveQueued,
@@ -130,7 +142,8 @@ export function PublishReviewDialog({
               </ul>
             ) : (
               <p className='gprv-publish-empty'>
-                No queued comments. Add a verdict and summary to publish a review.
+                No queued comments. Choose a verdict below. Add a summary or inline comments if you
+                want.
               </p>
             )}
           </section>
@@ -211,7 +224,7 @@ export function PublishReviewDialog({
               type='button'
               className='gprv-review-composer-button gprv-review-composer-button-primary'
               onClick={() => void handlePublish()}
-              disabled={isSubmitting || (queue.length === 0 && !body.trim())}
+              disabled={isSubmitting || !canPublishReview(event, queue.length, body)}
             >
               {isSubmitting ? 'Publishing…' : 'Publish review'}
             </button>

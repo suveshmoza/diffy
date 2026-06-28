@@ -152,14 +152,18 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
               />
               {isBatchMode ? 'Reviewing' : 'Start Review'}
             </button>
-            {isBatchMode && queuedCount > 0 ? (
+            {isBatchMode ? (
               <button
                 className='gprv-publish-cta'
                 type='button'
                 onClick={onOpenPublish}
-                title='Review and publish queued comments'
+                title={
+                  queuedCount > 0
+                    ? 'Review and publish queued comments'
+                    : 'Submit your review verdict to GitHub'
+                }
               >
-                Publish ({queuedCount})
+                {queuedCount > 0 ? `Publish (${queuedCount})` : 'Finish review'}
               </button>
             ) : null}
           </>
