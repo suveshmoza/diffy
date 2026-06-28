@@ -20,31 +20,14 @@ import {
 
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
+import { useCodeViewReviewMutations } from '@/hooks/useCodeViewReviewMutations';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
+import { useReviewQueue } from '@/hooks/useReviewQueue';
 import { pickTreeThemeCustomProperties, useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
 import { useViewedFiles } from '@/hooks/useViewedFiles';
-import {
-  getCodeViewItemIdForFile,
-  invalidateCodeViewItemsCache,
-} from '@/lib/code-view/build-items';
-import {
-  addDraftAnnotation,
-  addThreadAnnotationForComment,
-  appendReplyToThreadAnnotation,
-  hasAnyDraftAnnotation,
-  hasDraftAnnotation,
-  removeCommentFromAnnotation,
-  removeDraftAnnotation,
-  removeQueuedAnnotation,
-  replaceDraftWithQueuedAnnotation,
-  replaceDraftWithThreadAnnotation,
-  updateCommentInAnnotation,
-  updateQueuedAnnotationBody,
-} from '@/lib/code-view/review-mutations';
-import {
-  deferCodeViewControlledSync,
-  runCodeViewMutationPreservingScroll,
-} from '@/lib/code-view/scroll-anchor';
+import { getCodeViewItemIdForFile } from '@/lib/code-view/build-items';
+import { hasAnyDraftAnnotation } from '@/lib/code-view/review-mutations';
+import { deferCodeViewControlledSync } from '@/lib/code-view/scroll-anchor';
 import {
   DEFAULT_CODE_VIEW_DISPLAY_PREFS,
   readCodeViewDisplayPrefs,
@@ -58,34 +41,18 @@ import {
   type DiffLayout,
 } from '@/lib/diff/layout-prefs';
 import {
-  fetchPullRequestReviewComments,
   getRateLimitState,
   subscribeToRateLimitChanges,
-  type GitHubPullRequestReviewComment,
   type PullRequestDiffData,
 } from '@/lib/github/api';
-import {
-  deleteReviewComment,
-  GitHubReviewWriteError,
-  publishBatchedReview,
-  updateReviewComment,
-  type ReviewEvent,
-} from '@/lib/github/review-write';
 import { formatViewedFilesError } from '@/lib/github/token-hints';
-import { toBatchedReviewComments, type QueuedComment } from '@/lib/review/comment-queue';
 import {
   buildReviewCommentCountByPath,
   getItemPath,
   type ReviewAnnotationMetadata,
   type ReviewThreadMetadata,
 } from '@/lib/review/comments';
-import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
-import {
-  bindReplySession,
-  closeAllReplyComposers,
-  closeReplyComposer,
-  openReplySession,
-} from '@/lib/review/reply-session';
+import { bindReplySession } from '@/lib/review/reply-session';
 import { buildAnnotationThemeStyle } from '@/lib/theming/buildAnnotationThemeStyle';
 import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
@@ -95,8 +62,9 @@ import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
 import { FileViewedCheckbox } from '../review/FileViewedCheckbox';
 import { OrphanedReviewCommentsBadge } from '../review/OrphanedReviewCommentsBadge';
 import { PublishReviewDialog } from '../review/PublishReviewDialog';
+import { QueuedCommentCard } from '../review/QueuedCommentCard';
 import { ReviewCommentComposer } from '../review/ReviewCommentComposer';
-import { getReviewReplyKey, ReviewCommentThread } from '../review/ReviewCommentThread';
+import { ReviewCommentThread } from '../review/ReviewCommentThread';
 import { DiffOverlayHeader } from './DiffOverlayHeader';
 import { FileTreePanel } from './FileTreePanel';
 
@@ -126,10 +94,6 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     DEFAULT_CODE_VIEW_DISPLAY_PREFS,
   );
   const [liveReviewComments, setLiveReviewComments] = useState(data.reviewComments);
-  const [notificationError, setNotificationError] = useState<string | null>(null);
-  const [isBatchMode, setIsBatchMode] = useState(false);
-  const [queue, setQueue] = useState<QueuedComment[]>([]);
-  const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
 
   selectedLinesRef.current = selectedLines;
   hoveredThreadSelectionRef.current = hoveredThreadSelection;
@@ -229,6 +193,64 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     return new Map(codeViewItems.items.map((item) => [item.id, item]));
   }, [codeViewItems]);
 
+  const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
+    useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, [
+      codeViewItems,
+      isSidebarCollapsed,
+      isCodeViewMounted,
+    ]);
+
+  const {
+    notificationError,
+    setNotificationError,
+    openDraftComposer,
+    handleReplyOpen,
+    handleReplyClose,
+    handleReplySuccess,
+    handleCommentDelete,
+    handleCommentEdit,
+    handleCancelDraft,
+    handleImmediateCommentSuccess,
+    clearSelectionIfNoDrafts,
+  } = useCodeViewReviewMutations({
+    viewerRef,
+    modalRef,
+    codeViewItems,
+    pullRequestRef: data.ref,
+    setLiveReviewComments,
+    refreshCodeViewLayout,
+    selectedLinesRef,
+    setSelectedLines,
+    setHoveredThreadSelection,
+    itemById,
+    setSelectedPath,
+    isOpeningDraftRef,
+  });
+
+  const {
+    isBatchMode,
+    queue,
+    isPublishDialogOpen,
+    setIsPublishDialogOpen,
+    handleQueueComment,
+    handleRemoveQueued,
+    handleEditQueued,
+    handlePublishReview,
+    handleDiscardQueue,
+    handleToggleBatchMode,
+    handleCloseOverlay,
+  } = useReviewQueue({
+    viewerRef,
+    codeViewItems,
+    pullRequestRef: data.ref,
+    headSha: data.pullRequest.head.sha,
+    liveReviewComments,
+    setLiveReviewComments,
+    refreshCodeViewLayout,
+    clearSelectionIfNoDrafts,
+    onClose,
+  });
+
   const reviewCommentCountByPath = useMemo(() => {
     if (!codeViewItems) {
       return new Map<string, number>();
@@ -236,65 +258,6 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
 
     return buildReviewCommentCountByPath(liveReviewComments, codeViewItems.items);
   }, [codeViewItems, liveReviewComments]);
-
-  const clearAllDrafts = useCallback(() => {
-    const viewer = viewerRef.current;
-    if (!viewer || !codeViewItems) {
-      return;
-    }
-
-    runCodeViewMutationPreservingScroll(viewer, () => {
-      for (const item of codeViewItems.items) {
-        const liveItem = viewer.getItem(item.id);
-        if (!liveItem || !hasDraftAnnotation(liveItem)) {
-          continue;
-        }
-
-        viewer.updateItem(removeDraftAnnotation(liveItem));
-      }
-    });
-  }, [codeViewItems]);
-
-  const openDraftComposer = useCallback(
-    (selection: CodeViewLineSelection) => {
-      const viewer = viewerRef.current;
-      if (!viewer || !codeViewItems) {
-        return;
-      }
-
-      if (modalRef.current) {
-        closeAllReplyComposers(modalRef.current);
-      }
-
-      isOpeningDraftRef.current = true;
-
-      runCodeViewMutationPreservingScroll(
-        viewer,
-        () => {
-          const targetItem = viewer.getItem(selection.id);
-          if (!targetItem) {
-            isOpeningDraftRef.current = false;
-            return;
-          }
-
-          const { item: nextItem } = addDraftAnnotation(targetItem, selection.range);
-          viewer.updateItem(nextItem);
-        },
-        () => {
-          setSelectedLines(selection);
-
-          const item = itemById?.get(selection.id);
-          if (item) {
-            const path = getItemPath(item);
-            setSelectedPath((current) => (current === path ? current : path));
-          }
-
-          isOpeningDraftRef.current = false;
-        },
-      );
-    },
-    [codeViewItems, itemById],
-  );
 
   const handleGutterUtilityClick = useStableCallback(
     (range: SelectedLineRange, context: { item: { id: string } }) => {
@@ -335,13 +298,6 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     | ReadonlyMap<string, ReviewThreadMetadata[]>
     | undefined;
 
-  const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
-    useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, [
-      codeViewItems,
-      isSidebarCollapsed,
-      isCodeViewMounted,
-    ]);
-
   useEffect(() => {
     if (!isCodeViewMounted) {
       return;
@@ -357,214 +313,6 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
   const handleThreadHighlightClear = useStableCallback(() => {
     setHoveredThreadSelection(null);
   });
-
-  const handleReplyOpen = useCallback(
-    (replyKey: string) => {
-      clearAllDrafts();
-      setHoveredThreadSelection(null);
-      viewerRef.current?.clearSelectedLines();
-      setSelectedLines(null);
-      if (modalRef.current) {
-        openReplySession(modalRef.current, replyKey);
-      }
-    },
-    [clearAllDrafts],
-  );
-
-  const handleReplyClose = useCallback((replyKey: string) => {
-    if (modalRef.current) {
-      closeReplyComposer(modalRef.current, replyKey);
-    }
-  }, []);
-
-  const handleReplySuccess = useCallback(
-    (
-      itemId: string,
-      comment: GitHubPullRequestReviewComment,
-      replyKey: string,
-      isOrphaned = false,
-    ) => {
-      const viewer = viewerRef.current;
-      const modal = modalRef.current;
-
-      setLiveReviewComments((comments) => [...comments, comment]);
-      if (!isOrphaned) {
-        const item = viewer?.getItem(itemId);
-        if (item) {
-          viewer?.updateItem(appendReplyToThreadAnnotation(item, comment));
-        }
-      } else {
-        invalidateCodeViewItemsCache(data.ref);
-      }
-
-      if (modal) {
-        closeReplyComposer(modal, replyKey, { clearDraft: true });
-      }
-
-      refreshCodeViewLayout();
-    },
-    [data.ref, refreshCodeViewLayout],
-  );
-
-  const handleCommentDelete = useCallback(
-    async (itemId: string, comment: GitHubPullRequestReviewComment, isOrphaned = false) => {
-      const viewer = viewerRef.current;
-      const modal = modalRef.current;
-      const replyKey = getReviewReplyKey(itemId, comment.id);
-
-      try {
-        await deleteReviewComment(data.ref, comment.id);
-      } catch (error: unknown) {
-        const message =
-          error instanceof GitHubReviewWriteError
-            ? error.message
-            : error instanceof Error
-              ? error.message
-              : String(error);
-        setNotificationError(message);
-        return;
-      }
-
-      setLiveReviewComments((comments) => comments.filter((entry) => entry.id !== comment.id));
-
-      if (!isOrphaned) {
-        const item = viewer?.getItem(itemId);
-        if (item) {
-          viewer?.updateItem(removeCommentFromAnnotation(item, comment.id));
-        }
-      } else {
-        invalidateCodeViewItemsCache(data.ref);
-      }
-
-      if (modal) {
-        closeReplyComposer(modal, replyKey, { clearDraft: true });
-      }
-
-      refreshCodeViewLayout();
-    },
-    [data.ref, refreshCodeViewLayout],
-  );
-
-  const handleCommentEdit = useCallback(
-    async (
-      itemId: string,
-      comment: GitHubPullRequestReviewComment,
-      body: string,
-      isOrphaned = false,
-    ) => {
-      const viewer = viewerRef.current;
-
-      let updated: GitHubPullRequestReviewComment;
-      try {
-        updated = await updateReviewComment(data.ref, comment.id, body);
-      } catch (error: unknown) {
-        if (error instanceof GitHubReviewWriteError) {
-          throw error;
-        }
-
-        throw new Error(error instanceof Error ? error.message : String(error), { cause: error });
-      }
-
-      setLiveReviewComments((comments) =>
-        comments.map((entry) => (entry.id === updated.id ? updated : entry)),
-      );
-
-      if (!isOrphaned) {
-        const item = viewer?.getItem(itemId);
-        if (item) {
-          viewer?.updateItem(updateCommentInAnnotation(item, updated));
-        }
-      } else {
-        invalidateCodeViewItemsCache(data.ref);
-      }
-
-      refreshCodeViewLayout();
-    },
-    [data.ref, refreshCodeViewLayout],
-  );
-
-  const handleCancelDraft = useCallback(
-    (itemId: string, draftId: string, range: SelectedLineRange) => {
-      const viewer = viewerRef.current;
-      if (!viewer || !codeViewItems) {
-        return;
-      }
-
-      const item = viewer.getItem(itemId);
-      runCodeViewMutationPreservingScroll(
-        viewer,
-        () => {
-          if (item) {
-            viewer.updateItem(removeDraftAnnotation(item, draftId));
-          }
-        },
-        () => {
-          const activeSelection = selectedLinesRef.current;
-          if (
-            activeSelection?.id === itemId &&
-            activeSelection.range.start === range.start &&
-            activeSelection.range.end === range.end &&
-            activeSelection.range.side === range.side &&
-            activeSelection.range.endSide === range.endSide
-          ) {
-            setSelectedLines(null);
-          }
-
-          if (!hasAnyDraftAnnotation(viewer, codeViewItems.items)) {
-            viewer.clearSelectedLines();
-            setSelectedLines(null);
-            setHoveredThreadSelection(null);
-          }
-        },
-      );
-    },
-    [codeViewItems],
-  );
-
-  const handleImmediateCommentSuccess = useCallback(
-    (
-      itemId: string,
-      comment: GitHubPullRequestReviewComment,
-      draftId: string,
-      range: SelectedLineRange,
-    ) => {
-      const viewer = viewerRef.current;
-      if (!viewer || !codeViewItems) {
-        return;
-      }
-
-      const item = viewer.getItem(itemId);
-      setLiveReviewComments((comments) => [...comments, comment]);
-
-      runCodeViewMutationPreservingScroll(
-        viewer,
-        () => {
-          if (item) {
-            viewer.updateItem(replaceDraftWithThreadAnnotation(item, comment, draftId));
-          }
-        },
-        () => {
-          const activeSelection = selectedLinesRef.current;
-          if (
-            activeSelection?.id === itemId &&
-            activeSelection.range.start === range.start &&
-            activeSelection.range.end === range.end &&
-            activeSelection.range.side === range.side &&
-            activeSelection.range.endSide === range.endSide
-          ) {
-            setSelectedLines(null);
-          }
-
-          if (!hasAnyDraftAnnotation(viewer, codeViewItems.items)) {
-            viewer.clearSelectedLines();
-            setSelectedLines(null);
-            setHoveredThreadSelection(null);
-          }
-        },
-      );
-    },
-    [codeViewItems],
-  );
 
   const setItemCollapsed = useCallback((itemId: string, collapsed: boolean) => {
     const viewer = viewerRef.current;
@@ -630,173 +378,6 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     }
   }, [selectedPath, viewedFiles]);
 
-  const handleQueueComment = useCallback(
-    (itemId: string, path: string, draftId: string, range: SelectedLineRange, body: string) => {
-      const viewer = viewerRef.current;
-      if (!viewer || !codeViewItems) {
-        return;
-      }
-
-      const item = viewer.getItem(itemId);
-      if (!item) {
-        return;
-      }
-
-      runCodeViewMutationPreservingScroll(
-        viewer,
-        () => {
-          const { item: nextItem, queuedId } = replaceDraftWithQueuedAnnotation(
-            item,
-            draftId,
-            range,
-            body,
-          );
-          viewer.updateItem(nextItem);
-          setQueue((current) => [...current, { queuedId, itemId, path, range, body }]);
-        },
-        () => {
-          if (!hasAnyDraftAnnotation(viewer, codeViewItems.items)) {
-            viewer.clearSelectedLines();
-            setSelectedLines(null);
-            setHoveredThreadSelection(null);
-          }
-        },
-      );
-    },
-    [codeViewItems],
-  );
-
-  const handleRemoveQueued = useCallback((queuedId: string, itemId: string) => {
-    const viewer = viewerRef.current;
-    setQueue((current) => current.filter((entry) => entry.queuedId !== queuedId));
-
-    if (viewer) {
-      const item = viewer.getItem(itemId);
-      if (item) {
-        runCodeViewMutationPreservingScroll(viewer, () => {
-          viewer.updateItem(removeQueuedAnnotation(item, queuedId));
-        });
-      }
-    }
-  }, []);
-
-  const handleEditQueued = useCallback((queuedId: string, itemId: string, body: string) => {
-    const viewer = viewerRef.current;
-    setQueue((current) =>
-      current.map((entry) => (entry.queuedId === queuedId ? { ...entry, body } : entry)),
-    );
-
-    if (viewer) {
-      const item = viewer.getItem(itemId);
-      if (item) {
-        runCodeViewMutationPreservingScroll(viewer, () => {
-          viewer.updateItem(updateQueuedAnnotationBody(item, queuedId, body));
-        });
-      }
-    }
-  }, []);
-
-  const handlePublishReview = useCallback(
-    async (event: ReviewEvent, body: string) => {
-      await publishBatchedReview(data.ref, {
-        commitId: data.pullRequest.head.sha,
-        event,
-        body,
-        comments: toBatchedReviewComments(queue),
-      });
-
-      const viewer = viewerRef.current;
-      const queuedSnapshot = queue;
-
-      let fresh: GitHubPullRequestReviewComment[] = [];
-      try {
-        fresh = await fetchPullRequestReviewComments(data.ref);
-      } catch {
-        // Comments published; reflecting them inline is best-effort.
-      }
-
-      if (fresh.length > 0) {
-        const knownIds = new Set(liveReviewComments.map((comment) => comment.id));
-        const added = fresh.filter((comment) => !knownIds.has(comment.id));
-        setLiveReviewComments(fresh);
-
-        if (viewer && codeViewItems && added.length > 0) {
-          runCodeViewMutationPreservingScroll(viewer, () => {
-            for (const comment of added) {
-              const file = codeViewItems.fileByPath.get(comment.path);
-              if (!file) {
-                continue;
-              }
-              const id = getCodeViewItemIdForFile(file, codeViewItems.diffPathSet);
-              const item = viewer.getItem(id);
-              if (item) {
-                viewer.updateItem(addThreadAnnotationForComment(item, comment));
-              }
-            }
-          });
-        }
-      }
-
-      if (viewer) {
-        runCodeViewMutationPreservingScroll(viewer, () => {
-          for (const entry of queuedSnapshot) {
-            const item = viewer.getItem(entry.itemId);
-            if (item) {
-              viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
-            }
-          }
-        });
-      }
-
-      setQueue([]);
-      setIsPublishDialogOpen(false);
-      setIsBatchMode(false);
-      refreshCodeViewLayout();
-    },
-    [
-      codeViewItems,
-      data.pullRequest.head.sha,
-      data.ref,
-      liveReviewComments,
-      queue,
-      refreshCodeViewLayout,
-    ],
-  );
-
-  const handleDiscardQueue = useCallback(() => {
-    const viewer = viewerRef.current;
-    if (viewer) {
-      runCodeViewMutationPreservingScroll(viewer, () => {
-        for (const entry of queue) {
-          const item = viewer.getItem(entry.itemId);
-          if (item) {
-            viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
-          }
-        }
-      });
-    }
-
-    setQueue([]);
-    setIsPublishDialogOpen(false);
-  }, [queue]);
-
-  const handleToggleBatchMode = useCallback(() => {
-    setIsBatchMode((current) => !current);
-  }, []);
-
-  const handleCloseOverlay = useCallback(() => {
-    if (queue.length > 0) {
-      const confirmed = window.confirm(
-        `Discard ${queue.length} queued review ${queue.length === 1 ? 'comment' : 'comments'}? They have not been published to GitHub.`,
-      );
-      if (!confirmed) {
-        return;
-      }
-    }
-
-    onClose();
-  }, [onClose, queue.length]);
-
   const codeViewStyle = useMemo(
     () => ({
       height: '100%',
@@ -805,15 +386,6 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     }),
     [codeViewThemeType, annotationThemeStyle],
   );
-
-  useEffect(() => {
-    if (!notificationError) {
-      return;
-    }
-
-    const id = setTimeout(() => setNotificationError(null), 6000);
-    return () => clearTimeout(id);
-  }, [notificationError]);
 
   const updateDiffLayout = useCallback((nextLayout: DiffLayout) => {
     setDiffLayout(nextLayout);
@@ -900,7 +472,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     applySelectionState();
   });
 
-  const stopGitHubKeybindings = useCallback((event: React.KeyboardEvent) => {
+  const stopGitHubKeybindings = useCallback((event: ReactKeyboardEvent) => {
     event.stopPropagation();
   }, []);
 
@@ -1203,127 +775,6 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
         </GitHubAuthProvider>
       </section>
     </>
-  );
-}
-
-function QueuedCommentCard({
-  body,
-  range,
-  onRemove,
-  onEdit,
-  onHighlight,
-  onClearHighlight,
-}: {
-  body: string;
-  range: SelectedLineRange;
-  onRemove: () => void;
-  onEdit: (body: string) => void;
-  onHighlight: () => void;
-  onClearHighlight: () => void;
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState(body);
-  const editRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (isEditing) {
-      editRef.current?.focus({ preventScroll: true });
-    }
-  }, [isEditing]);
-
-  const startEdit = useCallback(() => {
-    setDraft(body);
-    setIsEditing(true);
-  }, [body]);
-
-  const save = useCallback(() => {
-    const trimmed = draft.trim();
-    if (trimmed && trimmed !== body) {
-      onEdit(trimmed);
-    }
-    setIsEditing(false);
-  }, [body, draft, onEdit]);
-
-  const handleKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
-      event.stopPropagation();
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        setIsEditing(false);
-      } else if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        save();
-      }
-    },
-    [save],
-  );
-
-  return (
-    <div className='gprv-review-thread-shell'>
-      <div
-        className='gprv-review-thread gprv-review-queued'
-        onMouseEnter={onHighlight}
-        onMouseLeave={onClearHighlight}
-      >
-        <p className='gprv-review-line-range'>{formatSelectedLineRangeLabel(range)}</p>
-        <div className='gprv-review-queued-header'>
-          <span className='gprv-queued-badge'>Queued</span>
-          {!isEditing ? (
-            <div className='gprv-review-comment-actions'>
-              <button
-                type='button'
-                className='gprv-review-comment-action'
-                onClick={startEdit}
-                aria-label='Edit queued comment'
-                title='Edit queued comment'
-              >
-                Edit
-              </button>
-              <button
-                type='button'
-                className='gprv-review-comment-action'
-                onClick={onRemove}
-                aria-label='Delete queued comment'
-                title='Delete queued comment'
-              >
-                Delete
-              </button>
-            </div>
-          ) : null}
-        </div>
-        {isEditing ? (
-          <div className='gprv-review-queued-edit'>
-            <textarea
-              ref={editRef}
-              className='gprv-review-composer-input'
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={3}
-            />
-            <div className='gprv-review-composer-actions'>
-              <button
-                type='button'
-                className='gprv-review-composer-button gprv-review-composer-button-secondary'
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type='button'
-                className='gprv-review-composer-button gprv-review-composer-button-primary'
-                onClick={save}
-                disabled={!draft.trim()}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        ) : (
-          <p className='gprv-review-queued-body'>{body}</p>
-        )}
-      </div>
-    </div>
   );
 }
 
