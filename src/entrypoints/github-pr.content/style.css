@@ -2108,7 +2108,7 @@ html.gprv-scroll-locked body {
 .gprv-viewed-checkbox-box {
   align-items: center;
   background: transparent;
-  border: 1.5px solid color-mix(in srgb, currentColor 45%, transparent);
+  border: 1.5px solid var(--gprv-header-control-border, var(--gprv-border));
   border-radius: 4px;
   box-sizing: border-box;
   color: #fff;
