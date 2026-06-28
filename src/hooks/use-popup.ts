@@ -2,6 +2,13 @@ import { useEffect, useReducer, useState } from 'react';
 
 import { fetchGitHubViewer, GitHubViewer } from '@/lib/github/review-write';
 import { shouldShowReviewFlowTokenWarning } from '@/lib/github/token-hints';
+import {
+  clearGitHubToken,
+  readGitHubTokenCredentials,
+  removeGitHubTokenViewer,
+  setGitHubToken,
+  setGitHubTokenViewer,
+} from '@/lib/github/token-storage';
 import { popupReducer } from '@/reducers/popup-reducer';
 
 export function usePopup() {
@@ -15,20 +22,20 @@ export function usePopup() {
   async function loadFromStorage() {
     dispatch({ type: 'LOADING' });
 
-    if (!browser?.storage?.sync) {
+    if (!browser?.storage?.local) {
       dispatch({ type: 'SET_EMPTY' });
       return;
     }
 
     try {
-      const stored = await browser.storage.sync.get(['githubToken', 'githubTokenViewer']);
+      const { token, viewerJson } = await readGitHubTokenCredentials();
 
-      if (typeof stored.githubToken === 'string' && stored.githubToken.trim()) {
-        setTokenInput(stored.githubToken);
+      if (token) {
+        setTokenInput(token);
 
-        if (typeof stored.githubTokenViewer === 'string') {
+        if (viewerJson) {
           try {
-            const viewer = JSON.parse(stored.githubTokenViewer) as GitHubViewer;
+            const viewer = JSON.parse(viewerJson) as GitHubViewer;
             dispatch({ type: 'SET_SAVED', viewer });
             return;
           } catch {
@@ -49,7 +56,7 @@ export function usePopup() {
     event.preventDefault();
     if (state.status === 'validating') return;
 
-    if (!browser?.storage?.sync) {
+    if (!browser?.storage?.local) {
       dispatch({
         type: 'SET_ERROR',
         message: 'Extension storage is unavailable.',
@@ -70,18 +77,16 @@ export function usePopup() {
     dispatch({ type: 'SET_VALIDATING' });
 
     try {
-      await browser.storage.sync.set({ githubToken: trimmed });
+      await setGitHubToken(trimmed);
 
       const viewer = await fetchGitHubViewer();
 
       if (viewer) {
         const { login, avatar_url } = viewer;
-        await browser.storage.sync.set({
-          githubTokenViewer: JSON.stringify({ login, avatar_url }),
-        });
+        await setGitHubTokenViewer(JSON.stringify({ login, avatar_url }));
         dispatch({ type: 'SET_SAVED', viewer });
       } else {
-        await browser.storage.sync.remove('githubTokenViewer');
+        await removeGitHubTokenViewer();
         dispatch({
           type: 'SET_ERROR',
           message: 'GitHub token invalid. Make sure you are entering a valid token.',
@@ -96,9 +101,9 @@ export function usePopup() {
   }
 
   async function handleClear() {
-    if (!browser?.storage?.sync) return;
+    if (!browser?.storage?.local) return;
 
-    await browser.storage.sync.remove(['githubToken', 'githubTokenViewer']);
+    await clearGitHubToken();
     setTokenInput('');
     dispatch({ type: 'SET_EMPTY' });
   }

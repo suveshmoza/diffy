@@ -3,6 +3,7 @@ import type { Octokit } from '@octokit/rest';
 import type { RestEndpointMethodTypes } from '@octokit/rest';
 
 import { addRateLimitListener, getOctokitClient, resetOctokitClients } from './octokit';
+import { readGitHubToken, subscribeToGitHubTokenChanges } from './token-storage';
 
 export type GitHubPullRequestRef = {
   owner: string;
@@ -120,7 +121,7 @@ export async function getGitHubToken(): Promise<string | null> {
   }
 
   if (!githubTokenPromise) {
-    githubTokenPromise = readGitHubTokenFromStorage().then((token) => {
+    githubTokenPromise = readGitHubToken().then((token) => {
       cachedGitHubToken = token;
       githubTokenPromise = null;
       return token;
@@ -130,26 +131,11 @@ export async function getGitHubToken(): Promise<string | null> {
   return githubTokenPromise;
 }
 
-async function readGitHubTokenFromStorage(): Promise<string | null> {
-  if (!browser?.storage?.sync) {
-    return null;
-  }
-
-  const stored = await browser.storage.sync.get('githubToken');
-  return typeof stored.githubToken === 'string' && stored.githubToken.trim()
-    ? stored.githubToken.trim()
-    : null;
-}
-
-if (browser?.storage?.onChanged) {
-  browser.storage.onChanged.addListener((changes, area) => {
-    if (area === 'sync' && changes.githubToken) {
-      cachedGitHubToken = undefined;
-      githubTokenPromise = null;
-      resetOctokitClients();
-    }
-  });
-}
+subscribeToGitHubTokenChanges(() => {
+  cachedGitHubToken = undefined;
+  githubTokenPromise = null;
+  resetOctokitClients();
+});
 
 export function parseGitHubPullRequestUrl(
   url: string | null | undefined,
