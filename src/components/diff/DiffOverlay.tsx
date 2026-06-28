@@ -584,10 +584,10 @@ export function DiffOverlay({ data, pullRequestUrl, onClose }: DiffOverlayProps)
     (path: string, next: boolean) => {
       viewedFiles.toggleViewed(path, next);
 
-      if (next && codeViewItems) {
+      if (codeViewItems) {
         const file = codeViewItems.fileByPath.get(path);
         if (file) {
-          setItemCollapsed(getCodeViewItemIdForFile(file, codeViewItems.diffPathSet), true);
+          setItemCollapsed(getCodeViewItemIdForFile(file, codeViewItems.diffPathSet), next);
         }
       }
     },
