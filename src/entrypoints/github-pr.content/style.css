@@ -702,6 +702,11 @@ html.gprv-scroll-locked body {
   width: 36px;
 }
 
+.gprv-header-icon-button .gprv-loading-spinner {
+  animation-duration: 1.4s;
+  animation-direction: reverse;
+}
+
 .gprv-header-button:hover,
 .gprv-close:hover,
 .gprv-header-icon-button:hover {
