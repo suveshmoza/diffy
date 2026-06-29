@@ -20,12 +20,12 @@
   <tr>
     <td align="center">
       <a href="https://chromewebstore.google.com/detail/diffy/oaakiockkfndnholpbeijclfbnldnpfn">
-        <img src="https://developer.chrome.com/static/docs/webstore/branding/image/mPGKYBIR2uCP0ApchDXE.png" alt="Available in the Chrome Web Store" height="56">
+        <img src="https://i.ibb.co/xKcKpPqC/m-PGKYBIR2u-CP0-Apch-DXE.png" alt="Available in the Chrome Web Store" height="56">
       </a>
     </td>
     <td align="center">
       <a href="https://addons.mozilla.org/en-US/firefox/addon/diffy-pr/">
-        <img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the add-on for Firefox" height="56">
+        <img src="https://i.ibb.co/tTGNC9cG/get-the-addon.webp" alt="Get the add-on for Firefox" height="56">
       </a>
     </td>
   </tr>
