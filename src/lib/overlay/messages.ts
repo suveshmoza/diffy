@@ -7,8 +7,12 @@ export const OVERLAY_CHILD_SOURCE = 'gprv-overlay-frame';
 export type OverlayHostMessage =
   | { source: typeof OVERLAY_PARENT_SOURCE; type: 'mount'; pullRequestUrl: string }
   | { source: typeof OVERLAY_PARENT_SOURCE; type: 'prefetch'; pullRequestUrl: string }
+  | { source: typeof OVERLAY_PARENT_SOURCE; type: 'layout' }
   | { source: typeof OVERLAY_PARENT_SOURCE; type: 'unmount' }
   | { source: typeof OVERLAY_PARENT_SOURCE; type: 'destroy' };
+
+/** Dispatched inside the overlay iframe to re-measure CodeView after the frame becomes visible. */
+export const OVERLAY_LAYOUT_KICK_EVENT = 'gprv-overlay-layout-kick';
 
 /** Sent by the overlay iframe (child) to the content script (parent). */
 export type OverlayFrameMessage =

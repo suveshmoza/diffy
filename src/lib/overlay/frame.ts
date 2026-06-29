@@ -1,4 +1,4 @@
-import { getOrCreateOverlayRoot, hideOverlayRoot, removeOverlayRoot } from '@/lib/github/page';
+import { getOrCreateOverlayRoot, removeOverlayRoot } from '@/lib/github/page';
 import { lockPageScroll, unlockPageScroll } from '@/lib/github/scroll-lock';
 import {
   OVERLAY_PARENT_SOURCE,
@@ -70,6 +70,19 @@ function applyFrameStyles(iframe: HTMLIFrameElement): void {
   });
 }
 
+/** Hide the iframe without visibility:hidden so layout inside the iframe still runs. */
+function hideIframe(iframe: HTMLIFrameElement): void {
+  iframe.style.pointerEvents = 'none';
+  iframe.style.opacity = '0';
+}
+
+function showIframe(iframe: HTMLIFrameElement): void {
+  iframe.style.pointerEvents = 'auto';
+  iframe.style.opacity = '1';
+  // Force style flush so the iframe is painted before CodeView mounts.
+  void iframe.offsetHeight;
+}
+
 function ensureFrame(): OverlayFrameState {
   if (state) {
     return state;
@@ -81,6 +94,7 @@ function ensureFrame(): OverlayFrameState {
   const iframe = document.createElement('iframe');
   applyFrameStyles(iframe);
   iframe.src = (browser.runtime.getURL as (path: string) => string)(OVERLAY_PAGE_PATH);
+  hideIframe(iframe);
   root.append(iframe);
 
   state = { iframe, ready: false, pending: [] };
@@ -99,11 +113,7 @@ function postToFrame(message: OverlayHostMessage): void {
 
 /** Create the (hidden) overlay iframe ahead of time so opening is instant. */
 export function preloadOverlayFrame(): void {
-  const created = state == null;
   ensureFrame();
-  if (created) {
-    hideOverlayRoot();
-  }
 }
 
 export function setOverlayCloseHandler(handler: () => void): void {
@@ -111,24 +121,34 @@ export function setOverlayCloseHandler(handler: () => void): void {
 }
 
 export function prefetchOverlayFrame(pullRequestUrl: string): void {
-  const created = state == null;
   postToFrame({ source: OVERLAY_PARENT_SOURCE, type: 'prefetch', pullRequestUrl });
-  if (created) {
-    hideOverlayRoot();
-  }
 }
 
 export function openOverlayFrame(pullRequestUrl: string): void {
-  ensureFrame();
+  const current = ensureFrame();
   getOrCreateOverlayRoot();
+  showIframe(current.iframe);
   lockPageScroll();
-  postToFrame({ source: OVERLAY_PARENT_SOURCE, type: 'mount', pullRequestUrl });
-  state?.iframe.contentWindow?.focus();
+
+  const postOpenMessages = () => {
+    postToFrame({ source: OVERLAY_PARENT_SOURCE, type: 'mount', pullRequestUrl });
+    postToFrame({ source: OVERLAY_PARENT_SOURCE, type: 'layout' });
+  };
+
+  // Defer mount until the iframe has painted visible so Pierre's IntersectionObserver
+  // sees the scroll root on first render.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(postOpenMessages);
+  });
+
+  current.iframe.contentWindow?.focus();
 }
 
 /** Hide the overlay but keep the worker pool alive in the iframe. */
 export function hideOverlayFrame(): void {
-  hideOverlayRoot();
+  if (state) {
+    hideIframe(state.iframe);
+  }
   unlockPageScroll();
   if (state) {
     postToFrame({ source: OVERLAY_PARENT_SOURCE, type: 'unmount' });

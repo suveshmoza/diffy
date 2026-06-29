@@ -1,10 +1,11 @@
-import { DEFAULT_THEMES, setCustomExtension } from '@pierre/diffs';
+import { setCustomExtension } from '@pierre/diffs';
 import { WorkerPoolContextProvider } from '@pierre/diffs/react';
 import { useMemo, type ReactNode } from 'react';
 
 import { DIFF_LANG_IDS } from '@/lib/diff/lang-ids';
 import { workerFactory } from '@/lib/diff/worker';
 import { useThemeControllerReady } from '@/providers/theming/ThemeControllerProvider';
+import { useDiffThemeProps } from '@/providers/theming/useDiffThemeProps';
 
 setCustomExtension('mts', 'typescript');
 setCustomExtension('cts', 'typescript');
@@ -19,13 +20,9 @@ type PersistentWorkerPoolShellProps = {
   children: ReactNode;
 };
 
-const WORKER_HIGHLIGHTER_OPTIONS = {
-  theme: DEFAULT_THEMES,
-  langs: [...DIFF_LANG_IDS],
-};
-
 export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShellProps) {
   const { isReady: isThemeReady } = useThemeControllerReady();
+  const diffTheme = useDiffThemeProps();
 
   const poolOptions = useMemo(
     () => ({
@@ -36,6 +33,14 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
     [],
   );
 
+  const highlighterOptions = useMemo(
+    () => ({
+      theme: diffTheme.theme,
+      langs: [...DIFF_LANG_IDS],
+    }),
+    [diffTheme.theme],
+  );
+
   if (!isThemeReady) {
     return children;
   }
@@ -43,7 +48,7 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
   return (
     <WorkerPoolContextProvider
       poolOptions={poolOptions}
-      highlighterOptions={WORKER_HIGHLIGHTER_OPTIONS}
+      highlighterOptions={highlighterOptions}
     >
       {children}
     </WorkerPoolContextProvider>

@@ -6,6 +6,7 @@ import {
 
 import {
   destroyOverlayRuntime,
+  kickOverlayLayout,
   mountOverlay,
   prefetchOverlayData,
   unmountOverlayApp,
@@ -65,6 +66,10 @@ if (isStandalone) {
           pullRequestUrl: message.pullRequestUrl,
           onClose: notifyClose,
         });
+        kickOverlayLayout();
+        break;
+      case 'layout':
+        kickOverlayLayout();
         break;
       case 'prefetch':
         prefetchOverlayData(message.pullRequestUrl);

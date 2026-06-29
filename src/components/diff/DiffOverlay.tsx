@@ -20,7 +20,11 @@ import {
 
 import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
-import { useCodeViewHostReady, useCodeViewLayoutRefresh } from '@/hooks/useCodeViewLayoutRefresh';
+import {
+  useCodeViewHostReady,
+  useCodeViewLayoutRefresh,
+  kickCodeViewLayout,
+} from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewReviewMutations } from '@/hooks/useCodeViewReviewMutations';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
 import { useReviewQueue } from '@/hooks/useReviewQueue';
@@ -47,6 +51,7 @@ import {
   type PullRequestDiffData,
 } from '@/lib/github/api';
 import { formatViewedFilesError } from '@/lib/github/token-hints';
+import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
 import {
   buildReviewCommentCountByPath,
   getItemPath,
@@ -342,8 +347,28 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
       return;
     }
 
-    refreshCodeViewLayout();
-  }, [isCodeViewMounted, codeViewItems, refreshCodeViewLayout]);
+    const runKick = () => {
+      kickCodeViewLayout(viewerRef.current, codeViewHostRef.current);
+    };
+
+    runKick();
+    const raf1 = requestAnimationFrame(() => {
+      runKick();
+      requestAnimationFrame(runKick);
+    });
+    const delayedKick = window.setTimeout(runKick, 100);
+
+    const onLayoutKick = () => {
+      runKick();
+    };
+    window.addEventListener(OVERLAY_LAYOUT_KICK_EVENT, onLayoutKick);
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      window.clearTimeout(delayedKick);
+      window.removeEventListener(OVERLAY_LAYOUT_KICK_EVENT, onLayoutKick);
+    };
+  }, [isCodeViewMounted, codeViewItems]);
 
   const handleThreadHighlight = useStableCallback((selection: CodeViewLineSelection) => {
     setHoveredThreadSelection(selection);

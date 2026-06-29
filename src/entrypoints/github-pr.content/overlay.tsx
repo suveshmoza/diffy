@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { App } from '@/components/app/App';
 import { PreloadHighlighter } from '@/components/theming/PreloadHighlighter';
 import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github/api';
+import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
 import { PersistentWorkerPoolShell } from '@/providers/PersistentWorkerPoolShell';
 import { ThemeControllerProvider } from '@/providers/theming/ThemeControllerProvider';
 
@@ -48,6 +49,23 @@ export function mountOverlay({ container, pullRequestUrl, onClose }: MountOverla
   overlayRoot ??= createRoot(container);
   runtimeProps = { pullRequestUrl, onClose };
   renderOverlayRuntime();
+  kickOverlayLayout();
+}
+
+/** Re-measure CodeView after the overlay iframe becomes visible. */
+export function kickOverlayLayout(): void {
+  const dispatch = () => {
+    window.dispatchEvent(new Event(OVERLAY_LAYOUT_KICK_EVENT));
+  };
+
+  dispatch();
+  requestAnimationFrame(() => {
+    dispatch();
+    requestAnimationFrame(() => {
+      dispatch();
+      window.setTimeout(dispatch, 100);
+    });
+  });
 }
 
 /** Unmount app UI while keeping the worker pool shell alive in the React tree. */
