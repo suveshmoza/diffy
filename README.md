@@ -12,11 +12,7 @@
 
 **diffy** is a browser extension for reviewing GitHub pull requests in a full-screen, continuous view, with inline comments, batch reviews, and the tooling reviewers actually need. Powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com).
 
-
-
 https://github.com/user-attachments/assets/a3682856-963a-4261-b77a-ad5038d9ef7e
-
-
 
 <h3 align="center">Install</h3>
 
@@ -80,8 +76,8 @@ GitHub's **Files changed** tab works well for most pull requests. It starts to b
 
 ## How it works
 
-1. Open any pull request on GitHub. diffy adds a **View Diff** button and starts prefetching PR data as the page loads.
-2. Click **View Diff** to open a full-screen diff viewer with every changed file in one scrollable view.
+1. Open a pull request on GitHub and click **View Diff** (diffy starts prefetching PR data as the page loads), or right-click any PR link on GitHub and choose **Open in diffy** from the context menu.
+2. Review every changed file in one full-screen, scrollable view.
 3. Use the file tree on the left to search and jump between files.
 4. Read and leave review comments directly on the lines you're looking at.
 5. Start a batch review to queue comments, mark files as viewed, and publish your verdict when you're done.
