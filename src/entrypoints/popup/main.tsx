@@ -50,7 +50,7 @@ function PopupApp() {
         />
         <div className='header-copy'>
           <h1>diffy</h1>
-          <p className='tagline'>Better PR diffs on GitHub</p>
+          <p className='tagline'>A better way to review GitHub pull requests</p>
         </div>
       </header>
 
