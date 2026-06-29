@@ -12,7 +12,11 @@
 
 **diffy** is a browser extension for reviewing GitHub pull requests in a full-screen, continuous view, with inline comments, batch reviews, and the tooling reviewers actually need. Powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com).
 
-<https://github.com/user-attachments/assets/0a37798f-da98-46e1-a200-187290414452>
+
+
+https://github.com/user-attachments/assets/a3682856-963a-4261-b77a-ad5038d9ef7e
+
+
 
 <h3 align="center">Install</h3>
 
