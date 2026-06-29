@@ -7,7 +7,7 @@ import type {
   SelectedLineRange,
 } from '@pierre/diffs';
 import { useStableCallback, type CodeViewHandle } from '@pierre/diffs/react';
-import { IconChevronDown, IconCircleX, IconLoader, IconX } from '@tabler/icons-react';
+import { IconChevronDown, IconCircleX, IconLoader } from '@tabler/icons-react';
 import {
   useCallback,
   useEffect,
@@ -19,12 +19,13 @@ import {
   type SetStateAction,
 } from 'react';
 
+import { NotificationErrorBar } from '@/components/diff/NotificationErrorBar';
 import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import {
+  kickCodeViewLayout,
   useCodeViewHostReady,
   useCodeViewLayoutRefresh,
-  kickCodeViewLayout,
 } from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewReviewMutations } from '@/hooks/useCodeViewReviewMutations';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
@@ -752,117 +753,105 @@ export function DiffOverlay({
 
           {isPublishDialogOpen ? <PublishReviewDialog /> : null}
 
-          <GitHubAuthProvider>
-            <ReviewProvider value={reviewContextValue}>
-              {notificationError ? (
-                <div className='gprv-notification-error'>
-                  <IconCircleX
-                    size={16}
-                    stroke={2}
+          <div className='gprv-modal-main'>
+            <GitHubAuthProvider>
+              <ReviewProvider value={reviewContextValue}>
+                {notificationError ? (
+                  <NotificationErrorBar
+                    message={notificationError}
+                    onDismiss={() => setNotificationError(null)}
                   />
-                  <span>{notificationError}</span>
-                  <button
-                    className='gprv-notification-dismiss'
-                    type='button'
-                    onClick={() => setNotificationError(null)}
-                    aria-label='Dismiss'
+                ) : null}
+                <div
+                  className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}
+                >
+                  {isSidebarCollapsed ? null : (
+                    <aside className='gprv-sidebar'>
+                      {data.files.length > 0 && codeViewItems ? (
+                        <FileTreePanel
+                          files={data.files}
+                          selectedPath={selectedPath}
+                          reviewCommentCountByPath={reviewCommentCountByPath}
+                          onSelectPath={handleTreeSelect}
+                          pullRequest={data.pullRequest}
+                          reviewCommentCount={data.reviewComments.length}
+                        />
+                      ) : (
+                        <div className='gprv-state'>
+                          {isBuilding ? 'Building file list…' : 'No changed files found.'}
+                        </div>
+                      )}
+                    </aside>
+                  )}
+
+                  <div
+                    ref={codeViewHostRef}
+                    className='gprv-code-view-host'
                   >
-                    <IconX
-                      size={14}
-                      stroke={2}
-                    />
-                  </button>
-                </div>
-              ) : null}
-              <div
-                className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}
-              >
-                {isSidebarCollapsed ? null : (
-                  <aside className='gprv-sidebar'>
-                    {data.files.length > 0 && codeViewItems ? (
-                      <FileTreePanel
-                        files={data.files}
-                        selectedPath={selectedPath}
-                        reviewCommentCountByPath={reviewCommentCountByPath}
-                        onSelectPath={handleTreeSelect}
-                        pullRequest={data.pullRequest}
-                        reviewCommentCount={data.reviewComments.length}
+                    {codeViewBuildError ? (
+                      <div
+                        className='gprv-state'
+                        style={{ color: 'var(--gprv-error)' }}
+                      >
+                        {codeViewBuildError}
+                      </div>
+                    ) : codeViewItems && codeViewItems.items.length === 0 ? (
+                      <div className='gprv-state'>
+                        <div className='gprv-empty-state'>
+                          <IconCircleX
+                            size={48}
+                            stroke={2}
+                            color='var(--gprv-muted)'
+                          />
+                          <p className='gprv-loading-summary'>
+                            This pull request has no code changes.
+                          </p>
+                          <p className='gprv-loading-hint'>
+                            The diff viewer requires at least one changed file.
+                          </p>
+                        </div>
+                      </div>
+                    ) : isCodeViewMounted && codeViewItems ? (
+                      <ThemedCodeView<ReviewAnnotationMetadata>
+                        key={`codeview-${refreshGeneration}`}
+                        ref={viewerRef}
+                        containerRef={handleCodeViewContainer}
+                        initialItems={codeViewItems.items}
+                        className='gprv-code-view'
+                        style={codeViewStyle}
+                        renderAnnotation={renderReviewAnnotation}
+                        renderHeaderPrefix={renderHeaderPrefix}
+                        renderHeaderMetadata={renderReviewHeaderMetadata}
+                        options={codeViewOptionsWithInteractions ?? codeViewOptions}
+                        selectedLines={hoveredThreadSelection ?? selectedLines}
+                        onSelectedLinesChange={handleSelectedLinesChange}
                       />
                     ) : (
                       <div className='gprv-state'>
-                        {isBuilding ? 'Building file list…' : 'No changed files found.'}
+                        {isBuilding ? (
+                          'Building diff…'
+                        ) : (
+                          <div
+                            className='gprv-loading-panel'
+                            role='status'
+                            aria-live='polite'
+                            aria-label='Preparing diff viewer'
+                          >
+                            <IconLoader
+                              size={48}
+                              stroke={2}
+                              className='gprv-loading-spinner'
+                            />
+                            <p className='gprv-loading-summary'>Preparing diff viewer…</p>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </aside>
-                )}
-
-                <div
-                  ref={codeViewHostRef}
-                  className='gprv-code-view-host'
-                >
-                  {codeViewBuildError ? (
-                    <div
-                      className='gprv-state'
-                      style={{ color: 'var(--gprv-error)' }}
-                    >
-                      {codeViewBuildError}
-                    </div>
-                  ) : codeViewItems && codeViewItems.items.length === 0 ? (
-                    <div className='gprv-state'>
-                      <div className='gprv-empty-state'>
-                        <IconCircleX
-                          size={48}
-                          stroke={2}
-                          color='var(--gprv-muted)'
-                        />
-                        <p className='gprv-loading-summary'>
-                          This pull request has no code changes.
-                        </p>
-                        <p className='gprv-loading-hint'>
-                          The diff viewer requires at least one changed file.
-                        </p>
-                      </div>
-                    </div>
-                  ) : isCodeViewMounted && codeViewItems ? (
-                    <ThemedCodeView<ReviewAnnotationMetadata>
-                      key={`codeview-${refreshGeneration}`}
-                      ref={viewerRef}
-                      containerRef={handleCodeViewContainer}
-                      initialItems={codeViewItems.items}
-                      className='gprv-code-view'
-                      style={codeViewStyle}
-                      renderAnnotation={renderReviewAnnotation}
-                      renderHeaderPrefix={renderHeaderPrefix}
-                      renderHeaderMetadata={renderReviewHeaderMetadata}
-                      options={codeViewOptionsWithInteractions ?? codeViewOptions}
-                      selectedLines={hoveredThreadSelection ?? selectedLines}
-                      onSelectedLinesChange={handleSelectedLinesChange}
-                    />
-                  ) : (
-                    <div className='gprv-state'>
-                      {isBuilding ? (
-                        'Building diff…'
-                      ) : (
-                        <div
-                          className='gprv-loading-panel'
-                          role='status'
-                          aria-live='polite'
-                          aria-label='Preparing diff viewer'
-                        >
-                          <IconLoader
-                            size={48}
-                            stroke={2}
-                            className='gprv-loading-spinner'
-                          />
-                          <p className='gprv-loading-summary'>Preparing diff viewer…</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </ReviewProvider>
-          </GitHubAuthProvider>
+              </ReviewProvider>
+            </GitHubAuthProvider>
+          </div>
         </ReviewQueueProvider>
       </section>
     </>
