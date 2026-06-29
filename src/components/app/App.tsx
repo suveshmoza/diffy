@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 
 import { usePullRequestDiff } from '@/hooks/usePullRequestDiff';
+import { useStandaloneDocumentTitle } from '@/hooks/useStandaloneDocumentTitle';
 import {
   getLoadProgress,
+  getPullRequestRefPrefix,
   parseGitHubPullRequestUrl,
   subscribeToLoadProgress,
 } from '@/lib/github/api';
@@ -22,11 +24,17 @@ type AppProps = {
 
 export function App({ pullRequestUrl, onClose }: AppProps) {
   const ref = parseGitHubPullRequestUrl(pullRequestUrl);
-  const { data, isPending, isError, error } = usePullRequestDiff(ref);
+  const { data, isPending, isError, error, headMeta } = usePullRequestDiff(ref);
   const { isReady: isThemeStorageReady, resolutionError: themeError } = useThemeControllerReady();
   const { activeTheme } = useThemeSource();
   const isResolvedThemeReady =
     isThemeStorageReady && activeTheme.theme != null && themeError == null;
+
+  useStandaloneDocumentTitle({
+    pullRequestTitle: data?.pullRequest.title ?? headMeta?.title,
+    fallbackTitle: ref ? getPullRequestRefPrefix(ref) : undefined,
+    isReady: data != null && isResolvedThemeReady,
+  });
   const loadProgress = useSyncExternalStore(subscribeToLoadProgress, getLoadProgress);
   const [refreshGeneration, setRefreshGeneration] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);

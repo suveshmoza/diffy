@@ -168,10 +168,17 @@ export function getPullRequestContentCacheKey(ref: GitHubPullRequestRef, headSha
   return `${getPullRequestRefPrefix(ref)}@${headSha}`;
 }
 
-export async function fetchPullRequestHeadSha(ref: GitHubPullRequestRef): Promise<string> {
+export type PullRequestHeadMeta = {
+  sha: string;
+  title: string;
+};
+
+export async function fetchPullRequestHeadMeta(
+  ref: GitHubPullRequestRef,
+): Promise<PullRequestHeadMeta> {
   const octokit = await getOctokit();
   const { data } = await octokit.rest.pulls.get(pullParams(ref));
-  return data.head.sha;
+  return { sha: data.head.sha, title: data.title };
 }
 
 export async function fetchPullRequestDiffData(

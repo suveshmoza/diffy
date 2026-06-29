@@ -23,7 +23,7 @@ export function usePullRequestDiff(ref: GitHubPullRequestRef | null) {
       return;
     }
 
-    if (headQuery.data === diffQuery.data.pullRequest.head.sha) {
+    if (headQuery.data.sha === diffQuery.data.pullRequest.head.sha) {
       return;
     }
 
@@ -34,5 +34,5 @@ export function usePullRequestDiff(ref: GitHubPullRequestRef | null) {
     });
   }, [diffQuery.data, headQuery.data, ref]);
 
-  return diffQuery;
+  return { ...diffQuery, headMeta: headQuery.data };
 }
