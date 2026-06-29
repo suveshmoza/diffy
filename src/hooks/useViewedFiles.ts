@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 
-import { getGitHubToken, type GitHubPullRequestRef } from '@/lib/github/api';
-import {
-  fetchViewedFiles,
-  markFileAsViewed,
-  unmarkFileAsViewed,
-  type FileViewedState,
-} from '@/lib/github/graphql';
+import type { GitHubPullRequestRef } from '@/lib/github/api';
+import { markFileAsViewed, unmarkFileAsViewed, type FileViewedState } from '@/lib/github/graphql';
+import { viewedFilesQueryOptions, type ViewedFilesQueryData } from '@/lib/query/viewed-files';
 import { computeViewedProgress, findNextUnviewedPath } from '@/lib/review/viewed-files';
 
 export type UseViewedFilesResult = {
@@ -20,6 +17,20 @@ export type UseViewedFilesResult = {
   nextUnviewedPath: (fromPath: string | null) => string | null;
 };
 
+type ToggleViewedVariables = {
+  path: string;
+  shouldView: boolean;
+  pullRequestId: string;
+};
+
+function toViewedMap(data: ViewedFilesQueryData | undefined): ReadonlyMap<string, FileViewedState> {
+  if (data == null || !data.hasToken) {
+    return new Map();
+  }
+
+  return new Map(Object.entries(data.viewedByPath));
+}
+
 /**
  * Loads + syncs per-file viewed state via GraphQL. Mutations are optimistic and
  * revert on failure. Loading is async and never blocks the diff render.
@@ -28,52 +39,47 @@ export function useViewedFiles(
   ref: GitHubPullRequestRef,
   orderedPaths: readonly string[],
 ): UseViewedFilesResult {
-  const [viewedByPath, setViewedByPath] = useState<ReadonlyMap<string, FileViewedState>>(new Map());
-  const [isReady, setIsReady] = useState(false);
-  const [hasToken, setHasToken] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const pullRequestIdRef = useRef<string | null>(null);
+  const queryClient = useQueryClient();
+  const queryKey = viewedFilesQueryOptions(ref).queryKey;
 
-  useEffect(() => {
-    let isCancelled = false;
+  const { data, isPending, error } = useQuery(viewedFilesQueryOptions(ref));
 
-    void (async () => {
-      const token = await getGitHubToken();
-      if (isCancelled) {
-        return;
+  const toggleMutation = useMutation({
+    mutationFn: async ({ path, shouldView, pullRequestId }: ToggleViewedVariables) => {
+      if (shouldView) {
+        await markFileAsViewed(pullRequestId, path);
+      } else {
+        await unmarkFileAsViewed(pullRequestId, path);
+      }
+    },
+    onMutate: async ({ path, shouldView }) => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const previous = queryClient.getQueryData<ViewedFilesQueryData>(queryKey);
+      if (previous == null || !previous.hasToken) {
+        return { previous };
       }
 
-      if (!token) {
-        setHasToken(false);
-        setIsReady(true);
-        return;
+      const nextState: FileViewedState = shouldView ? 'VIEWED' : 'UNVIEWED';
+      const optimistic: Extract<ViewedFilesQueryData, { hasToken: true }> = {
+        hasToken: true,
+        pullRequestId: previous.pullRequestId,
+        viewedByPath: { ...previous.viewedByPath, [path]: nextState },
+      };
+      queryClient.setQueryData<ViewedFilesQueryData>(queryKey, optimistic);
+
+      return { previous };
+    },
+    onError: (_mutationError, _variables, context) => {
+      if (context?.previous != null) {
+        queryClient.setQueryData(queryKey, context.previous);
       }
+    },
+  });
 
-      setHasToken(true);
-
-      try {
-        const result = await fetchViewedFiles(ref);
-        if (isCancelled) {
-          return;
-        }
-
-        pullRequestIdRef.current = result.pullRequestId;
-        setViewedByPath(new Map(result.files.map((file) => [file.path, file.viewerViewedState])));
-      } catch (loadError: unknown) {
-        if (!isCancelled) {
-          setError(loadError instanceof Error ? loadError.message : String(loadError));
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsReady(true);
-        }
-      }
-    })();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [ref]);
+  const viewedByPath = useMemo(() => toViewedMap(data), [data]);
+  const hasToken = data?.hasToken === true;
+  const isReady = !isPending;
 
   const isViewed = useCallback(
     (path: string) => viewedByPath.get(path) === 'VIEWED',
@@ -82,38 +88,18 @@ export function useViewedFiles(
 
   const toggleViewed = useCallback(
     (path: string, next?: boolean) => {
-      const pullRequestId = pullRequestIdRef.current;
-      if (!pullRequestId) {
+      if (data == null || !data.hasToken) {
         return;
       }
 
       const shouldView = next ?? viewedByPath.get(path) !== 'VIEWED';
-      const previous = viewedByPath.get(path);
-
-      setViewedByPath((current) => {
-        const updated = new Map(current);
-        updated.set(path, shouldView ? 'VIEWED' : 'UNVIEWED');
-        return updated;
-      });
-
-      const mutation = shouldView
-        ? markFileAsViewed(pullRequestId, path)
-        : unmarkFileAsViewed(pullRequestId, path);
-
-      mutation.catch((mutationError: unknown) => {
-        setError(mutationError instanceof Error ? mutationError.message : String(mutationError));
-        setViewedByPath((current) => {
-          const reverted = new Map(current);
-          if (previous === undefined) {
-            reverted.delete(path);
-          } else {
-            reverted.set(path, previous);
-          }
-          return reverted;
-        });
+      toggleMutation.mutate({
+        path,
+        shouldView,
+        pullRequestId: data.pullRequestId,
       });
     },
-    [viewedByPath],
+    [data, toggleMutation, viewedByPath],
   );
 
   const progress = useMemo(
@@ -126,11 +112,22 @@ export function useViewedFiles(
     [orderedPaths, viewedByPath],
   );
 
+  const mutationError = toggleMutation.error;
+
   return {
     viewedByPath,
     isReady,
     hasToken,
-    error,
+    error:
+      error != null
+        ? error instanceof Error
+          ? error.message
+          : String(error)
+        : mutationError != null
+          ? mutationError instanceof Error
+            ? mutationError.message
+            : String(mutationError)
+          : null,
     progress,
     isViewed,
     toggleViewed,

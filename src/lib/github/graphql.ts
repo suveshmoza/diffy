@@ -1,4 +1,5 @@
 import { getGitHubToken, type GitHubPullRequestRef } from './api';
+import { githubFetch } from './github-fetch';
 import type {
   FileViewedState,
   MarkViewedMutation,
@@ -70,7 +71,7 @@ async function graphqlRequest<TData, TVariables extends Record<string, unknown>>
     throw new GitHubGraphQLError('Add a GitHub token in the diffy extension popup.');
   }
 
-  const response = await fetch(GITHUB_GRAPHQL_URL, {
+  const response = await githubFetch(GITHUB_GRAPHQL_URL, {
     method: 'POST',
     headers: {
       Accept: 'application/json',

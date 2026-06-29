@@ -1,15 +1,12 @@
-import { useCallback, useEffect, useSyncExternalStore, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 
-import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
+import { usePullRequestDiff } from '@/hooks/usePullRequestDiff';
 import {
-  fetchCachedPullRequestDiffData,
   getLoadProgress,
-  invalidatePullRequestDiffCache,
-  isGitHubRateLimitError,
   parseGitHubPullRequestUrl,
   subscribeToLoadProgress,
-  type PullRequestDiffData,
 } from '@/lib/github/api';
+import { refreshPullRequestData } from '@/lib/query/refresh';
 import { SidebarProvider } from '@/providers/SidebarContext';
 import { useThemeControllerReady } from '@/providers/theming/ThemeControllerProvider';
 import { useThemeSource } from '@/providers/theming/useThemeSource';
@@ -18,33 +15,34 @@ import { DiffOverlay } from '../diff/DiffOverlay';
 import { ErrorOverlay } from './ErrorOverlay';
 import { LoadingOverlay } from './LoadingOverlay';
 
-type OverlayState =
-  | { status: 'loading' }
-  | { status: 'loaded'; data: PullRequestDiffData }
-  | { status: 'error'; message: string };
-
 type AppProps = {
   pullRequestUrl: string;
   onClose: () => void;
 };
 
 export function App({ pullRequestUrl, onClose }: AppProps) {
-  const [state, setState] = useState<OverlayState>({ status: 'loading' });
-  const [retryCount, setRetryCount] = useState(0);
+  const ref = parseGitHubPullRequestUrl(pullRequestUrl);
+  const { data, isPending, isError, error } = usePullRequestDiff(ref);
   const { isReady: isThemeStorageReady, resolutionError: themeError } = useThemeControllerReady();
   const { activeTheme } = useThemeSource();
   const isResolvedThemeReady =
     isThemeStorageReady && activeTheme.theme != null && themeError == null;
   const loadProgress = useSyncExternalStore(subscribeToLoadProgress, getLoadProgress);
+  const [refreshGeneration, setRefreshGeneration] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const retry = useCallback(() => {
-    const ref = parseGitHubPullRequestUrl(pullRequestUrl);
     if (ref) {
-      invalidatePullRequestDiffCache(ref);
-      invalidateCodeViewItemsCache(ref);
+      setIsRefreshing(true);
+      void refreshPullRequestData(ref)
+        .then(() => {
+          setRefreshGeneration((generation) => generation + 1);
+        })
+        .finally(() => {
+          setIsRefreshing(false);
+        });
     }
-    setRetryCount((count) => count + 1);
-  }, [pullRequestUrl]);
+  }, [ref]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -57,7 +55,7 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
         return;
       }
 
-      if (state.status === 'loaded' && isResolvedThemeReady) {
+      if (data != null && isResolvedThemeReady) {
         return;
       }
 
@@ -78,60 +76,31 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
 
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [isResolvedThemeReady, onClose, state.status]);
+  }, [data, isResolvedThemeReady, onClose]);
 
-  useEffect(() => {
-    let isCancelled = false;
-    const ref = parseGitHubPullRequestUrl(pullRequestUrl);
-
-    if (!ref) {
-      setState({
-        status: 'error',
-        message: 'Could not parse a GitHub pull request URL from this page.',
-      });
-      return;
-    }
-
-    setState({ status: 'loading' });
-    fetchCachedPullRequestDiffData(ref)
-      .then((data) => {
-        if (!isCancelled) {
-          setState({ status: 'loaded', data });
-        }
-      })
-      .catch((error: unknown) => {
-        if (!isCancelled) {
-          const message = error instanceof Error ? error.message : String(error);
-          if (isGitHubRateLimitError(error)) {
-            setState({
-              status: 'error',
-              message: message,
-            });
-          } else {
-            setState({
-              status: 'error',
-              message,
-            });
-          }
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [pullRequestUrl, retryCount]);
+  if (!ref) {
+    return (
+      <ErrorOverlay
+        message='Could not parse a GitHub pull request URL from this page.'
+        onRetry={retry}
+        onClose={onClose}
+      />
+    );
+  }
 
   let content: ReactNode;
 
-  if (state.status === 'loaded') {
+  if (data != null) {
     if (isResolvedThemeReady) {
       content = (
         <SidebarProvider>
           <DiffOverlay
-            data={state.data}
+            data={data}
             pullRequestUrl={pullRequestUrl}
             onClose={onClose}
             onRefresh={retry}
+            refreshGeneration={refreshGeneration}
+            isRefreshing={isRefreshing}
           />
         </SidebarProvider>
       );
@@ -151,12 +120,19 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
         />
       );
     }
-  } else if (state.status === 'error') {
+  } else if (isError) {
     content = (
       <ErrorOverlay
-        message={state.message}
+        message={error instanceof Error ? error.message : String(error)}
         onRetry={retry}
         onClose={onClose}
+      />
+    );
+  } else if (isPending) {
+    content = (
+      <LoadingOverlay
+        onClose={onClose}
+        progress={loadProgress}
       />
     );
   } else {

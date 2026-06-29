@@ -1,11 +1,12 @@
 import { setCustomExtension } from '@pierre/diffs';
 import { WorkerPoolContextProvider } from '@pierre/diffs/react';
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { DIFF_LANG_IDS } from '@/lib/diff/lang-ids';
 import { workerFactory } from '@/lib/diff/worker';
 import { useThemeControllerReady } from '@/providers/theming/ThemeControllerProvider';
 import { useDiffThemeProps } from '@/providers/theming/useDiffThemeProps';
+import { ensureDiffThemesResolved } from '@/providers/theming/useDiffThemeReady';
 
 setCustomExtension('mts', 'typescript');
 setCustomExtension('cts', 'typescript');
@@ -23,6 +24,29 @@ type PersistentWorkerPoolShellProps = {
 export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShellProps) {
   const { isReady: isThemeReady } = useThemeControllerReady();
   const diffTheme = useDiffThemeProps();
+  const [areThemesResolved, setAreThemesResolved] = useState(false);
+  const hasResolvedForPoolRef = useRef(false);
+
+  useEffect(() => {
+    if (!isThemeReady || hasResolvedForPoolRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void ensureDiffThemesResolved(diffTheme.theme)
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) {
+          hasResolvedForPoolRef.current = true;
+          setAreThemesResolved(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [diffTheme.theme, isThemeReady]);
 
   const poolOptions = useMemo(
     () => ({
@@ -41,7 +65,7 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
     [diffTheme.theme],
   );
 
-  if (!isThemeReady) {
+  if (!isThemeReady || !areThemesResolved) {
     return children;
   }
 

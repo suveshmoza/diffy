@@ -4,6 +4,7 @@ import {
   buildPatchFromFiles,
   getPullRequestContentCacheKey,
   type GitHubPullRequestFile,
+  type GitHubPullRequestReviewComment,
   type PullRequestDiffData,
 } from '@/lib/github/api';
 import {
@@ -22,8 +23,22 @@ export type CodeViewItemsResult = {
 
 const codeViewItemsCache = new Map<string, CodeViewItemsResult>();
 
+function getReviewCommentsCacheSuffix(comments: GitHubPullRequestReviewComment[]): string {
+  let idSum = 0;
+  let newestUpdatedAt = '';
+
+  for (const comment of comments) {
+    idSum += comment.id;
+    if (comment.updated_at > newestUpdatedAt) {
+      newestUpdatedAt = comment.updated_at;
+    }
+  }
+
+  return `${comments.length}:${idSum}:${newestUpdatedAt}`;
+}
+
 function getCodeViewItemsCacheKey(data: PullRequestDiffData): string {
-  return getPullRequestContentCacheKey(data.ref, data.pullRequest.head.sha);
+  return `${getPullRequestContentCacheKey(data.ref, data.pullRequest.head.sha)}@${getReviewCommentsCacheSuffix(data.reviewComments)}`;
 }
 
 export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResult {

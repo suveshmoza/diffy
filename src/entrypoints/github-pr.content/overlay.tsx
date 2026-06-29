@@ -2,9 +2,13 @@ import { createRoot, type Root } from 'react-dom/client';
 
 import { App } from '@/components/app/App';
 import { PreloadHighlighter } from '@/components/theming/PreloadHighlighter';
-import { prefetchPullRequestDiffData, warmGitHubTokenCache } from '@/lib/github/api';
+import { warmGitHubTokenCache } from '@/lib/github/api';
 import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
+import { clearAllReviewSessions } from '@/lib/overlay/review-session';
+import { queryClient } from '@/lib/query/client';
+import { prefetchPullRequestDiff } from '@/lib/query/pr-diff';
 import { PersistentWorkerPoolShell } from '@/providers/PersistentWorkerPoolShell';
+import { QueryProvider } from '@/providers/QueryProvider';
 import { ThemeControllerProvider } from '@/providers/theming/ThemeControllerProvider';
 
 export type MountOverlayOptions = {
@@ -20,18 +24,20 @@ type OverlayRuntimeProps = {
 
 function OverlayRuntime({ pullRequestUrl, onClose }: OverlayRuntimeProps) {
   return (
-    <ThemeControllerProvider>
-      <PersistentWorkerPoolShell>
-        {pullRequestUrl ? (
-          <App
-            key={pullRequestUrl}
-            pullRequestUrl={pullRequestUrl}
-            onClose={onClose}
-          />
-        ) : null}
-      </PersistentWorkerPoolShell>
-      <PreloadHighlighter />
-    </ThemeControllerProvider>
+    <QueryProvider>
+      <ThemeControllerProvider>
+        <PersistentWorkerPoolShell>
+          {pullRequestUrl ? (
+            <App
+              key={pullRequestUrl}
+              pullRequestUrl={pullRequestUrl}
+              onClose={onClose}
+            />
+          ) : null}
+        </PersistentWorkerPoolShell>
+        <PreloadHighlighter />
+      </ThemeControllerProvider>
+    </QueryProvider>
   );
 }
 
@@ -78,10 +84,12 @@ export function destroyOverlayRuntime(): void {
   overlayRoot?.unmount();
   overlayRoot = null;
   runtimeProps = { pullRequestUrl: null, onClose: () => undefined };
+  queryClient.clear();
+  clearAllReviewSessions();
 }
 
 /** Warm the GitHub token + diff data caches in this (extension-origin) realm before mount. */
 export function prefetchOverlayData(pullRequestUrl: string): void {
   warmGitHubTokenCache();
-  prefetchPullRequestDiffData(pullRequestUrl);
+  prefetchPullRequestDiff(pullRequestUrl);
 }

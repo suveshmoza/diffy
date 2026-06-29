@@ -1,8 +1,8 @@
-import type { CodeViewLineSelection, DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
+import type { DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
 import { IconMessageCircle } from '@tabler/icons-react';
 import { memo, useCallback, useState } from 'react';
 
-import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
+import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { renderGitHubCommentBody } from '@/lib/github/comments/markdown';
 import {
   formatReviewCommentHiddenLabel,
@@ -15,6 +15,7 @@ import {
 } from '@/lib/review/format-line-range';
 import { formatQuoteReplyPrefill } from '@/lib/review/format-quote-reply';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
+import { useReview } from '@/providers/ReviewContext';
 
 import { ReviewCommentEditComposer } from './ReviewCommentEditComposer';
 import { ReviewReplyComposer } from './ReviewReplyComposer';
@@ -29,43 +30,24 @@ type ReviewCommentThreadBaseProps = {
     | DiffLineAnnotation<ReviewAnnotationMetadata>;
   itemId?: string;
   variant: 'inline' | 'header';
-  pullRequestRef?: GitHubPullRequestRef;
-  onReplyOpen?: (replyKey: string) => void;
-  onReplyClose?: (replyKey: string) => void;
-  onReplySuccess?: (comment: GitHubPullRequestReviewComment, replyKey: string) => void;
-  onDelete?: (comment: GitHubPullRequestReviewComment) => void | Promise<void>;
-  onEdit?: (comment: GitHubPullRequestReviewComment, body: string) => void | Promise<void>;
-  onHighlightRange?: (selection: CodeViewLineSelection) => void;
-  onClearHighlight?: () => void;
 };
 
 const ReviewCommentThreadBase = memo(function ReviewCommentThreadBase({
   annotation,
   itemId,
   variant,
-  pullRequestRef,
-  onReplyOpen,
-  onReplyClose,
-  onReplySuccess,
-  onDelete,
-  onEdit,
-  onHighlightRange,
-  onClearHighlight,
 }: ReviewCommentThreadBaseProps) {
   const { hasToken } = useGitHubAuth();
+  const { actions } = useReview();
+  const isOrphaned = variant === 'header';
   const metadata = annotation.metadata;
   const mainComment = metadata?.kind === 'thread' ? metadata.comments[0] : undefined;
   const replies = metadata?.kind === 'thread' ? metadata.comments.slice(1) : [];
 
-  const canReply =
-    hasToken &&
-    pullRequestRef != null &&
-    onReplySuccess != null &&
-    onReplyClose != null &&
-    onReplyOpen != null;
+  const canReply = hasToken;
 
   const handleMouseEnter = useCallback(() => {
-    if (!itemId || !onHighlightRange || !mainComment) {
+    if (!itemId || !mainComment) {
       return;
     }
 
@@ -74,12 +56,12 @@ const ReviewCommentThreadBase = memo(function ReviewCommentThreadBase({
       return;
     }
 
-    onHighlightRange({ id: itemId, range });
-  }, [itemId, mainComment, onHighlightRange]);
+    actions.highlightRange({ id: itemId, range });
+  }, [actions, itemId, mainComment]);
 
   const handleMouseLeave = useCallback(() => {
-    onClearHighlight?.();
-  }, [onClearHighlight]);
+    actions.clearHighlight();
+  }, [actions]);
 
   if (!metadata || metadata.kind !== 'thread') {
     return null;
@@ -102,12 +84,7 @@ const ReviewCommentThreadBase = memo(function ReviewCommentThreadBase({
           rootCommentId={mainComment.id}
           lineRangeLabel={formatReviewCommentLineLabel(mainComment)}
           canReply={canReply}
-          pullRequestRef={pullRequestRef}
-          onReplyOpen={onReplyOpen}
-          onReplyClose={onReplyClose}
-          onReplySuccess={onReplySuccess}
-          onDelete={onDelete}
-          onEdit={onEdit}
+          isOrphaned={isOrphaned}
         />
         {replies.length > 0 ? (
           <div className='gprv-review-replies'>
@@ -119,12 +96,7 @@ const ReviewCommentThreadBase = memo(function ReviewCommentThreadBase({
                 rootCommentId={mainComment.id}
                 depth={1}
                 canReply={canReply}
-                pullRequestRef={pullRequestRef}
-                onReplyOpen={onReplyOpen}
-                onReplyClose={onReplyClose}
-                onReplySuccess={onReplySuccess}
-                onDelete={onDelete}
-                onEdit={onEdit}
+                isOrphaned={isOrphaned}
               />
             ))}
           </div>
@@ -163,12 +135,7 @@ type CommentReplySlotProps = {
   lineRangeLabel?: string | null;
   depth?: number;
   canReply: boolean;
-  pullRequestRef?: GitHubPullRequestRef;
-  onReplyOpen?: (replyKey: string) => void;
-  onReplyClose?: (replyKey: string) => void;
-  onReplySuccess?: (comment: GitHubPullRequestReviewComment, replyKey: string) => void;
-  onDelete?: (comment: GitHubPullRequestReviewComment) => void | Promise<void>;
-  onEdit?: (comment: GitHubPullRequestReviewComment, body: string) => void | Promise<void>;
+  isOrphaned: boolean;
 };
 
 const CommentReplySlot = memo(function CommentReplySlot({
@@ -178,26 +145,22 @@ const CommentReplySlot = memo(function CommentReplySlot({
   lineRangeLabel,
   depth = 0,
   canReply,
-  pullRequestRef,
-  onReplyOpen,
-  onReplyClose,
-  onReplySuccess,
-  onDelete,
-  onEdit,
+  isOrphaned,
 }: CommentReplySlotProps) {
   const { viewerUser, hasToken } = useGitHubAuth();
+  const { actions, meta } = useReview();
+  const { pullRequestRef } = meta;
   const replyKey = getReviewReplyKey(itemId, comment.id);
   const replyLabel = depth > 0 ? 'Quote reply' : 'Reply';
   const isMinimized = isReviewCommentHidden(comment);
   const [isExpanded, setIsExpanded] = useState(false);
   const isHidden = isMinimized && !isExpanded;
-  const canManage =
-    hasToken && viewerUser?.login === comment.user.login && onDelete != null && onEdit != null;
+  const canManage = hasToken && viewerUser?.login === comment.user.login;
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleDelete = useCallback(async () => {
-    if (!onDelete || isDeleting) {
+    if (isDeleting) {
       return;
     }
 
@@ -207,22 +170,18 @@ const CommentReplySlot = memo(function CommentReplySlot({
 
     setIsDeleting(true);
     try {
-      await onDelete(comment);
+      await actions.deleteComment(itemId, comment, isOrphaned);
     } finally {
       setIsDeleting(false);
     }
-  }, [comment, isDeleting, onDelete]);
+  }, [actions, comment, isDeleting, isOrphaned, itemId]);
 
   const handleSaveEdit = useCallback(
     async (body: string) => {
-      if (!onEdit) {
-        return;
-      }
-
-      await onEdit(comment, body);
+      await actions.editComment(itemId, comment, body, isOrphaned);
       setIsEditing(false);
     },
-    [comment, onEdit],
+    [actions, comment, isOrphaned, itemId],
   );
 
   return (
@@ -308,7 +267,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
                 Show comment
               </button>
             </div>
-          ) : isEditing && onEdit ? (
+          ) : isEditing ? (
             <ReviewCommentEditComposer
               comment={comment}
               onCancel={() => setIsEditing(false)}
@@ -319,11 +278,11 @@ const CommentReplySlot = memo(function CommentReplySlot({
               {renderGitHubCommentBody(comment.body, { pullRequestRef })}
             </div>
           )}
-          {canReply && onReplyOpen && !isHidden && !isEditing ? (
+          {canReply && !isHidden && !isEditing ? (
             <button
               type='button'
               className='gprv-review-reply-trigger'
-              onClick={() => onReplyOpen(replyKey)}
+              onClick={() => actions.openReply(replyKey)}
               aria-label={replyLabel}
               title={replyLabel}
             >
@@ -336,7 +295,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
           ) : null}
         </div>
       </article>
-      {canReply && pullRequestRef && onReplyClose && onReplySuccess && !isHidden && !isEditing ? (
+      {canReply && !isHidden && !isEditing ? (
         <div
           data-reply-composer
           hidden
@@ -344,8 +303,10 @@ const CommentReplySlot = memo(function CommentReplySlot({
           <ReviewReplyComposer
             pullRequestRef={pullRequestRef}
             inReplyToId={rootCommentId}
-            onCancel={() => onReplyClose(replyKey)}
-            onSuccess={(postedComment) => onReplySuccess(postedComment, replyKey)}
+            onCancel={() => actions.closeReply(replyKey)}
+            onSuccess={(postedComment) =>
+              actions.submitReply(itemId, postedComment, replyKey, isOrphaned)
+            }
           />
         </div>
       ) : null}

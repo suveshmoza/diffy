@@ -12,7 +12,6 @@ import {
 
 import { getReviewReplyKey } from '@/components/review/ReviewCommentThread';
 import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
-import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
 import {
   addDraftAnnotation,
   appendReplyToThreadAnnotation,
@@ -30,6 +29,7 @@ import {
   GitHubReviewWriteError,
   updateReviewComment,
 } from '@/lib/github/review-write';
+import { removeReviewDraft, upsertReviewDraft } from '@/lib/overlay/review-session';
 import { getItemPath, type ReviewAnnotationMetadata } from '@/lib/review/comments';
 import {
   closeAllReplyComposers,
@@ -42,7 +42,7 @@ type UseCodeViewReviewMutationsParams = {
   modalRef: RefObject<HTMLElement | null>;
   codeViewItems: CodeViewItemsResult | null;
   pullRequestRef: GitHubPullRequestRef;
-  setLiveReviewComments: Dispatch<SetStateAction<GitHubPullRequestReviewComment[]>>;
+  updateReviewComments: Dispatch<SetStateAction<GitHubPullRequestReviewComment[]>>;
   refreshCodeViewLayout: () => void;
   selectedLinesRef: MutableRefObject<CodeViewLineSelection | null>;
   setSelectedLines: (selection: CodeViewLineSelection | null) => void;
@@ -57,7 +57,7 @@ export function useCodeViewReviewMutations({
   modalRef,
   codeViewItems,
   pullRequestRef,
-  setLiveReviewComments,
+  updateReviewComments,
   refreshCodeViewLayout,
   selectedLinesRef,
   setSelectedLines,
@@ -146,8 +146,17 @@ export function useCodeViewReviewMutations({
             return;
           }
 
-          const { item: nextItem } = addDraftAnnotation(targetItem, selection.range);
+          const { item: nextItem, draftId } = addDraftAnnotation(targetItem, selection.range);
           viewer.updateItem(nextItem);
+
+          const path = getItemPath(targetItem);
+          upsertReviewDraft(pullRequestRef, {
+            itemId: selection.id,
+            path,
+            draftId,
+            range: selection.range,
+            body: '',
+          });
         },
         () => {
           setSelectedLines(selection);
@@ -167,6 +176,7 @@ export function useCodeViewReviewMutations({
       isOpeningDraftRef,
       itemById,
       modalRef,
+      pullRequestRef,
       setSelectedLines,
       setSelectedPath,
       viewerRef,
@@ -205,14 +215,12 @@ export function useCodeViewReviewMutations({
       const viewer = viewerRef.current;
       const modal = modalRef.current;
 
-      setLiveReviewComments((comments) => [...comments, comment]);
+      updateReviewComments((comments) => [...comments, comment]);
       if (!isOrphaned) {
         const item = viewer?.getItem(itemId);
         if (item) {
           viewer?.updateItem(appendReplyToThreadAnnotation(item, comment));
         }
-      } else {
-        invalidateCodeViewItemsCache(pullRequestRef);
       }
 
       if (modal) {
@@ -221,7 +229,7 @@ export function useCodeViewReviewMutations({
 
       refreshCodeViewLayout();
     },
-    [modalRef, pullRequestRef, refreshCodeViewLayout, setLiveReviewComments, viewerRef],
+    [modalRef, pullRequestRef, refreshCodeViewLayout, updateReviewComments, viewerRef],
   );
 
   const handleCommentDelete = useCallback(
@@ -243,15 +251,13 @@ export function useCodeViewReviewMutations({
         return;
       }
 
-      setLiveReviewComments((comments) => comments.filter((entry) => entry.id !== comment.id));
+      updateReviewComments((comments) => comments.filter((entry) => entry.id !== comment.id));
 
       if (!isOrphaned) {
         const item = viewer?.getItem(itemId);
         if (item) {
           viewer?.updateItem(removeCommentFromAnnotation(item, comment.id));
         }
-      } else {
-        invalidateCodeViewItemsCache(pullRequestRef);
       }
 
       if (modal) {
@@ -260,7 +266,7 @@ export function useCodeViewReviewMutations({
 
       refreshCodeViewLayout();
     },
-    [modalRef, pullRequestRef, refreshCodeViewLayout, setLiveReviewComments, viewerRef],
+    [modalRef, pullRequestRef, refreshCodeViewLayout, updateReviewComments, viewerRef],
   );
 
   const handleCommentEdit = useCallback(
@@ -283,7 +289,7 @@ export function useCodeViewReviewMutations({
         throw new Error(error instanceof Error ? error.message : String(error), { cause: error });
       }
 
-      setLiveReviewComments((comments) =>
+      updateReviewComments((comments) =>
         comments.map((entry) => (entry.id === updated.id ? updated : entry)),
       );
 
@@ -292,13 +298,11 @@ export function useCodeViewReviewMutations({
         if (item) {
           viewer?.updateItem(updateCommentInAnnotation(item, updated));
         }
-      } else {
-        invalidateCodeViewItemsCache(pullRequestRef);
       }
 
       refreshCodeViewLayout();
     },
-    [pullRequestRef, refreshCodeViewLayout, setLiveReviewComments, viewerRef],
+    [pullRequestRef, refreshCodeViewLayout, updateReviewComments, viewerRef],
   );
 
   const handleCancelDraft = useCallback(
@@ -315,6 +319,7 @@ export function useCodeViewReviewMutations({
           if (item) {
             viewer.updateItem(removeDraftAnnotation(item, draftId));
           }
+          removeReviewDraft(pullRequestRef, draftId);
         },
         () => {
           clearDraftSelectionIfActive(itemId, range);
@@ -322,7 +327,13 @@ export function useCodeViewReviewMutations({
         },
       );
     },
-    [clearDraftSelectionIfActive, clearSelectionIfNoDrafts, codeViewItems, viewerRef],
+    [
+      clearDraftSelectionIfActive,
+      clearSelectionIfNoDrafts,
+      codeViewItems,
+      pullRequestRef,
+      viewerRef,
+    ],
   );
 
   const handleImmediateCommentSuccess = useCallback(
@@ -338,7 +349,8 @@ export function useCodeViewReviewMutations({
       }
 
       const item = viewer.getItem(itemId);
-      setLiveReviewComments((comments) => [...comments, comment]);
+      updateReviewComments((comments) => [...comments, comment]);
+      removeReviewDraft(pullRequestRef, draftId);
 
       runCodeViewMutationPreservingScroll(
         viewer,
@@ -357,7 +369,8 @@ export function useCodeViewReviewMutations({
       clearDraftSelectionIfActive,
       clearSelectionIfNoDrafts,
       codeViewItems,
-      setLiveReviewComments,
+      pullRequestRef,
+      updateReviewComments,
       viewerRef,
     ],
   );

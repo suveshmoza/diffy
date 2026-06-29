@@ -8,27 +8,32 @@ import {
 } from 'react';
 
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
+import { useReview } from '@/providers/ReviewContext';
+import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 
 type QueuedCommentCardProps = {
+  queuedId: string;
+  itemId: string;
   body: string;
   range: SelectedLineRange;
-  onRemove: () => void;
-  onEdit: (body: string) => void;
-  onHighlight: () => void;
-  onClearHighlight: () => void;
 };
 
-export function QueuedCommentCard({
-  body,
-  range,
-  onRemove,
-  onEdit,
-  onHighlight,
-  onClearHighlight,
-}: QueuedCommentCardProps) {
+export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedCommentCardProps) {
+  const { removeQueued, editQueued } = useReviewQueueContext();
+  const { actions } = useReview();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(body);
   const editRef = useRef<HTMLTextAreaElement>(null);
+
+  const onRemove = useCallback(
+    () => removeQueued(queuedId, itemId),
+    [itemId, queuedId, removeQueued],
+  );
+  const onHighlight = useCallback(
+    () => actions.highlightRange({ id: itemId, range }),
+    [actions, itemId, range],
+  );
+  const onClearHighlight = useCallback(() => actions.clearHighlight(), [actions]);
 
   useEffect(() => {
     if (isEditing) {
@@ -44,10 +49,10 @@ export function QueuedCommentCard({
   const save = useCallback(() => {
     const trimmed = draft.trim();
     if (trimmed && trimmed !== body) {
-      onEdit(trimmed);
+      editQueued(queuedId, itemId, trimmed);
     }
     setIsEditing(false);
-  }, [body, draft, onEdit]);
+  }, [body, draft, editQueued, itemId, queuedId]);
 
   const handleKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {

@@ -82,6 +82,7 @@ export function removeDraftAnnotation(
 export function addDraftAnnotation(
   item: CodeViewItem<ReviewAnnotationMetadata>,
   range: SelectedLineRange,
+  draftId: string = crypto.randomUUID(),
 ): { item: CodeViewItem<ReviewAnnotationMetadata>; draftId: string } {
   for (const annotation of getAnnotations(item)) {
     const metadata = annotation.metadata;
@@ -90,7 +91,6 @@ export function addDraftAnnotation(
     }
   }
 
-  const draftId = crypto.randomUUID();
   const metadata: ReviewDraftMetadata = { kind: 'draft', draftId, range };
   const draftAnnotation = createAnnotationForMetadata(
     item,
@@ -139,18 +139,27 @@ export function replaceDraftWithQueuedAnnotation(
 ): { item: CodeViewItem<ReviewAnnotationMetadata>; queuedId: string } {
   const withoutDraft = removeDraftAnnotation(item, draftId);
   const queuedId = crypto.randomUUID();
+  return {
+    item: addQueuedAnnotation(withoutDraft, queuedId, range, body),
+    queuedId,
+  };
+}
+
+export function addQueuedAnnotation(
+  item: CodeViewItem<ReviewAnnotationMetadata>,
+  queuedId: string,
+  range: SelectedLineRange,
+  body: string,
+): CodeViewItem<ReviewAnnotationMetadata> {
   const metadata: ReviewQueuedMetadata = { kind: 'queued', queuedId, range, body };
   const annotation = createAnnotationForMetadata(
-    withoutDraft,
+    item,
     range.end,
     range.endSide ?? range.side,
     metadata,
   );
 
-  return {
-    item: withAnnotations(withoutDraft, [...getAnnotations(withoutDraft), annotation]),
-    queuedId,
-  };
+  return withAnnotations(item, [...getAnnotations(item), annotation]);
 }
 
 export function updateQueuedAnnotationBody(

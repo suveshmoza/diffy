@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useState } from 'react';
+import { startTransition, useEffect, useMemo, useState } from 'react';
 
 import {
   buildCodeViewItems,
@@ -13,49 +13,41 @@ type UseCodeViewItemsState = {
   error: string | null;
 };
 
+function buildSyncState(data: PullRequestDiffData): UseCodeViewItemsState {
+  try {
+    return {
+      result: buildCodeViewItems(data),
+      isBuilding: false,
+      error: null,
+    };
+  } catch (error: unknown) {
+    return {
+      result: null,
+      isBuilding: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsState {
-  const [state, setState] = useState<UseCodeViewItemsState>(() => {
-    if (isLargePullRequestData(data)) {
-      return { result: null, isBuilding: true, error: null };
+  const isLarge = isLargePullRequestData(data);
+  const syncState = useMemo(() => (isLarge ? null : buildSyncState(data)), [data, isLarge]);
+
+  const [largeState, setLargeState] = useState<UseCodeViewItemsState>(() => {
+    if (!isLarge) {
+      return syncState ?? buildSyncState(data);
     }
 
-    try {
-      return {
-        result: buildCodeViewItems(data),
-        isBuilding: false,
-        error: null,
-      };
-    } catch (error: unknown) {
-      return {
-        result: null,
-        isBuilding: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    return { result: null, isBuilding: true, error: null };
   });
 
   useEffect(() => {
-    if (!isLargePullRequestData(data)) {
-      startTransition(() => {
-        try {
-          setState({
-            result: buildCodeViewItems(data),
-            isBuilding: false,
-            error: null,
-          });
-        } catch (error: unknown) {
-          setState({
-            result: null,
-            isBuilding: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      });
+    if (!isLarge) {
       return;
     }
 
     let isCancelled = false;
-    setState({ result: null, isBuilding: true, error: null });
+    setLargeState({ result: null, isBuilding: true, error: null });
 
     const build = () => {
       if (isCancelled) {
@@ -67,19 +59,7 @@ export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsSta
           return;
         }
 
-        try {
-          setState({
-            result: buildCodeViewItems(data),
-            isBuilding: false,
-            error: null,
-          });
-        } catch (error: unknown) {
-          setState({
-            result: null,
-            isBuilding: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
+        setLargeState(buildSyncState(data));
       });
     };
 
@@ -95,7 +75,11 @@ export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsSta
     return () => {
       isCancelled = true;
     };
-  }, [data]);
+  }, [data, isLarge]);
 
-  return state;
+  if (!isLarge) {
+    return syncState ?? buildSyncState(data);
+  }
+
+  return largeState;
 }

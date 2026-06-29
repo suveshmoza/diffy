@@ -1,6 +1,13 @@
 import type { SelectedLineRange } from '@pierre/diffs';
 import type { CodeViewHandle } from '@pierre/diffs/react';
-import { useCallback, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+} from 'react';
 
 import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
 import { getCodeViewItemIdForFile } from '@/lib/code-view/build-items';
@@ -17,6 +24,12 @@ import {
   type GitHubPullRequestReviewComment,
 } from '@/lib/github/api';
 import { publishBatchedReview, type ReviewEvent } from '@/lib/github/review-write';
+import {
+  clearReviewSession,
+  getReviewSession,
+  removeReviewDraft,
+  syncReviewQueue,
+} from '@/lib/overlay/review-session';
 import { toBatchedReviewComments, type QueuedComment } from '@/lib/review/comment-queue';
 import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
 
@@ -25,8 +38,8 @@ type UseReviewQueueParams = {
   codeViewItems: CodeViewItemsResult | null;
   pullRequestRef: GitHubPullRequestRef;
   headSha: string;
-  liveReviewComments: GitHubPullRequestReviewComment[];
-  setLiveReviewComments: Dispatch<SetStateAction<GitHubPullRequestReviewComment[]>>;
+  reviewComments: GitHubPullRequestReviewComment[];
+  updateReviewComments: Dispatch<SetStateAction<GitHubPullRequestReviewComment[]>>;
   refreshCodeViewLayout: () => void;
   clearSelectionIfNoDrafts: () => void;
   onClose: () => void;
@@ -37,15 +50,20 @@ export function useReviewQueue({
   codeViewItems,
   pullRequestRef,
   headSha,
-  liveReviewComments,
-  setLiveReviewComments,
+  reviewComments,
+  updateReviewComments,
   refreshCodeViewLayout,
   clearSelectionIfNoDrafts,
   onClose,
 }: UseReviewQueueParams) {
-  const [isBatchMode, setIsBatchMode] = useState(false);
-  const [queue, setQueue] = useState<QueuedComment[]>([]);
+  const initialSession = getReviewSession(pullRequestRef);
+  const [isBatchMode, setIsBatchMode] = useState(initialSession.isBatchMode);
+  const [queue, setQueue] = useState<QueuedComment[]>(() => initialSession.queue);
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
+
+  useEffect(() => {
+    syncReviewQueue(pullRequestRef, queue, isBatchMode);
+  }, [isBatchMode, pullRequestRef, queue]);
 
   const handleQueueComment = useCallback(
     (itemId: string, path: string, draftId: string, range: SelectedLineRange, body: string) => {
@@ -69,6 +87,7 @@ export function useReviewQueue({
             body,
           );
           viewer.updateItem(nextItem);
+          removeReviewDraft(pullRequestRef, draftId);
           setQueue((current) => [...current, { queuedId, itemId, path, range, body }]);
         },
         () => {
@@ -76,7 +95,7 @@ export function useReviewQueue({
         },
       );
     },
-    [clearSelectionIfNoDrafts, codeViewItems, viewerRef],
+    [clearSelectionIfNoDrafts, codeViewItems, pullRequestRef, viewerRef],
   );
 
   const handleRemoveQueued = useCallback(
@@ -135,9 +154,9 @@ export function useReviewQueue({
       }
 
       if (fresh.length > 0) {
-        const knownIds = new Set(liveReviewComments.map((comment) => comment.id));
+        const knownIds = new Set(reviewComments.map((comment) => comment.id));
         const added = fresh.filter((comment) => !knownIds.has(comment.id));
-        setLiveReviewComments(fresh);
+        updateReviewComments(fresh);
 
         if (viewer && codeViewItems && added.length > 0) {
           runCodeViewMutationPreservingScroll(viewer, () => {
@@ -170,16 +189,17 @@ export function useReviewQueue({
       setQueue([]);
       setIsPublishDialogOpen(false);
       setIsBatchMode(false);
+      clearReviewSession(pullRequestRef);
       refreshCodeViewLayout();
     },
     [
       codeViewItems,
       headSha,
-      liveReviewComments,
+      reviewComments,
       pullRequestRef,
       queue,
       refreshCodeViewLayout,
-      setLiveReviewComments,
+      updateReviewComments,
       viewerRef,
     ],
   );
@@ -199,7 +219,8 @@ export function useReviewQueue({
 
     setQueue([]);
     setIsPublishDialogOpen(false);
-  }, [queue, viewerRef]);
+    clearReviewSession(pullRequestRef);
+  }, [pullRequestRef, queue, viewerRef]);
 
   const handleToggleBatchMode = useCallback(() => {
     setIsBatchMode((current) => !current);

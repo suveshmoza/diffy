@@ -1,5 +1,7 @@
 import { Octokit } from '@octokit/rest';
 
+import { githubFetch } from './github-fetch';
+
 type RateLimitHeaders = {
   remaining: number;
   reset: number;
@@ -36,7 +38,10 @@ const UNAUTHENTICATED = '';
 const clientByToken = new Map<string, Octokit>();
 
 function instantiateClient(auth?: string): Octokit {
-  const octokit = new Octokit({ auth: auth || undefined });
+  const octokit = new Octokit({
+    auth: auth || undefined,
+    request: { fetch: githubFetch },
+  });
 
   octokit.hook.after('request', (response) => {
     const state = readRateLimitHeaders(response.headers as Record<string, string>);

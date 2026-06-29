@@ -1,17 +1,18 @@
 import type { SelectedLineRange } from '@pierre/diffs';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
-import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
+import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { createImmediateReviewComment, GitHubReviewWriteError } from '@/lib/github/review-write';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
+import { useReview } from '@/providers/ReviewContext';
 
 type ReviewCommentComposerProps = {
   path: string;
   range: SelectedLineRange;
-  pullRequestRef: GitHubPullRequestRef;
-  commitId: string;
   isBatchMode?: boolean;
+  initialBody?: string;
+  onBodyChange?: (body: string) => void;
   onCancel: () => void;
   onSuccess: (comment: GitHubPullRequestReviewComment) => void;
   onQueue?: (body: string) => void;
@@ -20,22 +21,33 @@ type ReviewCommentComposerProps = {
 export function ReviewCommentComposer({
   path,
   range,
-  pullRequestRef,
-  commitId,
   isBatchMode = false,
+  initialBody = '',
+  onBodyChange,
   onCancel,
   onSuccess,
   onQueue,
 }: ReviewCommentComposerProps) {
   const { viewerUser, hasToken } = useGitHubAuth();
+  const {
+    meta: { pullRequestRef, headSha: commitId },
+  } = useReview();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState(initialBody);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     textareaRef.current?.focus({ preventScroll: true });
   }, []);
+
+  const handleBodyChange = useCallback(
+    (nextBody: string) => {
+      setBody(nextBody);
+      onBodyChange?.(nextBody);
+    },
+    [onBodyChange],
+  );
 
   const handleSubmit = useCallback(async () => {
     const trimmed = body.trim();
@@ -130,7 +142,7 @@ export function ReviewCommentComposer({
                 ref={textareaRef}
                 className='gprv-review-composer-input'
                 value={body}
-                onChange={(event) => setBody(event.target.value)}
+                onChange={(event) => handleBodyChange(event.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder='Leave a comment'
                 rows={3}

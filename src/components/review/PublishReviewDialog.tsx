@@ -2,16 +2,8 @@ import { IconCheck, IconMessageCircle, IconX } from '@tabler/icons-react';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 import type { ReviewEvent } from '@/lib/github/review-write';
-import type { QueuedComment } from '@/lib/review/comment-queue';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
-
-type PublishReviewDialogProps = {
-  queue: readonly QueuedComment[];
-  onRemoveQueued: (queuedId: string) => void;
-  onPublish: (event: ReviewEvent, body: string) => Promise<void>;
-  onDiscardAll: () => void;
-  onClose: () => void;
-};
+import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 
 const EVENT_OPTIONS: ReadonlyArray<{ value: ReviewEvent; label: string }> = [
   { value: 'COMMENT', label: 'Comment' },
@@ -31,13 +23,14 @@ function canPublishReview(event: ReviewEvent, queuedCount: number, body: string)
   return queuedCount > 0 || Boolean(body.trim());
 }
 
-export function PublishReviewDialog({
-  queue,
-  onRemoveQueued,
-  onPublish,
-  onDiscardAll,
-  onClose,
-}: PublishReviewDialogProps) {
+export function PublishReviewDialog() {
+  const {
+    queue,
+    removeQueuedById: onRemoveQueued,
+    publishReview: onPublish,
+    discardQueue: onDiscardAll,
+    closePublishDialog: onClose,
+  } = useReviewQueueContext();
   const [event, setEvent] = useState<ReviewEvent>('COMMENT');
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);

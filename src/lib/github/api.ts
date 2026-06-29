@@ -2,6 +2,7 @@ import { RequestError } from '@octokit/request-error';
 import type { Octokit } from '@octokit/rest';
 import type { RestEndpointMethodTypes } from '@octokit/rest';
 
+import { githubFetch } from './github-fetch';
 import { addRateLimitListener, getOctokitClient, resetOctokitClients } from './octokit';
 import { readGitHubToken, subscribeToGitHubTokenChanges } from './token-storage';
 
@@ -71,8 +72,6 @@ export function subscribeToLoadProgress(listener: () => void): () => void {
 const GITHUB_PULL_URL_PATTERN = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/i;
 /** GitHub rejects unified diffs above this file count. */
 const GITHUB_MAX_AGGREGATE_DIFF_FILES = 300;
-const pullRequestDiffCache = new Map<string, Promise<PullRequestDiffData>>();
-const pullRequestDiffInFlight = new Map<string, Promise<PullRequestDiffData>>();
 let cachedGitHubToken: string | null | undefined;
 let githubTokenPromise: Promise<string | null> | null = null;
 
@@ -161,15 +160,6 @@ export function parseCurrentPullRequestUrl(): GitHubPullRequestRef | null {
   return parseGitHubPullRequestUrl(window.location.href);
 }
 
-export function prefetchPullRequestDiffData(url: string | null | undefined): void {
-  const ref = parseGitHubPullRequestUrl(url);
-  if (!ref) {
-    return;
-  }
-
-  void fetchCachedPullRequestDiffData(ref).catch(() => undefined);
-}
-
 export function getPullRequestRefPrefix(ref: GitHubPullRequestRef): string {
   return `${ref.owner.toLowerCase()}/${ref.repo.toLowerCase()}#${ref.pullNumber}`;
 }
@@ -178,29 +168,18 @@ export function getPullRequestContentCacheKey(ref: GitHubPullRequestRef, headSha
   return `${getPullRequestRefPrefix(ref)}@${headSha}`;
 }
 
-export function invalidatePullRequestDiffCache(ref: GitHubPullRequestRef): void {
-  const prefix = getPullRequestRefPrefix(ref);
-  for (const key of pullRequestDiffCache.keys()) {
-    if (key.startsWith(prefix)) {
-      pullRequestDiffCache.delete(key);
-    }
-  }
+export async function fetchPullRequestHeadSha(ref: GitHubPullRequestRef): Promise<string> {
+  const octokit = await getOctokit();
+  const { data } = await octokit.rest.pulls.get(pullParams(ref));
+  return data.head.sha;
 }
 
-export function fetchCachedPullRequestDiffData(
+export async function fetchPullRequestDiffData(
   ref: GitHubPullRequestRef,
 ): Promise<PullRequestDiffData> {
-  const inFlightKey = getPullRequestRefPrefix(ref);
-  const inFlight = pullRequestDiffInFlight.get(inFlightKey);
-  if (inFlight) {
-    return inFlight;
-  }
-
-  const promise = fetchPullRequestDiffDataCached(ref).finally(() => {
-    pullRequestDiffInFlight.delete(inFlightKey);
-  });
-  pullRequestDiffInFlight.set(inFlightKey, promise);
-  return promise;
+  const octokit = await getOctokit();
+  const { data: pullRequest } = await octokit.rest.pulls.get(pullParams(ref));
+  return fetchPullRequestDiffDataBody(ref, pullRequest, octokit);
 }
 
 async function getOctokit(): Promise<Octokit> {
@@ -214,27 +193,6 @@ function pullParams(ref: GitHubPullRequestRef) {
     repo: ref.repo,
     pull_number: ref.pullNumber,
   };
-}
-
-async function fetchPullRequestDiffDataCached(
-  ref: GitHubPullRequestRef,
-): Promise<PullRequestDiffData> {
-  const octokit = await getOctokit();
-  const { data: pullRequest } = await octokit.rest.pulls.get(pullParams(ref));
-  const cacheKey = getPullRequestContentCacheKey(ref, pullRequest.head.sha);
-  const cached = pullRequestDiffCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  const promise = fetchPullRequestDiffDataBody(ref, pullRequest, octokit).catch(
-    (error: unknown) => {
-      pullRequestDiffCache.delete(cacheKey);
-      throw error;
-    },
-  );
-  pullRequestDiffCache.set(cacheKey, promise);
-  return promise;
 }
 
 async function fetchPullRequestDiffDataBody(
@@ -417,7 +375,7 @@ async function fetchComparePullRequestDiff(
 
 async function fetchWebPullRequestDiff(ref: GitHubPullRequestRef): Promise<string> {
   const url = `https://github.com/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.repo)}/pull/${ref.pullNumber}.diff`;
-  const response = await fetch(url, { credentials: 'include' });
+  const response = await githubFetch(url, { credentials: 'include' });
   if (!response.ok) {
     throw await createFetchError(response);
   }

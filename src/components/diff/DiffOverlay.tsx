@@ -16,6 +16,7 @@ import {
   useState,
   useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
+  type SetStateAction,
 } from 'react';
 
 import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
@@ -27,6 +28,7 @@ import {
 } from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewReviewMutations } from '@/hooks/useCodeViewReviewMutations';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
+import { useRestoreReviewSession } from '@/hooks/useRestoreReviewSession';
 import { useReviewQueue } from '@/hooks/useReviewQueue';
 import { pickTreeThemeCustomProperties, useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
 import { useViewedFiles } from '@/hooks/useViewedFiles';
@@ -52,6 +54,8 @@ import {
 } from '@/lib/github/api';
 import { formatViewedFilesError } from '@/lib/github/token-hints';
 import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
+import { getReviewDraftBody, updateReviewDraftBody } from '@/lib/overlay/review-session';
+import { updatePullRequestReviewComments } from '@/lib/query/pr-diff';
 import {
   buildReviewCommentCountByPath,
   getItemPath,
@@ -62,8 +66,11 @@ import { bindReplySession } from '@/lib/review/reply-session';
 import { buildAnnotationThemeStyle } from '@/lib/theming/buildAnnotationThemeStyle';
 import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
+import { ReviewProvider, type ReviewContextValue } from '@/providers/ReviewContext';
+import { ReviewQueueProvider, type ReviewQueueContextValue } from '@/providers/ReviewQueueContext';
 import { useSidebarContext } from '@/providers/SidebarContext';
 import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
+import { useDiffThemeReady } from '@/providers/theming/useDiffThemeReady';
 import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
 
 import { FileViewedCheckbox } from '../review/FileViewedCheckbox';
@@ -80,9 +87,18 @@ type DiffOverlayProps = {
   pullRequestUrl: string;
   onClose: () => void;
   onRefresh: () => void;
+  refreshGeneration: number;
+  isRefreshing: boolean;
 };
 
-export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOverlayProps) {
+export function DiffOverlay({
+  data,
+  pullRequestUrl,
+  onClose,
+  onRefresh,
+  refreshGeneration,
+  isRefreshing,
+}: DiffOverlayProps) {
   const viewerRef = useRef<CodeViewHandle<ReviewAnnotationMetadata>>(null);
   const codeViewHostRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLElement>(null);
@@ -101,7 +117,13 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
   const [displayPrefs, setDisplayPrefs] = useState<CodeViewDisplayPrefs>(
     DEFAULT_CODE_VIEW_DISPLAY_PREFS,
   );
-  const [liveReviewComments, setLiveReviewComments] = useState(data.reviewComments);
+
+  const updateReviewComments = useCallback(
+    (updater: SetStateAction<typeof data.reviewComments>) => {
+      updatePullRequestReviewComments(data.ref, updater);
+    },
+    [data.ref],
+  );
 
   selectedLinesRef.current = selectedLines;
   hoveredThreadSelectionRef.current = hoveredThreadSelection;
@@ -150,14 +172,6 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
 
   const rateLimit = useSyncExternalStore(subscribeToRateLimitChanges, getRateLimitState);
 
-  const augmentedData = useMemo(
-    () => ({
-      ...data,
-      reviewComments: liveReviewComments,
-    }),
-    [data, liveReviewComments],
-  );
-
   const { isThemeReady, codeViewOptions } = useCodeViewThemeBootstrap({
     diffLayout,
     displayPrefs,
@@ -186,13 +200,11 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
     [chromeStyle, treeThemeVars, colorScheme],
   );
 
-  const {
-    result: codeViewItems,
-    isBuilding,
-    error: codeViewBuildError,
-  } = useCodeViewItems(augmentedData);
+  const { result: codeViewItems, isBuilding, error: codeViewBuildError } = useCodeViewItems(data);
   const isCodeViewHostReady = useCodeViewHostReady(codeViewHostRef);
-  const isCodeViewMounted = isCodeViewHostReady && isThemeReady && codeViewItems != null;
+  const isDiffThemeReady = useDiffThemeReady();
+  const isCodeViewMounted =
+    isCodeViewHostReady && isThemeReady && isDiffThemeReady && codeViewItems != null;
 
   const itemById = useMemo(() => {
     if (!codeViewItems) {
@@ -208,6 +220,15 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
       isSidebarCollapsed,
       isCodeViewMounted,
     ]);
+
+  useRestoreReviewSession({
+    ref: data.ref,
+    viewerRef,
+    codeViewItems,
+    isCodeViewMounted,
+    refreshCodeViewLayout,
+    codeViewInstanceKey: refreshGeneration,
+  });
 
   const {
     notificationError,
@@ -226,7 +247,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
     modalRef,
     codeViewItems,
     pullRequestRef: data.ref,
-    setLiveReviewComments,
+    updateReviewComments,
     refreshCodeViewLayout,
     selectedLinesRef,
     setSelectedLines,
@@ -254,8 +275,8 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
     codeViewItems,
     pullRequestRef: data.ref,
     headSha: data.pullRequest.head.sha,
-    liveReviewComments,
-    setLiveReviewComments,
+    reviewComments: data.reviewComments,
+    updateReviewComments,
     refreshCodeViewLayout,
     clearSelectionIfNoDrafts,
     onClose,
@@ -264,6 +285,38 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
   const handleRefresh = useCallback(() => {
     withQueueConfirm(onRefresh);
   }, [onRefresh, withQueueConfirm]);
+
+  const reviewQueueContextValue = useMemo<ReviewQueueContextValue>(
+    () => ({
+      isBatchMode,
+      queue,
+      toggleBatchMode: handleToggleBatchMode,
+      queueComment: handleQueueComment,
+      removeQueued: handleRemoveQueued,
+      removeQueuedById: (queuedId: string) => {
+        const entry = queue.find((item) => item.queuedId === queuedId);
+        if (entry) {
+          handleRemoveQueued(queuedId, entry.itemId);
+        }
+      },
+      editQueued: handleEditQueued,
+      publishReview: handlePublishReview,
+      discardQueue: handleDiscardQueue,
+      openPublishDialog: () => setIsPublishDialogOpen(true),
+      closePublishDialog: () => setIsPublishDialogOpen(false),
+    }),
+    [
+      handleDiscardQueue,
+      handleEditQueued,
+      handlePublishReview,
+      handleQueueComment,
+      handleRemoveQueued,
+      handleToggleBatchMode,
+      isBatchMode,
+      queue,
+      setIsPublishDialogOpen,
+    ],
+  );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -300,8 +353,8 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
       return new Map<string, number>();
     }
 
-    return buildReviewCommentCountByPath(liveReviewComments, codeViewItems.items);
-  }, [codeViewItems, liveReviewComments]);
+    return buildReviewCommentCountByPath(data.reviewComments, codeViewItems.items);
+  }, [codeViewItems, data.reviewComments]);
 
   const handleGutterUtilityClick = useStableCallback(
     (range: SelectedLineRange, context: { item: { id: string } }) => {
@@ -377,6 +430,35 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
   const handleThreadHighlightClear = useStableCallback(() => {
     setHoveredThreadSelection(null);
   });
+
+  const reviewContextValue = useMemo<ReviewContextValue>(
+    () => ({
+      actions: {
+        openReply: handleReplyOpen,
+        closeReply: handleReplyClose,
+        submitReply: handleReplySuccess,
+        deleteComment: handleCommentDelete,
+        editComment: handleCommentEdit,
+        highlightRange: handleThreadHighlight,
+        clearHighlight: handleThreadHighlightClear,
+      },
+      meta: {
+        pullRequestRef: data.ref,
+        headSha: data.pullRequest.head.sha,
+      },
+    }),
+    [
+      data.pullRequest.head.sha,
+      data.ref,
+      handleCommentDelete,
+      handleCommentEdit,
+      handleReplyClose,
+      handleReplyOpen,
+      handleReplySuccess,
+      handleThreadHighlight,
+      handleThreadHighlightClear,
+    ],
+  );
 
   const setItemCollapsed = useCallback((itemId: string, collapsed: boolean) => {
     const viewer = viewerRef.current;
@@ -558,9 +640,9 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
             key={metadata.draftId}
             path={getItemPath(item)}
             range={metadata.range}
-            pullRequestRef={data.ref}
-            commitId={data.pullRequest.head.sha}
             isBatchMode={isBatchMode}
+            initialBody={getReviewDraftBody(data.ref, metadata.draftId)}
+            onBodyChange={(body) => updateReviewDraftBody(data.ref, metadata.draftId, body)}
             onCancel={() => handleCancelDraft(item.id, metadata.draftId, metadata.range)}
             onSuccess={(comment) =>
               handleImmediateCommentSuccess(item.id, comment, metadata.draftId, metadata.range)
@@ -576,12 +658,10 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
         return (
           <QueuedCommentCard
             key={metadata.queuedId}
+            queuedId={metadata.queuedId}
+            itemId={item.id}
             body={metadata.body}
             range={metadata.range}
-            onRemove={() => handleRemoveQueued(metadata.queuedId, item.id)}
-            onEdit={(body) => handleEditQueued(metadata.queuedId, item.id, body)}
-            onHighlight={() => handleThreadHighlight({ id: item.id, range: metadata.range })}
-            onClearHighlight={handleThreadHighlightClear}
           />
         );
       }
@@ -590,34 +670,10 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
         <ReviewCommentThread
           annotation={annotation}
           itemId={item.id}
-          pullRequestRef={data.ref}
-          onReplyOpen={handleReplyOpen}
-          onReplyClose={handleReplyClose}
-          onReplySuccess={(comment, replyKey) => handleReplySuccess(item.id, comment, replyKey)}
-          onDelete={(comment) => handleCommentDelete(item.id, comment)}
-          onEdit={(comment, body) => handleCommentEdit(item.id, comment, body)}
-          onHighlightRange={handleThreadHighlight}
-          onClearHighlight={handleThreadHighlightClear}
         />
       );
     },
-    [
-      data.pullRequest.head.sha,
-      data.ref,
-      handleCancelDraft,
-      handleCommentDelete,
-      handleCommentEdit,
-      handleEditQueued,
-      handleImmediateCommentSuccess,
-      handleQueueComment,
-      handleRemoveQueued,
-      handleReplyClose,
-      handleReplyOpen,
-      handleReplySuccess,
-      handleThreadHighlight,
-      handleThreadHighlightClear,
-      isBatchMode,
-    ],
+    [data.ref, handleCancelDraft, handleImmediateCommentSuccess, handleQueueComment, isBatchMode],
   );
 
   const renderReviewHeaderMetadata = useCallback(
@@ -631,16 +687,6 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
             <OrphanedReviewCommentsBadge
               threads={orphanedThreads}
               itemId={item.id}
-              pullRequestRef={data.ref}
-              onReplyOpen={handleReplyOpen}
-              onReplyClose={handleReplyClose}
-              onReplySuccess={(comment, replyKey) =>
-                handleReplySuccess(item.id, comment, replyKey, true)
-              }
-              onDelete={(comment) => handleCommentDelete(item.id, comment, true)}
-              onEdit={(comment, body) => handleCommentEdit(item.id, comment, body, true)}
-              onHighlightRange={handleThreadHighlight}
-              onClearHighlight={handleThreadHighlightClear}
             />
           ) : null}
           {viewedFiles.hasToken ? (
@@ -653,20 +699,7 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
         </span>
       );
     },
-    [
-      data.ref,
-      handleCommentDelete,
-      handleCommentEdit,
-      handleReplyClose,
-      handleReplyOpen,
-      handleReplySuccess,
-      handleThreadHighlight,
-      handleThreadHighlightClear,
-      handleToggleViewed,
-      viewedFiles.hasToken,
-      viewedFiles.isReady,
-      viewedFiles.viewedByPath,
-    ],
+    [handleToggleViewed, viewedFiles.hasToken, viewedFiles.isReady, viewedFiles.viewedByPath],
   );
 
   const renderHeaderPrefix = useStableCallback((item: CodeViewItem<ReviewAnnotationMetadata>) => {
@@ -694,150 +727,143 @@ export function DiffOverlay({ data, pullRequestUrl, onClose, onRefresh }: DiffOv
         onKeyDown={stopGitHubKeybindings}
         onKeyUp={stopGitHubKeybindings}
       >
-        <DiffOverlayHeader
-          pullRequest={data.pullRequest}
-          pullRequestUrl={pullRequestUrl}
-          diffLayout={diffLayout}
-          displayPrefs={displayPrefs}
-          reviewCommentsLoadError={data.reviewCommentsLoadError}
-          rateLimit={rateLimit}
-          viewedFilesError={
-            viewedFiles.hasToken && viewedFiles.error
-              ? formatViewedFilesError(viewedFiles.error)
-              : null
-          }
-          reviewProgress={viewedFiles.hasToken ? viewedFiles.progress : null}
-          onJumpToNextUnviewed={handleJumpToNextUnviewed}
-          isBatchMode={isBatchMode}
-          queuedCount={queue.length}
-          canReview={viewedFiles.hasToken}
-          onToggleBatchMode={handleToggleBatchMode}
-          onOpenPublish={() => setIsPublishDialogOpen(true)}
-          onDiffLayoutChange={updateDiffLayout}
-          onDisplayPrefsChange={updateDisplayPrefs}
-          onRefresh={handleRefresh}
-          onClose={handleCloseOverlay}
-        />
-
-        {isPublishDialogOpen ? (
-          <PublishReviewDialog
-            queue={queue}
-            onRemoveQueued={(queuedId) => {
-              const entry = queue.find((item) => item.queuedId === queuedId);
-              if (entry) {
-                handleRemoveQueued(queuedId, entry.itemId);
-              }
-            }}
-            onPublish={handlePublishReview}
-            onDiscardAll={handleDiscardQueue}
-            onClose={() => setIsPublishDialogOpen(false)}
+        <ReviewQueueProvider value={reviewQueueContextValue}>
+          <DiffOverlayHeader
+            pullRequest={data.pullRequest}
+            pullRequestUrl={pullRequestUrl}
+            diffLayout={diffLayout}
+            displayPrefs={displayPrefs}
+            reviewCommentsLoadError={data.reviewCommentsLoadError}
+            rateLimit={rateLimit}
+            viewedFilesError={
+              viewedFiles.hasToken && viewedFiles.error
+                ? formatViewedFilesError(viewedFiles.error)
+                : null
+            }
+            reviewProgress={viewedFiles.hasToken ? viewedFiles.progress : null}
+            onJumpToNextUnviewed={handleJumpToNextUnviewed}
+            canReview={viewedFiles.hasToken}
+            onDiffLayoutChange={updateDiffLayout}
+            onDisplayPrefsChange={updateDisplayPrefs}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
+            onClose={handleCloseOverlay}
           />
-        ) : null}
 
-        <GitHubAuthProvider>
-          {notificationError ? (
-            <div className='gprv-notification-error'>
-              <IconCircleX
-                size={16}
-                stroke={2}
-              />
-              <span>{notificationError}</span>
-              <button
-                className='gprv-notification-dismiss'
-                type='button'
-                onClick={() => setNotificationError(null)}
-                aria-label='Dismiss'
-              >
-                <IconX
-                  size={14}
-                  stroke={2}
-                />
-              </button>
-            </div>
-          ) : null}
-          <div className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}>
-            {isSidebarCollapsed ? null : (
-              <aside className='gprv-sidebar'>
-                {data.files.length > 0 && codeViewItems ? (
-                  <FileTreePanel
-                    files={data.files}
-                    selectedPath={selectedPath}
-                    reviewCommentCountByPath={reviewCommentCountByPath}
-                    onSelectPath={handleTreeSelect}
-                    pullRequest={data.pullRequest}
-                    reviewCommentCount={liveReviewComments.length}
+          {isPublishDialogOpen ? <PublishReviewDialog /> : null}
+
+          <GitHubAuthProvider>
+            <ReviewProvider value={reviewContextValue}>
+              {notificationError ? (
+                <div className='gprv-notification-error'>
+                  <IconCircleX
+                    size={16}
+                    stroke={2}
                   />
-                ) : (
-                  <div className='gprv-state'>
-                    {isBuilding ? 'Building file list…' : 'No changed files found.'}
-                  </div>
-                )}
-              </aside>
-            )}
-
-            <div
-              ref={codeViewHostRef}
-              className='gprv-code-view-host'
-            >
-              {codeViewBuildError ? (
-                <div
-                  className='gprv-state'
-                  style={{ color: 'var(--gprv-error)' }}
-                >
-                  {codeViewBuildError}
-                </div>
-              ) : codeViewItems && codeViewItems.items.length === 0 ? (
-                <div className='gprv-state'>
-                  <div className='gprv-empty-state'>
-                    <IconCircleX
-                      size={48}
+                  <span>{notificationError}</span>
+                  <button
+                    className='gprv-notification-dismiss'
+                    type='button'
+                    onClick={() => setNotificationError(null)}
+                    aria-label='Dismiss'
+                  >
+                    <IconX
+                      size={14}
                       stroke={2}
-                      color='var(--gprv-muted)'
                     />
-                    <p className='gprv-loading-summary'>This pull request has no code changes.</p>
-                    <p className='gprv-loading-hint'>
-                      The diff viewer requires at least one changed file.
-                    </p>
-                  </div>
+                  </button>
                 </div>
-              ) : isCodeViewMounted && codeViewItems ? (
-                <ThemedCodeView<ReviewAnnotationMetadata>
-                  ref={viewerRef}
-                  containerRef={handleCodeViewContainer}
-                  initialItems={codeViewItems.items}
-                  className='gprv-code-view'
-                  style={codeViewStyle}
-                  renderAnnotation={renderReviewAnnotation}
-                  renderHeaderPrefix={renderHeaderPrefix}
-                  renderHeaderMetadata={renderReviewHeaderMetadata}
-                  options={codeViewOptionsWithInteractions ?? codeViewOptions}
-                  selectedLines={hoveredThreadSelection ?? selectedLines}
-                  onSelectedLinesChange={handleSelectedLinesChange}
-                />
-              ) : (
-                <div className='gprv-state'>
-                  {isBuilding ? (
-                    'Building diff…'
-                  ) : (
-                    <div
-                      className='gprv-loading-panel'
-                      role='status'
-                      aria-live='polite'
-                      aria-label='Preparing diff viewer'
-                    >
-                      <IconLoader
-                        size={48}
-                        stroke={2}
-                        className='gprv-loading-spinner'
+              ) : null}
+              <div
+                className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}
+              >
+                {isSidebarCollapsed ? null : (
+                  <aside className='gprv-sidebar'>
+                    {data.files.length > 0 && codeViewItems ? (
+                      <FileTreePanel
+                        files={data.files}
+                        selectedPath={selectedPath}
+                        reviewCommentCountByPath={reviewCommentCountByPath}
+                        onSelectPath={handleTreeSelect}
+                        pullRequest={data.pullRequest}
+                        reviewCommentCount={data.reviewComments.length}
                       />
-                      <p className='gprv-loading-summary'>Preparing diff viewer…</p>
+                    ) : (
+                      <div className='gprv-state'>
+                        {isBuilding ? 'Building file list…' : 'No changed files found.'}
+                      </div>
+                    )}
+                  </aside>
+                )}
+
+                <div
+                  ref={codeViewHostRef}
+                  className='gprv-code-view-host'
+                >
+                  {codeViewBuildError ? (
+                    <div
+                      className='gprv-state'
+                      style={{ color: 'var(--gprv-error)' }}
+                    >
+                      {codeViewBuildError}
+                    </div>
+                  ) : codeViewItems && codeViewItems.items.length === 0 ? (
+                    <div className='gprv-state'>
+                      <div className='gprv-empty-state'>
+                        <IconCircleX
+                          size={48}
+                          stroke={2}
+                          color='var(--gprv-muted)'
+                        />
+                        <p className='gprv-loading-summary'>
+                          This pull request has no code changes.
+                        </p>
+                        <p className='gprv-loading-hint'>
+                          The diff viewer requires at least one changed file.
+                        </p>
+                      </div>
+                    </div>
+                  ) : isCodeViewMounted && codeViewItems ? (
+                    <ThemedCodeView<ReviewAnnotationMetadata>
+                      key={`codeview-${refreshGeneration}`}
+                      ref={viewerRef}
+                      containerRef={handleCodeViewContainer}
+                      initialItems={codeViewItems.items}
+                      className='gprv-code-view'
+                      style={codeViewStyle}
+                      renderAnnotation={renderReviewAnnotation}
+                      renderHeaderPrefix={renderHeaderPrefix}
+                      renderHeaderMetadata={renderReviewHeaderMetadata}
+                      options={codeViewOptionsWithInteractions ?? codeViewOptions}
+                      selectedLines={hoveredThreadSelection ?? selectedLines}
+                      onSelectedLinesChange={handleSelectedLinesChange}
+                    />
+                  ) : (
+                    <div className='gprv-state'>
+                      {isBuilding ? (
+                        'Building diff…'
+                      ) : (
+                        <div
+                          className='gprv-loading-panel'
+                          role='status'
+                          aria-live='polite'
+                          aria-label='Preparing diff viewer'
+                        >
+                          <IconLoader
+                            size={48}
+                            stroke={2}
+                            className='gprv-loading-spinner'
+                          />
+                          <p className='gprv-loading-summary'>Preparing diff viewer…</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          </div>
-        </GitHubAuthProvider>
+              </div>
+            </ReviewProvider>
+          </GitHubAuthProvider>
+        </ReviewQueueProvider>
       </section>
     </>
   );

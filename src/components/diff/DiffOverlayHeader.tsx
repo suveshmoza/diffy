@@ -12,6 +12,7 @@ import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
 import type { ViewedProgress } from '@/lib/review/viewed-files';
+import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 import { useSidebarContext } from '@/providers/SidebarContext';
 
 import { ReviewProgress } from '../review/ReviewProgress';
@@ -28,15 +29,12 @@ type DiffOverlayHeaderProps = {
   rateLimit?: RateLimitState | null;
   viewedFilesError?: string | null;
   reviewProgress?: ViewedProgress | null;
-  isBatchMode?: boolean;
-  queuedCount?: number;
   canReview?: boolean;
   onJumpToNextUnviewed?: () => void;
-  onToggleBatchMode?: () => void;
-  onOpenPublish?: () => void;
   onDiffLayoutChange: (layout: DiffLayout) => void;
   onDisplayPrefsChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
   onRefresh?: () => void;
+  isRefreshing?: boolean;
   onClose: () => void;
 };
 
@@ -49,18 +47,17 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   rateLimit,
   viewedFilesError,
   reviewProgress,
-  isBatchMode = false,
-  queuedCount = 0,
   canReview = false,
   onJumpToNextUnviewed,
-  onToggleBatchMode,
-  onOpenPublish,
   onDiffLayoutChange,
   onDisplayPrefsChange,
   onRefresh,
+  isRefreshing = false,
   onClose,
 }: DiffOverlayHeaderProps) {
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
+  const { isBatchMode, queue, toggleBatchMode, openPublishDialog } = useReviewQueueContext();
+  const queuedCount = queue.length;
   const { base } = pullRequest;
   const isRateLimitLow = rateLimit != null && rateLimit.remaining >= 0 && rateLimit.remaining <= 10;
   const isRateLimitExhausted = rateLimit != null && rateLimit.remaining <= 0;
@@ -141,7 +138,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
             <button
               className={`gprv-review-cta${isBatchMode ? ' gprv-review-cta-active' : ''}`}
               type='button'
-              onClick={onToggleBatchMode}
+              onClick={toggleBatchMode}
               aria-pressed={isBatchMode}
               title={
                 isBatchMode
@@ -159,7 +156,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
               <button
                 className='gprv-publish-cta'
                 type='button'
-                onClick={onOpenPublish}
+                onClick={openPublishDialog}
                 title={
                   queuedCount > 0
                     ? 'Review and publish queued comments'
@@ -203,12 +200,15 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
             className='gprv-header-icon-button'
             type='button'
             onClick={onRefresh}
+            disabled={isRefreshing}
+            aria-busy={isRefreshing}
             aria-label='Refresh pull request data'
             title='Refresh'
           >
             <IconRefresh
               size={16}
               stroke={2}
+              className={isRefreshing ? 'gprv-loading-spinner' : undefined}
             />
           </button>
         ) : null}

@@ -3,6 +3,6 @@ import { themes } from '@pierre/theming/themes';
 
 export const diffyThemeCatalog = createThemeCatalog({
   themes,
-  defaultLightThemeName: 'pierre-light-soft',
-  defaultDarkThemeName: 'pierre-dark-soft',
+  defaultLightThemeName: 'pierre-light',
+  defaultDarkThemeName: 'pierre-dark',
 });
