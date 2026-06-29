@@ -185,20 +185,29 @@ function SafeMarkdownLink({
   );
 }
 
-function SafeMarkdownImage({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) {
+function SafeMarkdownImage({
+  src,
+  alt,
+  width: _width,
+  height: _height,
+  style: _style,
+  ...props
+}: React.ImgHTMLAttributes<HTMLImageElement>) {
   if (!src || !isSafeImageUrl(src)) {
     return null;
   }
 
   return (
-    <img
-      className='gprv-review-image'
-      src={src}
-      alt={alt ?? ''}
-      loading='lazy'
-      decoding='async'
-      {...props}
-    />
+    <span className='gprv-review-image-wrap'>
+      <img
+        className='gprv-review-image'
+        src={src}
+        alt={alt ?? ''}
+        loading='lazy'
+        decoding='async'
+        {...props}
+      />
+    </span>
   );
 }
 

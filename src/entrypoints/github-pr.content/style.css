@@ -1418,6 +1418,7 @@ html.gprv-scroll-locked body {
   max-width: 100%;
   min-width: 0;
   overflow-wrap: anywhere;
+  overflow-x: clip;
   white-space: normal;
   width: 100%;
 }
@@ -1546,10 +1547,27 @@ html.gprv-scroll-locked body {
   font-weight: 600;
 }
 
-.gprv-review-image {
-  border-radius: 6px;
+.gprv-review-image-wrap {
   display: block;
-  height: auto;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.gprv-review-image,
+.gprv-review-prose img,
+.gprv-review-comment-text img {
+  border-radius: 6px;
+  box-sizing: border-box;
+  display: block;
+  height: auto !important;
+  max-width: 100% !important;
+  width: auto !important;
+}
+
+.gprv-review-prose a:has(> img),
+.gprv-review-comment-text a:has(> img) {
+  display: inline-block;
   max-width: 100%;
 }
 
