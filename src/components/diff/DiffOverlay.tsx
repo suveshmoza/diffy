@@ -375,6 +375,10 @@ export function DiffOverlay({
       collapsed: !item.collapsed,
       version: item.version != null ? item.version + 1 : 1,
     });
+
+    // Keep the allCollapsed flag in sync after a single-item toggle.
+    // Expanding any file means not-all-collapsed; only scan when collapsing.
+    setAllCollapsed(item.collapsed ? false : computeAllCollapsed());
   });
 
   const codeViewOptionsWithInteractions =
@@ -475,6 +479,44 @@ export function DiffOverlay({
     });
   }, []);
 
+  const computeAllCollapsed = useCallback((): boolean => {
+    const viewer = viewerRef.current;
+    if (!viewer || !codeViewItems || codeViewItems.items.length === 0) {
+      return false;
+    }
+
+    return codeViewItems.items.every((item) => {
+      const current = viewer.getItem(item.id);
+      return current ? current.collapsed === true : item.collapsed === true;
+    });
+  }, [codeViewItems]);
+
+  const [allCollapsed, setAllCollapsed] = useState(false);
+
+  const handleCollapseAll = useCallback(() => {
+    if (!codeViewItems) {
+      return;
+    }
+
+    for (const item of codeViewItems.items) {
+      setItemCollapsed(item.id, true);
+    }
+
+    setAllCollapsed(true);
+  }, [codeViewItems, setItemCollapsed]);
+
+  const handleExpandAll = useCallback(() => {
+    if (!codeViewItems) {
+      return;
+    }
+
+    for (const item of codeViewItems.items) {
+      setItemCollapsed(item.id, false);
+    }
+
+    setAllCollapsed(false);
+  }, [codeViewItems, setItemCollapsed]);
+
   const handleToggleViewed = useCallback(
     (path: string, next: boolean) => {
       viewedFiles.toggleViewed(path, next);
@@ -485,8 +527,10 @@ export function DiffOverlay({
           setItemCollapsed(getCodeViewItemIdForFile(file, codeViewItems.diffPathSet), next);
         }
       }
+
+      setAllCollapsed(computeAllCollapsed());
     },
-    [codeViewItems, setItemCollapsed, viewedFiles],
+    [codeViewItems, computeAllCollapsed, setItemCollapsed, viewedFiles],
   );
 
   const didInitialViewedCollapseRef = useRef(false);
@@ -510,12 +554,15 @@ export function DiffOverlay({
         setItemCollapsed(getCodeViewItemIdForFile(file, codeViewItems.diffPathSet), true);
       }
     }
+
+    setAllCollapsed(computeAllCollapsed());
   }, [
     isCodeViewMounted,
     codeViewItems,
     viewedFiles.isReady,
     viewedFiles.viewedByPath,
     setItemCollapsed,
+    computeAllCollapsed,
   ]);
 
   const handleJumpToNextUnviewed = useCallback(() => {
@@ -749,6 +796,9 @@ export function DiffOverlay({
             onRefresh={handleRefresh}
             isRefreshing={isRefreshing}
             onClose={handleCloseOverlay}
+            allCollapsed={allCollapsed}
+            onExpandAll={handleExpandAll}
+            onCollapseAll={handleCollapseAll}
           />
 
           {isPublishDialogOpen ? <PublishReviewDialog /> : null}

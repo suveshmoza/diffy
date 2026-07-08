@@ -1,5 +1,7 @@
 import {
   IconAlertTriangle,
+  IconChevronsDown,
+  IconChevronsUp,
   IconExternalLink,
   IconLayoutSidebar,
   IconMessages,
@@ -36,6 +38,9 @@ type DiffOverlayHeaderProps = {
   onRefresh?: () => void;
   isRefreshing?: boolean;
   onClose: () => void;
+  allCollapsed?: boolean;
+  onExpandAll?: () => void;
+  onCollapseAll?: () => void;
 };
 
 export const DiffOverlayHeader = memo(function DiffOverlayHeader({
@@ -54,6 +59,9 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   onRefresh,
   isRefreshing = false,
   onClose,
+  allCollapsed = false,
+  onExpandAll,
+  onCollapseAll,
 }: DiffOverlayHeaderProps) {
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
   const { isBatchMode, queue, toggleBatchMode, openPublishDialog } = useReviewQueueContext();
@@ -210,6 +218,28 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
               stroke={2}
               className={isRefreshing ? 'gprv-loading-spinner' : undefined}
             />
+          </button>
+        ) : null}
+
+        {onExpandAll && onCollapseAll ? (
+          <button
+            className='gprv-header-icon-button'
+            type='button'
+            onClick={allCollapsed ? onExpandAll : onCollapseAll}
+            aria-label={allCollapsed ? 'Expand all files' : 'Collapse all files'}
+            title={allCollapsed ? 'Expand all files' : 'Collapse all files'}
+          >
+            {allCollapsed ? (
+              <IconChevronsUp
+                size={16}
+                stroke={2}
+              />
+            ) : (
+              <IconChevronsDown
+                size={16}
+                stroke={2}
+              />
+            )}
           </button>
         ) : null}
 
