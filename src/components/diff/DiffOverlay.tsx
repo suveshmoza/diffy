@@ -502,8 +502,8 @@ export function DiffOverlay({
       setItemCollapsed(item.id, true);
     }
 
-    setAllCollapsed(true);
-  }, [codeViewItems, setItemCollapsed]);
+    setAllCollapsed(computeAllCollapsed());
+  }, [codeViewItems, computeAllCollapsed, setItemCollapsed]);
 
   const handleExpandAll = useCallback(() => {
     if (!codeViewItems) {
@@ -514,8 +514,8 @@ export function DiffOverlay({
       setItemCollapsed(item.id, false);
     }
 
-    setAllCollapsed(false);
-  }, [codeViewItems, setItemCollapsed]);
+    setAllCollapsed(computeAllCollapsed());
+  }, [codeViewItems, computeAllCollapsed, setItemCollapsed]);
 
   const handleToggleViewed = useCallback(
     (path: string, next: boolean) => {
