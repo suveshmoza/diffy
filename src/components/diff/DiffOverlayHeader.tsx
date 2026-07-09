@@ -1,7 +1,6 @@
 import {
   IconAlertTriangle,
-  IconChevronsDown,
-  IconChevronsUp,
+  IconCaretUpDown,
   IconExternalLink,
   IconLayoutSidebar,
   IconMessages,
@@ -10,6 +9,7 @@ import {
 } from '@tabler/icons-react';
 import { memo } from 'react';
 
+import { IconCaretDownUp } from '@/components/icons/CaretDownUp';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
@@ -230,12 +230,12 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
             title={allCollapsed ? 'Expand all files' : 'Collapse all files'}
           >
             {allCollapsed ? (
-              <IconChevronsUp
+              <IconCaretDownUp
                 size={16}
-                stroke={2}
+                strokeWidth={2}
               />
             ) : (
-              <IconChevronsDown
+              <IconCaretUpDown
                 size={16}
                 stroke={2}
               />
