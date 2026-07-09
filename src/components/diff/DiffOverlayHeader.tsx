@@ -1,5 +1,6 @@
 import {
   IconAlertTriangle,
+  IconCaretUpDown,
   IconExternalLink,
   IconLayoutSidebar,
   IconMessages,
@@ -8,6 +9,7 @@ import {
 } from '@tabler/icons-react';
 import { memo } from 'react';
 
+import { IconCaretDownUp } from '@/components/icons/CaretDownUp';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
@@ -36,6 +38,9 @@ type DiffOverlayHeaderProps = {
   onRefresh?: () => void;
   isRefreshing?: boolean;
   onClose: () => void;
+  allCollapsed?: boolean;
+  onExpandAll?: () => void;
+  onCollapseAll?: () => void;
 };
 
 export const DiffOverlayHeader = memo(function DiffOverlayHeader({
@@ -54,6 +59,9 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   onRefresh,
   isRefreshing = false,
   onClose,
+  allCollapsed = false,
+  onExpandAll,
+  onCollapseAll,
 }: DiffOverlayHeaderProps) {
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
   const { isBatchMode, queue, toggleBatchMode, openPublishDialog } = useReviewQueueContext();
@@ -210,6 +218,28 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
               stroke={2}
               className={isRefreshing ? 'gprv-loading-spinner' : undefined}
             />
+          </button>
+        ) : null}
+
+        {onExpandAll && onCollapseAll ? (
+          <button
+            className='gprv-header-icon-button'
+            type='button'
+            onClick={allCollapsed ? onExpandAll : onCollapseAll}
+            aria-label={allCollapsed ? 'Expand all files' : 'Collapse all files'}
+            title={allCollapsed ? 'Expand all files' : 'Collapse all files'}
+          >
+            {allCollapsed ? (
+              <IconCaretDownUp
+                size={16}
+                strokeWidth={2}
+              />
+            ) : (
+              <IconCaretUpDown
+                size={16}
+                stroke={2}
+              />
+            )}
           </button>
         ) : null}
 
