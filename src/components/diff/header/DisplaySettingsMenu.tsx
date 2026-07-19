@@ -1,21 +1,17 @@
 import { IconSettings } from '@tabler/icons-react';
-import { lazy, Suspense, useCallback, useId, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 
 import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 
-const DisplaySettingsPanel = lazy(() => import('./DisplaySettingsPanel'));
+import { DisplaySettingsPanel } from './DisplaySettingsPanel';
 
 type DisplaySettingsMenuProps = {
   displayPrefs: CodeViewDisplayPrefs;
   onChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
 };
 
-/**
- * Settings popover trigger. The panel body is code-split and only fetched the
- * first time the menu opens. Selecting options keeps the popover open; it is
- * dismissed only by clicking outside or pressing Escape.
- */
+/** Settings popover trigger for display and appearance preferences. */
 export function DisplaySettingsMenu({ displayPrefs, onChange }: DisplaySettingsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -35,11 +31,11 @@ export function DisplaySettingsMenu({ displayPrefs, onChange }: DisplaySettingsM
       <button
         type='button'
         className='gprv-header-icon-button gprv-header-popover-trigger'
-        aria-label='Display settings'
+        aria-label='Settings'
         aria-haspopup='dialog'
         aria-expanded={isOpen}
         aria-controls={panelId}
-        title='Display settings'
+        title='Settings'
         onClick={() => setIsOpen((open) => !open)}
       >
         <IconSettings
@@ -49,13 +45,12 @@ export function DisplaySettingsMenu({ displayPrefs, onChange }: DisplaySettingsM
       </button>
 
       {isOpen ? (
-        <Suspense fallback={null}>
-          <DisplaySettingsPanel
-            id={panelId}
-            displayPrefs={displayPrefs}
-            onChange={onChange}
-          />
-        </Suspense>
+        <DisplaySettingsPanel
+          id={panelId}
+          displayPrefs={displayPrefs}
+          onChange={onChange}
+          onClose={close}
+        />
       ) : null}
     </div>
   );
