@@ -2,13 +2,15 @@ import {
   IconAlertTriangle,
   IconArrowNarrowLeft,
   IconCaretUpDown,
+  IconCheck,
+  IconCopy,
   IconExternalLink,
   IconLayoutSidebar,
   IconMessages,
   IconRefresh,
   IconX,
 } from '@tabler/icons-react';
-import { memo } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import { IconCaretDownUp } from '@/components/icons/CaretDownUp';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
@@ -82,23 +84,13 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
               <strong title={pullRequest.title}>{pullRequest.title}</strong>
               <div className='gprv-title-meta'>
                 <span className='gprv-branches'>
-                  <span
-                    className='gprv-branch'
-                    title={base.ref}
-                  >
-                    {base.ref}
-                  </span>
+                  <CopyableBranch name={base.ref} />
                   <IconArrowNarrowLeft
                     className='gprv-branch-arrow'
                     size={20}
                     aria-hidden='true'
                   />
-                  <span
-                    className='gprv-branch'
-                    title={head.ref}
-                  >
-                    {head.ref}
-                  </span>
+                  <CopyableBranch name={head.ref} />
                 </span>
               </div>
             </div>
@@ -289,3 +281,62 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
     </header>
   );
 });
+
+function CopyableBranch({ name }: { name: string }) {
+  const [copied, setCopied] = useState(false);
+  const resetTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetTimerRef.current != null) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  const copy = useCallback(async () => {
+    setCopied(true);
+    if (resetTimerRef.current != null) {
+      window.clearTimeout(resetTimerRef.current);
+    }
+    resetTimerRef.current = window.setTimeout(() => setCopied(false), 750);
+
+    try {
+      await navigator.clipboard.writeText(name);
+    } catch {
+      window.clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+      setCopied(false);
+      // Clipboard access can be denied by browser or extension permissions.
+    }
+  }, [name]);
+
+  return (
+    <button
+      type='button'
+      className='gprv-copyable-branch'
+      title={`Copy ${name}`}
+      aria-label={copied ? `Copied branch ${name}` : `Copy branch ${name}`}
+      onClick={() => void copy()}
+    >
+      <span className='gprv-branch'>{name}</span>
+      <span
+        className='gprv-branch-copy-status'
+        data-copied={copied ? '' : undefined}
+        aria-hidden='true'
+      >
+        <IconCopy
+          className='gprv-branch-copy-icon'
+          size={14}
+          stroke={2}
+        />
+        <IconCheck
+          className='gprv-branch-check-icon'
+          size={14}
+          stroke={2.5}
+        />
+      </span>
+    </button>
+  );
+}

@@ -181,11 +181,26 @@ html.gprv-scroll-locked body {
   min-width: 0;
 }
 
-.gprv-branch {
+.gprv-copyable-branch {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 1 auto;
+  gap: 3px;
+  max-width: 10rem;
+  min-width: 0;
+  padding: 0;
+}
+
+.gprv-copyable-branch .gprv-branch {
   background: var(--trees-theme-input-bg, var(--gprv-control-bg));
   border: 1px solid
     var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
   border-radius: 6px;
+  color: inherit;
   flex: 0 1 auto;
   font-family:
     ui-monospace,
@@ -202,6 +217,60 @@ html.gprv-scroll-locked body {
   padding: 3px 6px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.gprv-branch-copy-status {
+  flex-shrink: 0;
+  height: 14px;
+  position: relative;
+  width: 14px;
+}
+
+.gprv-branch-copy-status svg {
+  inset: 0;
+  position: absolute;
+  transition:
+    opacity 90ms ease,
+    transform 90ms ease;
+}
+
+.gprv-branch-copy-icon {
+  opacity: 0.7;
+  transform: scale(1);
+}
+
+.gprv-branch-check-icon {
+  color: var(--gprv-success);
+  opacity: 0;
+  transform: scale(0.65);
+}
+
+.gprv-branch-copy-status[data-copied] .gprv-branch-copy-icon {
+  opacity: 0;
+  transform: scale(0.65);
+}
+
+.gprv-branch-copy-status[data-copied] .gprv-branch-check-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.gprv-copyable-branch:hover .gprv-branch-copy-status:not([data-copied]) .gprv-branch-copy-icon,
+.gprv-copyable-branch:focus-visible
+  .gprv-branch-copy-status:not([data-copied])
+  .gprv-branch-copy-icon {
+  color: var(--gprv-accent);
+  opacity: 1;
+}
+
+.gprv-copyable-branch:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gprv-branch-copy-status svg {
+    transition: none;
+  }
 }
 
 .gprv-branch-arrow {
