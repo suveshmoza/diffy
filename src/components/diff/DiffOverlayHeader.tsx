@@ -1,5 +1,6 @@
 import {
   IconAlertTriangle,
+  IconArrowNarrowLeft,
   IconCaretUpDown,
   IconExternalLink,
   IconLayoutSidebar,
@@ -65,7 +66,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
   const { isBatchMode, queue, toggleBatchMode, openPublishDialog } = useReviewQueueContext();
   const queuedCount = queue.length;
-  const { base } = pullRequest;
+  const { base, head } = pullRequest;
   const isRateLimitLow = rateLimit != null && rateLimit.remaining >= 0 && rateLimit.remaining <= 10;
   const isRateLimitExhausted = rateLimit != null && rateLimit.remaining <= 0;
 
@@ -80,11 +81,24 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
             <div className='gprv-title-content'>
               <strong title={pullRequest.title}>{pullRequest.title}</strong>
               <div className='gprv-title-meta'>
-                <span
-                  className='gprv-repo'
-                  title={base.repo.full_name}
-                >
-                  {base.repo.full_name}
+                <span className='gprv-branches'>
+                  <span
+                    className='gprv-branch'
+                    title={base.ref}
+                  >
+                    {base.ref}
+                  </span>
+                  <IconArrowNarrowLeft
+                    className='gprv-branch-arrow'
+                    size={20}
+                    aria-hidden='true'
+                  />
+                  <span
+                    className='gprv-branch'
+                    title={head.ref}
+                  >
+                    {head.ref}
+                  </span>
                 </span>
               </div>
             </div>

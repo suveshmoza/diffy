@@ -172,30 +172,10 @@ html.gprv-scroll-locked body {
   min-width: 0;
 }
 
-.gprv-repo,
-.gprv-branch {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gprv-repo {
-  flex-shrink: 1;
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    SF Mono,
-    Menlo,
-    Consolas,
-    Liberation Mono,
-    monospace;
-  min-width: 0;
-}
-
 .gprv-branches {
   align-items: center;
   display: inline-flex;
-  flex-shrink: 0;
+  flex-shrink: 1;
   gap: 4px;
   max-width: 100%;
   min-width: 0;
@@ -206,6 +186,7 @@ html.gprv-scroll-locked body {
   border: 1px solid
     var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
   border-radius: 6px;
+  flex: 0 1 auto;
   font-family:
     ui-monospace,
     SFMono-Regular,
@@ -214,9 +195,13 @@ html.gprv-scroll-locked body {
     Consolas,
     Liberation Mono,
     monospace;
-  font-size: 10px;
-  max-width: 10rem;
-  padding: 2px 4px;
+  font-size: 12px;
+  line-height: inherit;
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .gprv-branch-arrow {
@@ -1005,6 +990,24 @@ html.gprv-scroll-locked body {
   text-align: right;
   vertical-align: top;
   word-break: break-word;
+}
+
+.gprv-sidebar-repo {
+  display: block;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    SF Mono,
+    Menlo,
+    Consolas,
+    Liberation Mono,
+    monospace;
+  margin-left: auto;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 13rem;
 }
 
 .gprv-pr-table-author {

@@ -1,5 +1,5 @@
 import {
-  IconGitBranch,
+  IconBrandGithub,
   IconGitPullRequest,
   IconTag,
   IconUser,
@@ -38,17 +38,20 @@ export const SidebarPrInfo = memo(function SidebarPrInfo({ pullRequest }: Sideba
           <tr>
             <td className='gprv-pr-table-label'>
               <span className='gprv-pr-table-label-inner'>
-                <IconGitBranch
+                <IconBrandGithub
                   size={14}
                   stroke={1.5}
                 />
-                Branches
+                Repository
               </span>
             </td>
             <td className='gprv-pr-table-value'>
-              <span className='gprv-branch'>{pullRequest.base.ref}</span>
-              <span className='gprv-branch-arrow'>←</span>
-              <span className='gprv-branch'>{pullRequest.head.ref}</span>
+              <span
+                className='gprv-sidebar-repo'
+                title={pullRequest.base.repo.full_name}
+              >
+                {pullRequest.base.repo.full_name}
+              </span>
             </td>
           </tr>
           <tr>
