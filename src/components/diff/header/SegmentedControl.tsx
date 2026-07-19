@@ -13,6 +13,8 @@ type SegmentedControlProps<T extends string> = {
   onChange: (value: T) => void;
   /** Allow buttons to wrap onto multiple rows when labels are long. */
   wrap?: boolean;
+  /** Hide visible labels while retaining accessible names. */
+  showLabels?: boolean;
 };
 
 /** Inline single-select control rendered as a row of mutually exclusive buttons. */
@@ -22,6 +24,7 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   wrap = false,
+  showLabels = true,
 }: SegmentedControlProps<T>) {
   return (
     <div
@@ -37,6 +40,7 @@ export function SegmentedControl<T extends string>({
           className='gprv-segmented-button'
           data-active={option.value === value ? '' : undefined}
           aria-pressed={option.value === value}
+          aria-label={showLabels ? undefined : option.label}
           title={option.label}
           onClick={() => onChange(option.value)}
         >
@@ -48,7 +52,7 @@ export function SegmentedControl<T extends string>({
               {option.icon}
             </span>
           ) : null}
-          <span className='gprv-segmented-text'>{option.label}</span>
+          {showLabels ? <span className='gprv-segmented-text'>{option.label}</span> : null}
         </button>
       ))}
     </div>

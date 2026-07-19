@@ -20,7 +20,6 @@ import { useSidebarContext } from '@/providers/SidebarContext';
 import { ReviewProgress } from '../review/ReviewProgress';
 import { DiffLayoutToggle } from './header/DiffLayoutToggle';
 import { DisplaySettingsMenu } from './header/DisplaySettingsMenu';
-import { ThemePicker } from './header/ThemePicker';
 
 type DiffOverlayHeaderProps = {
   pullRequest: GitHubPullRequest;
@@ -196,31 +195,6 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           onChange={onDiffLayoutChange}
         />
 
-        <ThemePicker />
-
-        <DisplaySettingsMenu
-          displayPrefs={displayPrefs}
-          onChange={onDisplayPrefsChange}
-        />
-
-        {onRefresh ? (
-          <button
-            className='gprv-header-icon-button'
-            type='button'
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            aria-busy={isRefreshing}
-            aria-label='Refresh pull request data'
-            title='Refresh'
-          >
-            <IconRefresh
-              size={16}
-              stroke={2}
-              className={isRefreshing ? 'gprv-loading-spinner' : undefined}
-            />
-          </button>
-        ) : null}
-
         {onExpandAll && onCollapseAll ? (
           <button
             className='gprv-header-icon-button'
@@ -240,6 +214,24 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
                 stroke={2}
               />
             )}
+          </button>
+        ) : null}
+
+        {onRefresh ? (
+          <button
+            className='gprv-header-icon-button'
+            type='button'
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            aria-busy={isRefreshing}
+            aria-label='Refresh pull request data'
+            title='Refresh'
+          >
+            <IconRefresh
+              size={16}
+              stroke={2}
+              className={isRefreshing ? 'gprv-loading-spinner' : undefined}
+            />
           </button>
         ) : null}
 
@@ -263,6 +255,10 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           </button>
         ) : null}
 
+        <DisplaySettingsMenu
+          displayPrefs={displayPrefs}
+          onChange={onDisplayPrefsChange}
+        />
         <button
           className='gprv-close gprv-header-icon-button'
           type='button'
