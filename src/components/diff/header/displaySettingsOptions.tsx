@@ -8,12 +8,31 @@ import {
 } from '@tabler/icons-react';
 
 import type { CodeViewDisplayPrefs, HunkSeparatorStyle } from '@/lib/diff/display-prefs';
+import {
+  CODE_FONT_SIZES,
+  CODE_LINE_HEIGHTS,
+  type CodeFontSize,
+  type CodeLineHeight,
+} from '@/lib/diff/font-prefs';
 
 import type { SegmentOption } from './SegmentedControl';
 
 const ICON_SIZE = 16;
 
 export type LineNumberChoice = 'show' | 'hide';
+
+export const CODE_FONT_SIZE_OPTIONS: readonly SegmentOption<CodeFontSize>[] = CODE_FONT_SIZES.map(
+  (size) => ({
+    value: size,
+    label: String(size),
+  }),
+);
+
+export const CODE_LINE_HEIGHT_OPTIONS: readonly SegmentOption<CodeLineHeight>[] =
+  CODE_LINE_HEIGHTS.map((height) => ({
+    value: height,
+    label: String(height),
+  }));
 
 export const DIFF_INDICATOR_OPTIONS: readonly SegmentOption<DiffIndicators>[] = [
   {
