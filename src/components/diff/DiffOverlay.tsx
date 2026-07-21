@@ -238,14 +238,25 @@ export function DiffOverlay({
     return new Map(codeViewItems.items.map((item) => [item.id, item]));
   }, [codeViewItems]);
 
-  const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
-    useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, [
+  const layoutRefreshDeps = useMemo(
+    () => [
       codeViewItems,
       isSidebarCollapsed,
       isCodeViewMounted,
       displayPrefs.codeFontSize,
       displayPrefs.codeLineHeight,
-    ]);
+    ],
+    [
+      codeViewItems,
+      isSidebarCollapsed,
+      isCodeViewMounted,
+      displayPrefs.codeFontSize,
+      displayPrefs.codeLineHeight,
+    ],
+  );
+
+  const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
+    useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, layoutRefreshDeps);
 
   useRestoreReviewSession({
     ref: data.ref,

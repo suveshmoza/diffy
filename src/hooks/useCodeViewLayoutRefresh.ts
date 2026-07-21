@@ -52,7 +52,7 @@ export function useCodeViewLayoutRefresh<T>(
 
   useEffect(() => {
     refresh();
-  }, [refresh, ...deps]);
+  }, [refresh, deps]);
 
   return { containerRef, refresh };
 }

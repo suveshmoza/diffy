@@ -4,9 +4,8 @@ import {
   useCallback,
   useEffect,
   useState,
-  type MutableRefObject,
-  type RefObject,
   type Dispatch,
+  type RefObject,
   type SetStateAction,
 } from 'react';
 
@@ -44,12 +43,12 @@ type UseCodeViewReviewMutationsParams = {
   pullRequestRef: GitHubPullRequestRef;
   updateReviewComments: Dispatch<SetStateAction<GitHubPullRequestReviewComment[]>>;
   refreshCodeViewLayout: () => void;
-  selectedLinesRef: MutableRefObject<CodeViewLineSelection | null>;
+  selectedLinesRef: RefObject<CodeViewLineSelection | null>;
   setSelectedLines: (selection: CodeViewLineSelection | null) => void;
   setHoveredThreadSelection: (selection: CodeViewLineSelection | null) => void;
   itemById: Map<string, CodeViewItemsResult['items'][number]> | undefined;
   setSelectedPath: (updater: string | null | ((current: string | null) => string | null)) => void;
-  isOpeningDraftRef: MutableRefObject<boolean>;
+  isOpeningDraftRef: RefObject<boolean>;
 };
 
 export function useCodeViewReviewMutations({
@@ -229,7 +228,7 @@ export function useCodeViewReviewMutations({
 
       refreshCodeViewLayout();
     },
-    [modalRef, pullRequestRef, refreshCodeViewLayout, updateReviewComments, viewerRef],
+    [modalRef, refreshCodeViewLayout, updateReviewComments, viewerRef],
   );
 
   const handleCommentDelete = useCallback(
