@@ -96,10 +96,17 @@ export default defineConfig({
     name: 'diffy',
     description: 'A better way to review GitHub pull requests',
     permissions: ['storage', 'contextMenus'],
-    host_permissions: ['https://api.github.com/*', 'https://github.com/*'],
+    host_permissions: [
+      'https://api.github.com/*',
+      'https://github.com/*',
+      'https://fonts.googleapis.com/*',
+      'https://fonts.gstatic.com/*',
+    ],
     content_security_policy: {
-      // The overlay iframe runs Shiki's oniguruma WASM in the extension page + its worker.
-      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+      // Overlay loads Shiki WASM plus Google Fonts for preset code/tree families.
+      // Do not set connect-src — it would block HMR (ws://localhost) and other runtime fetches.
+      extension_pages:
+        "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;",
     },
     web_accessible_resources: [
       {

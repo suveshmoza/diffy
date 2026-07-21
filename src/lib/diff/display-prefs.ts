@@ -1,5 +1,24 @@
 import type { DiffIndicators, HunkSeparators } from '@pierre/diffs';
 
+import {
+  CODE_FONT_PRESETS,
+  DEFAULT_CODE_FONT,
+  DEFAULT_CODE_FONT_FEATURES,
+  DEFAULT_CODE_FONT_SIZE,
+  DEFAULT_CODE_LINE_HEIGHT,
+  DEFAULT_TREE_FONT,
+  normalizeCodeFontFeatures,
+  normalizeCodeFontSize,
+  normalizeCodeLineHeight,
+  normalizeFontPreference,
+  TREE_FONT_PRESETS,
+  type CodeFontFeaturesPreference,
+  type CodeFontPreference,
+  type CodeFontSize,
+  type CodeLineHeight,
+  type TreeFontPreference,
+} from './font-prefs';
+
 export type HunkSeparatorStyle = Exclude<HunkSeparators, 'custom'>;
 
 export type CodeViewDisplayPrefs = {
@@ -7,6 +26,11 @@ export type CodeViewDisplayPrefs = {
   hunkSeparators: HunkSeparatorStyle;
   disableLineNumbers: boolean;
   overflow: 'scroll' | 'wrap';
+  codeFont: CodeFontPreference;
+  treeFont: TreeFontPreference;
+  codeFontSize: CodeFontSize;
+  codeLineHeight: CodeLineHeight;
+  codeFontFeatures: CodeFontFeaturesPreference;
 };
 
 export const DISPLAY_PREFS_STORAGE_KEY = 'codeViewDisplayPrefs';
@@ -16,6 +40,11 @@ export const DEFAULT_CODE_VIEW_DISPLAY_PREFS: CodeViewDisplayPrefs = {
   hunkSeparators: 'line-info',
   disableLineNumbers: false,
   overflow: 'wrap',
+  codeFont: DEFAULT_CODE_FONT,
+  treeFont: DEFAULT_TREE_FONT,
+  codeFontSize: DEFAULT_CODE_FONT_SIZE,
+  codeLineHeight: DEFAULT_CODE_LINE_HEIGHT,
+  codeFontFeatures: DEFAULT_CODE_FONT_FEATURES,
 };
 
 const DIFF_INDICATORS: readonly DiffIndicators[] = ['classic', 'bars', 'none'];
@@ -65,6 +94,11 @@ function normalizeDisplayPrefs(value: unknown): CodeViewDisplayPrefs {
     overflow: isOneOf(candidate.overflow, OVERFLOW_VALUES)
       ? candidate.overflow
       : DEFAULT_CODE_VIEW_DISPLAY_PREFS.overflow,
+    codeFont: normalizeFontPreference(candidate.codeFont, CODE_FONT_PRESETS, DEFAULT_CODE_FONT),
+    treeFont: normalizeFontPreference(candidate.treeFont, TREE_FONT_PRESETS, DEFAULT_TREE_FONT),
+    codeFontSize: normalizeCodeFontSize(candidate.codeFontSize),
+    codeLineHeight: normalizeCodeLineHeight(candidate.codeLineHeight),
+    codeFontFeatures: normalizeCodeFontFeatures(candidate.codeFontFeatures),
   };
 }
 

@@ -535,6 +535,45 @@ html.gprv-scroll-locked body {
   text-align: center;
 }
 
+.gprv-font-custom-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 10px 8px;
+}
+
+.gprv-font-custom-label {
+  color: var(--gprv-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gprv-font-custom-input {
+  background: var(--trees-theme-input-bg, var(--gprv-control-bg));
+  border: 1px solid
+    var(--trees-theme-input-border, var(--trees-theme-sidebar-border, var(--gprv-border)));
+  border-radius: 6px;
+  box-sizing: border-box;
+  color: var(--gprv-text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  padding: 7px 9px;
+  width: 100%;
+}
+
+.gprv-font-custom-input::placeholder {
+  color: var(--gprv-muted);
+}
+
+.gprv-font-custom-input:focus {
+  border-color: var(--gprv-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gprv-accent) 30%, transparent);
+  outline: none;
+}
+
 .gprv-settings-menu {
   --gprv-switch-track-off: color-mix(
     in srgb,

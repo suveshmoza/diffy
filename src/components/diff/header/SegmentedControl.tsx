@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 
-export type SegmentOption<T extends string> = {
+export type SegmentOption<T extends string | number> = {
   value: T;
   label: string;
   icon?: ReactNode;
 };
 
-type SegmentedControlProps<T extends string> = {
+type SegmentedControlProps<T extends string | number> = {
   ariaLabel: string;
   options: readonly SegmentOption<T>[];
   value: T;
@@ -18,7 +18,7 @@ type SegmentedControlProps<T extends string> = {
 };
 
 /** Inline single-select control rendered as a row of mutually exclusive buttons. */
-export function SegmentedControl<T extends string>({
+export function SegmentedControl<T extends string | number>({
   ariaLabel,
   options,
   value,
