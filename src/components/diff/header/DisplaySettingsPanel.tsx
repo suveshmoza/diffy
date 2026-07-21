@@ -51,6 +51,8 @@ type DisplaySettingsPanelProps = {
   displayPrefs: CodeViewDisplayPrefs;
   onChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
   onClose: () => void;
+  onBack?: () => void;
+  embedded?: boolean;
 };
 
 export function DisplaySettingsPanel({
@@ -58,6 +60,8 @@ export function DisplaySettingsPanel({
   displayPrefs,
   onChange,
   onClose,
+  onBack,
+  embedded = false,
 }: DisplaySettingsPanelProps) {
   const {
     colorMode,
@@ -95,7 +99,7 @@ export function DisplaySettingsPanel({
     return (
       <div
         id={id}
-        className='gprv-settings-menu gprv-settings-menu-nested'
+        className={`gprv-settings-menu gprv-settings-menu-nested${embedded ? ' gprv-settings-menu-embedded' : ''}`}
         role='dialog'
         aria-label={label}
       >
@@ -149,7 +153,7 @@ export function DisplaySettingsPanel({
   return (
     <div
       id={id}
-      className='gprv-settings-menu'
+      className={`gprv-settings-menu${embedded ? ' gprv-settings-menu-embedded' : ''}`}
       role='dialog'
       aria-label='Settings'
     >
@@ -158,6 +162,19 @@ export function DisplaySettingsPanel({
         className='gprv-settings-menu-view'
         data-direction={transitionDirection}
       >
+        {onBack ? (
+          <button
+            type='button'
+            className='gprv-header-popover-option gprv-theme-picker-back'
+            onClick={onBack}
+          >
+            <IconChevronLeft
+              size={14}
+              stroke={2}
+            />
+            <span>Header actions</span>
+          </button>
+        ) : null}
         <section
           className='gprv-settings-section'
           aria-labelledby={`${id}-display-label`}

@@ -181,6 +181,14 @@ html.gprv-scroll-locked body {
   min-width: 0;
 }
 
+.gprv-branches-base {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 1 auto;
+  gap: 4px;
+  min-width: 0;
+}
+
 .gprv-copyable-branch {
   align-items: center;
   background: transparent;
@@ -332,6 +340,24 @@ html.gprv-scroll-locked body {
   gap: 4px;
 }
 
+.gprv-header-primary-actions,
+.gprv-header-desktop-actions,
+.gprv-header-compact-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.gprv-header-primary-actions:empty,
+.gprv-header-compact-actions {
+  display: none;
+}
+
+.gprv-review-cta-label-compact,
+.gprv-publish-cta-label-compact {
+  display: none;
+}
+
 .gprv-header-popover {
   min-width: 0;
   position: relative;
@@ -402,6 +428,69 @@ html.gprv-scroll-locked body {
 .gprv-header-popover-option:focus-visible {
   outline: 2px solid var(--gprv-accent);
   outline-offset: -2px;
+}
+
+.gprv-header-overflow-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: min(28rem, calc(100vh - 4rem));
+  min-width: 15rem;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.gprv-header-overflow-view {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gprv-header-overflow-view[data-direction='forward'] {
+  animation: gprv-settings-slide-forward 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.gprv-header-overflow-view[data-direction='back'] {
+  animation: gprv-settings-slide-back 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.gprv-header-overflow-option {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.gprv-header-overflow-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.gprv-header-overflow-option-icon,
+.gprv-header-overflow-option-suffix {
+  align-items: center;
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  line-height: 0;
+}
+
+.gprv-header-overflow-option-icon {
+  color: var(--gprv-muted);
+  width: 1.25rem;
+}
+
+.gprv-header-overflow-option-label {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.gprv-header-overflow-option-suffix {
+  color: var(--gprv-muted);
+  margin-left: auto;
 }
 
 .gprv-theme-picker-row {
@@ -546,8 +635,36 @@ html.gprv-scroll-locked body {
   gap: 4px;
 }
 
+.gprv-settings-menu-embedded {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+  position: static;
+  right: auto;
+  top: auto;
+  width: 100%;
+  z-index: auto;
+}
+
+.gprv-settings-menu-embedded .gprv-theme-picker-list {
+  margin: 0;
+}
+
+.gprv-settings-menu-embedded .gprv-theme-picker-back {
+  margin-bottom: 0;
+}
+
 .gprv-settings-menu .gprv-theme-picker-list {
   margin: 0 -4px -4px;
+}
+
+.gprv-settings-menu-embedded.gprv-settings-menu .gprv-theme-picker-list {
+  margin: 0;
 }
 
 .gprv-settings-row {
@@ -664,7 +781,8 @@ html.gprv-scroll-locked body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gprv-settings-menu-view {
+  .gprv-settings-menu-view,
+  .gprv-header-overflow-view {
     animation: none !important;
   }
 
@@ -813,19 +931,159 @@ html.gprv-scroll-locked body {
   }
 }
 
+.gprv-header-sidebar-toggle {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .gprv-header-desktop-actions {
+    display: none;
+  }
+
+  .gprv-header-compact-actions {
+    display: inline-flex;
+  }
+
+  .gprv-header-sidebar-toggle {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  .gprv-header-overflow-menu,
+  .gprv-header-overflow .gprv-settings-menu {
+    max-width: min(18rem, calc(100vw - 12px));
+    min-width: min(15rem, calc(100vw - 12px));
+    right: 0;
+  }
+
+  .gprv-header-overflow .gprv-settings-menu-embedded {
+    max-width: none;
+    min-width: 0;
+  }
+
+  .gprv-header-overflow .gprv-settings-menu-embedded .gprv-settings-section-label,
+  .gprv-header-overflow .gprv-settings-menu-embedded .gprv-settings-row {
+    padding-inline: 10px;
+  }
+
+  .gprv-header-overflow
+    .gprv-settings-menu-embedded
+    .gprv-settings-section
+    + .gprv-settings-section {
+    margin-inline: 10px;
+    padding-inline: 0;
+  }
+
+  .gprv-header-overflow .gprv-settings-menu-embedded .gprv-theme-picker-reset {
+    padding-inline: 10px;
+  }
+
+  .gprv-header-overflow-option,
+  .gprv-header-overflow .gprv-header-popover-option {
+    font-size: 13px;
+    gap: 10px;
+    padding: 9px 10px;
+  }
+
+  .gprv-header-overflow-option-icon {
+    width: 1.125rem;
+  }
+
+  .gprv-header-overflow-option-icon svg {
+    height: 15px;
+    width: 15px;
+  }
+
+  .gprv-header-overflow .gprv-settings-section-label {
+    font-size: 10px;
+  }
+
+  .gprv-header-overflow .gprv-settings-row-label,
+  .gprv-header-overflow .gprv-theme-picker-row-label {
+    font-size: 12px;
+  }
+
+  .gprv-header-overflow .gprv-theme-picker-row-value {
+    font-size: 11px;
+    max-width: 7rem;
+  }
+}
+
 @media (max-width: 640px) {
   .gprv-diff-header {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 10px;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 4px 6px;
   }
 
   .gprv-header-leading {
-    width: 100%;
+    flex-wrap: nowrap;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .gprv-title-content strong {
+    font-size: 13px;
+  }
+
+  .gprv-pr-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+
+  .gprv-title-meta {
+    flex-shrink: 1;
+    font-size: 11px;
+    min-width: 0;
+  }
+
+  .gprv-branches-base {
+    display: none;
+  }
+
+  .gprv-copyable-branch {
+    max-width: min(9rem, 36vw);
+  }
+
+  .gprv-copyable-branch .gprv-branch {
+    font-size: 11px;
+    padding: 2px 5px;
   }
 
   .gprv-header-toolbar {
-    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .gprv-header-overflow-option,
+  .gprv-header-overflow .gprv-header-popover-option {
+    font-size: 12px;
+    gap: 8px;
+    padding: 8px 9px;
+  }
+
+  .gprv-header-overflow .gprv-settings-menu-embedded .gprv-settings-section-label,
+  .gprv-header-overflow .gprv-settings-menu-embedded .gprv-settings-row {
+    padding-inline: 9px;
+  }
+
+  .gprv-header-overflow
+    .gprv-settings-menu-embedded
+    .gprv-settings-section
+    + .gprv-settings-section {
+    margin-inline: 9px;
+  }
+
+  .gprv-header-overflow .gprv-settings-menu-embedded .gprv-theme-picker-reset {
+    padding-inline: 9px;
+  }
+
+  .gprv-header-overflow .gprv-settings-row {
+    gap: 8px;
+  }
+
+  .gprv-header-overflow .gprv-settings-row-label {
+    font-size: 11px;
   }
 
   .gprv-notification-error {
@@ -852,12 +1110,61 @@ html.gprv-scroll-locked body {
   }
 }
 
+@media (max-width: 420px) {
+  .gprv-diff-header {
+    gap: 6px;
+    padding-inline: 4px;
+  }
+
+  .gprv-header-leading {
+    gap: 6px;
+  }
+
+  .gprv-title-stack {
+    gap: 5px;
+  }
+
+  .gprv-title-content strong {
+    font-size: 12px;
+  }
+
+  .gprv-pr-badge {
+    font-size: 9px;
+    padding-inline: 5px;
+  }
+
+  .gprv-copyable-branch {
+    max-width: min(7rem, 30vw);
+  }
+
+  .gprv-copyable-branch .gprv-branch {
+    font-size: 10px;
+  }
+
+  .gprv-review-cta,
+  .gprv-publish-cta {
+    min-height: 32px;
+    padding: 5px 8px;
+  }
+
+  .gprv-review-cta-label-full,
+  .gprv-publish-cta-label-full {
+    display: none;
+  }
+
+  .gprv-review-cta-label-compact,
+  .gprv-publish-cta-label-compact {
+    display: inline;
+  }
+}
+
 .gprv-body {
   display: grid;
   grid-template-columns: 345px minmax(0, 1fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .gprv-modal-main {
@@ -871,6 +1178,14 @@ html.gprv-scroll-locked body {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.gprv-body-sidebar-collapsed .gprv-sidebar {
+  display: none;
+}
+
+.gprv-sidebar-backdrop {
+  display: none;
+}
+
 .gprv-sidebar {
   border-right: 1px solid var(--gprv-border);
   display: grid;
@@ -878,6 +1193,66 @@ html.gprv-scroll-locked body {
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .gprv-body,
+  .gprv-body-sidebar-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gprv-sidebar-backdrop {
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    background: color-mix(in srgb, var(--gprv-bg, #000) 60%, transparent);
+    border: 0;
+    cursor: pointer;
+    display: block;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transition: opacity 300ms cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 20;
+  }
+
+  .gprv-sidebar-backdrop[data-open] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .gprv-body-sidebar-collapsed .gprv-sidebar,
+  .gprv-sidebar {
+    background: var(--trees-theme-sidebar-bg, var(--gprv-panel-bg, var(--gprv-bg)));
+    border-right: 0;
+    border-radius: 12px 12px 0 0;
+    box-shadow:
+      0 0 0 1px var(--gprv-border),
+      0 16px 32px rgb(0 0 0 / 0.25);
+    display: grid;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    transform: translateY(calc(100% + 1.5rem));
+    transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+    z-index: 30;
+  }
+
+  .gprv-body:not(.gprv-body-sidebar-collapsed) .gprv-sidebar {
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .gprv-sidebar-backdrop,
+  .gprv-body-sidebar-collapsed .gprv-sidebar,
+  .gprv-sidebar {
+    transition: none;
+    will-change: auto;
+  }
 }
 
 .gprv-tree-panel {
@@ -2249,12 +2624,46 @@ html.gprv-scroll-locked body {
   background: var(--gprv-success);
 }
 
+.gprv-review-progress-circle {
+  display: none;
+  flex-shrink: 0;
+}
+
+.gprv-review-progress-circle-track {
+  stroke: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.gprv-review-progress-circle-fill {
+  stroke: color-mix(in srgb, currentColor 80%, transparent);
+  transition: stroke-dashoffset 0.2s ease;
+}
+
+.gprv-review-progress-complete .gprv-review-progress-circle-fill {
+  stroke: var(--gprv-success);
+}
+
 .gprv-review-progress-label {
   color: var(--gprv-text);
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .gprv-review-progress {
+    border-radius: 999px;
+    padding: 6px;
+  }
+
+  .gprv-review-progress-track,
+  .gprv-review-progress-label {
+    display: none;
+  }
+
+  .gprv-review-progress-circle {
+    display: block;
+  }
 }
 
 .gprv-file-header-meta {
