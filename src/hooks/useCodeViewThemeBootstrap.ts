@@ -20,7 +20,8 @@ export function useCodeViewThemeBootstrap({
 
   const diffStyle = diffLayout === 'switched' ? ('split' as const) : ('unified' as const);
 
-  const { diffIndicators, hunkSeparators, disableLineNumbers, overflow } = displayPrefs;
+  const { diffIndicators, hunkSeparators, disableLineNumbers, overflow, codeLineHeight } =
+    displayPrefs;
 
   const codeViewOptions = useMemo((): Omit<
     CodeViewOptions<ReviewAnnotationMetadata>,
@@ -35,8 +36,9 @@ export function useCodeViewThemeBootstrap({
       hunkSeparators,
       disableLineNumbers,
       overflow,
+      itemMetrics: { lineHeight: codeLineHeight },
     };
-  }, [diffStyle, diffIndicators, hunkSeparators, disableLineNumbers, overflow]);
+  }, [diffStyle, diffIndicators, hunkSeparators, disableLineNumbers, overflow, codeLineHeight]);
 
   return {
     isThemeReady,

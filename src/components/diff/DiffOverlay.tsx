@@ -42,6 +42,7 @@ import {
   writeCodeViewDisplayPrefs,
   type CodeViewDisplayPrefs,
 } from '@/lib/diff/display-prefs';
+import { ensureGoogleFontsLoaded, resolveFontCssVariables } from '@/lib/diff/font-prefs';
 import {
   DEFAULT_DIFF_LAYOUT,
   readDiffLayoutPreference,
@@ -169,6 +170,10 @@ export function DiffOverlay({
     };
   }, []);
 
+  useEffect(() => {
+    ensureGoogleFontsLoaded();
+  }, []);
+
   const { isSidebarCollapsed, closeSidebar } = useSidebarContext();
 
   const rateLimit = useSyncExternalStore(subscribeToRateLimitChanges, getRateLimitState);
@@ -192,13 +197,31 @@ export function DiffOverlay({
     () => buildAnnotationThemeStyle(themeChromeStyle),
     [themeChromeStyle],
   );
+  const fontCssVariables = useMemo(
+    () =>
+      resolveFontCssVariables({
+        codeFont: displayPrefs.codeFont,
+        treeFont: displayPrefs.treeFont,
+        codeFontSize: displayPrefs.codeFontSize,
+        codeLineHeight: displayPrefs.codeLineHeight,
+        codeFontFeatures: displayPrefs.codeFontFeatures,
+      }),
+    [
+      displayPrefs.codeFont,
+      displayPrefs.treeFont,
+      displayPrefs.codeFontSize,
+      displayPrefs.codeLineHeight,
+      displayPrefs.codeFontFeatures,
+    ],
+  );
   const modalStyle = useMemo(
     () => ({
       ...chromeStyle,
       ...treeThemeVars,
+      ...fontCssVariables,
       colorScheme,
     }),
-    [chromeStyle, treeThemeVars, colorScheme],
+    [chromeStyle, treeThemeVars, fontCssVariables, colorScheme],
   );
 
   const { result: codeViewItems, isBuilding, error: codeViewBuildError } = useCodeViewItems(data);
@@ -220,6 +243,8 @@ export function DiffOverlay({
       codeViewItems,
       isSidebarCollapsed,
       isCodeViewMounted,
+      displayPrefs.codeFontSize,
+      displayPrefs.codeLineHeight,
     ]);
 
   useRestoreReviewSession({
