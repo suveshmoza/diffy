@@ -2624,12 +2624,46 @@ html.gprv-scroll-locked body {
   background: var(--gprv-success);
 }
 
+.gprv-review-progress-circle {
+  display: none;
+  flex-shrink: 0;
+}
+
+.gprv-review-progress-circle-track {
+  stroke: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.gprv-review-progress-circle-fill {
+  stroke: color-mix(in srgb, currentColor 80%, transparent);
+  transition: stroke-dashoffset 0.2s ease;
+}
+
+.gprv-review-progress-complete .gprv-review-progress-circle-fill {
+  stroke: var(--gprv-success);
+}
+
 .gprv-review-progress-label {
   color: var(--gprv-text);
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .gprv-review-progress {
+    border-radius: 999px;
+    padding: 6px;
+  }
+
+  .gprv-review-progress-track,
+  .gprv-review-progress-label {
+    display: none;
+  }
+
+  .gprv-review-progress-circle {
+    display: block;
+  }
 }
 
 .gprv-file-header-meta {
