@@ -69,7 +69,7 @@ import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
 import { ReviewProvider, type ReviewContextValue } from '@/providers/ReviewContext';
 import { ReviewQueueProvider, type ReviewQueueContextValue } from '@/providers/ReviewQueueContext';
-import { useSidebarContext } from '@/providers/SidebarContext';
+import { useSidebarContext, MOBILE_SIDEBAR_QUERY } from '@/providers/SidebarContext';
 import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
 import { useDiffThemeReady } from '@/providers/theming/useDiffThemeReady';
 import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
@@ -169,7 +169,7 @@ export function DiffOverlay({
     };
   }, []);
 
-  const { isSidebarCollapsed } = useSidebarContext();
+  const { isSidebarCollapsed, closeSidebar } = useSidebarContext();
 
   const rateLimit = useSyncExternalStore(subscribeToRateLimitChanges, getRateLimitState);
 
@@ -613,8 +613,12 @@ export function DiffOverlay({
         align: 'start',
         behavior: 'smooth',
       });
+
+      if (window.matchMedia(MOBILE_SIDEBAR_QUERY).matches) {
+        closeSidebar();
+      }
     },
-    [codeViewItems],
+    [closeSidebar, codeViewItems],
   );
 
   handleTreeSelectRef.current = handleTreeSelect;
@@ -815,24 +819,34 @@ export function DiffOverlay({
                 <div
                   className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}
                 >
-                  {isSidebarCollapsed ? null : (
-                    <aside className='gprv-sidebar'>
-                      {data.files.length > 0 && codeViewItems ? (
-                        <FileTreePanel
-                          files={data.files}
-                          selectedPath={selectedPath}
-                          reviewCommentCountByPath={reviewCommentCountByPath}
-                          onSelectPath={handleTreeSelect}
-                          pullRequest={data.pullRequest}
-                          reviewCommentCount={data.reviewComments.length}
-                        />
-                      ) : (
-                        <div className='gprv-state'>
-                          {isBuilding ? 'Building file list…' : 'No changed files found.'}
-                        </div>
-                      )}
-                    </aside>
-                  )}
+                  <button
+                    type='button'
+                    className='gprv-sidebar-backdrop'
+                    data-open={isSidebarCollapsed ? undefined : ''}
+                    aria-hidden={isSidebarCollapsed}
+                    aria-label='Close file list'
+                    tabIndex={isSidebarCollapsed ? -1 : 0}
+                    onClick={closeSidebar}
+                  />
+                  <aside
+                    className='gprv-sidebar'
+                    aria-hidden={isSidebarCollapsed}
+                  >
+                    {data.files.length > 0 && codeViewItems ? (
+                      <FileTreePanel
+                        files={data.files}
+                        selectedPath={selectedPath}
+                        reviewCommentCountByPath={reviewCommentCountByPath}
+                        onSelectPath={handleTreeSelect}
+                        pullRequest={data.pullRequest}
+                        reviewCommentCount={data.reviewComments.length}
+                      />
+                    ) : (
+                      <div className='gprv-state'>
+                        {isBuilding ? 'Building file list…' : 'No changed files found.'}
+                      </div>
+                    )}
+                  </aside>
 
                   <div
                     ref={codeViewHostRef}

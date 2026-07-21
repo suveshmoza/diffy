@@ -1164,6 +1164,7 @@ html.gprv-scroll-locked body {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .gprv-modal-main {
@@ -1177,6 +1178,14 @@ html.gprv-scroll-locked body {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.gprv-body-sidebar-collapsed .gprv-sidebar {
+  display: none;
+}
+
+.gprv-sidebar-backdrop {
+  display: none;
+}
+
 .gprv-sidebar {
   border-right: 1px solid var(--gprv-border);
   display: grid;
@@ -1184,6 +1193,66 @@ html.gprv-scroll-locked body {
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .gprv-body,
+  .gprv-body-sidebar-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gprv-sidebar-backdrop {
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    background: color-mix(in srgb, var(--gprv-bg, #000) 60%, transparent);
+    border: 0;
+    cursor: pointer;
+    display: block;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transition: opacity 300ms cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 20;
+  }
+
+  .gprv-sidebar-backdrop[data-open] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .gprv-body-sidebar-collapsed .gprv-sidebar,
+  .gprv-sidebar {
+    background: var(--trees-theme-sidebar-bg, var(--gprv-panel-bg, var(--gprv-bg)));
+    border-right: 0;
+    border-radius: 12px 12px 0 0;
+    box-shadow:
+      0 0 0 1px var(--gprv-border),
+      0 16px 32px rgb(0 0 0 / 0.25);
+    display: grid;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    transform: translateY(calc(100% + 1.5rem));
+    transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+    z-index: 30;
+  }
+
+  .gprv-body:not(.gprv-body-sidebar-collapsed) .gprv-sidebar {
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .gprv-sidebar-backdrop,
+  .gprv-body-sidebar-collapsed .gprv-sidebar,
+  .gprv-sidebar {
+    transition: none;
+    will-change: auto;
+  }
 }
 
 .gprv-tree-panel {
