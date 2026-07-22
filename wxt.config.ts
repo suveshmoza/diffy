@@ -92,7 +92,7 @@ export default defineConfig({
       : undefined,
   },
   manifest: {
-    version: '1.2.0',
+    version: '1.3.0',
     name: 'diffy',
     description: 'A better way to review GitHub pull requests',
     permissions: ['storage', 'contextMenus'],

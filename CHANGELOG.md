@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.3.0
+
+### Features
+
+- Add Expand All / Collapse All for diff files (#22)
+- Swap repository and branch metadata in the overlay header
+- Allow copying branch names from the overlay header
+- Make the overlay header responsive on smaller screens (#25)
+- Customize code and tree fonts in settings (#26)
+- Preview image changes inline in PR diffs with before/after panes (#27)
+- Add image lightbox compare modes (2-up, swipe, onion) with zoom, pan, and blink (#27)
+- Prefetch and cache image blobs; show a placeholder for non-image binary files (#27)
+- Add Images settings for default compare mode and checkerboard background (#27)
+
+### Fixes
+
+- Resolve oxlint `react-hooks/exhaustive-deps` warnings
+
+### Chores & Refactoring
+
+- Reorganize DiffOverlayHeader and DisplaySettings components (#24)
+
 ## v1.2.0
 
 ### Features
