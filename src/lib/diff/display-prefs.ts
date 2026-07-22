@@ -20,6 +20,7 @@ import {
 } from './font-prefs';
 
 export type HunkSeparatorStyle = Exclude<HunkSeparators, 'custom'>;
+export type ImageCompareMode = '2up' | 'swipe' | 'onion';
 
 export type CodeViewDisplayPrefs = {
   diffIndicators: DiffIndicators;
@@ -31,6 +32,8 @@ export type CodeViewDisplayPrefs = {
   codeFontSize: CodeFontSize;
   codeLineHeight: CodeLineHeight;
   codeFontFeatures: CodeFontFeaturesPreference;
+  imageCompareMode: ImageCompareMode;
+  imageCheckerboard: boolean;
 };
 
 export const DISPLAY_PREFS_STORAGE_KEY = 'codeViewDisplayPrefs';
@@ -45,6 +48,8 @@ export const DEFAULT_CODE_VIEW_DISPLAY_PREFS: CodeViewDisplayPrefs = {
   codeFontSize: DEFAULT_CODE_FONT_SIZE,
   codeLineHeight: DEFAULT_CODE_LINE_HEIGHT,
   codeFontFeatures: DEFAULT_CODE_FONT_FEATURES,
+  imageCompareMode: '2up',
+  imageCheckerboard: true,
 };
 
 const DIFF_INDICATORS: readonly DiffIndicators[] = ['classic', 'bars', 'none'];
@@ -55,6 +60,7 @@ const HUNK_SEPARATORS: readonly HunkSeparatorStyle[] = [
   'line-info-basic',
 ];
 const OVERFLOW_VALUES: readonly CodeViewDisplayPrefs['overflow'][] = ['scroll', 'wrap'];
+const IMAGE_COMPARE_MODES: readonly ImageCompareMode[] = ['2up', 'swipe', 'onion'];
 
 export async function readCodeViewDisplayPrefs(): Promise<CodeViewDisplayPrefs> {
   if (!browser?.storage?.sync) {
@@ -99,6 +105,13 @@ function normalizeDisplayPrefs(value: unknown): CodeViewDisplayPrefs {
     codeFontSize: normalizeCodeFontSize(candidate.codeFontSize),
     codeLineHeight: normalizeCodeLineHeight(candidate.codeLineHeight),
     codeFontFeatures: normalizeCodeFontFeatures(candidate.codeFontFeatures),
+    imageCompareMode: isOneOf(candidate.imageCompareMode, IMAGE_COMPARE_MODES)
+      ? candidate.imageCompareMode
+      : DEFAULT_CODE_VIEW_DISPLAY_PREFS.imageCompareMode,
+    imageCheckerboard:
+      typeof candidate.imageCheckerboard === 'boolean'
+        ? candidate.imageCheckerboard
+        : DEFAULT_CODE_VIEW_DISPLAY_PREFS.imageCheckerboard,
   };
 }
 

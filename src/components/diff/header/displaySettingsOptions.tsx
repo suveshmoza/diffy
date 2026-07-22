@@ -7,7 +7,11 @@ import {
   IconTextWrap,
 } from '@tabler/icons-react';
 
-import type { CodeViewDisplayPrefs, HunkSeparatorStyle } from '@/lib/diff/display-prefs';
+import type {
+  CodeViewDisplayPrefs,
+  HunkSeparatorStyle,
+  ImageCompareMode,
+} from '@/lib/diff/display-prefs';
 import {
   CODE_FONT_SIZES,
   CODE_LINE_HEIGHTS,
@@ -100,4 +104,10 @@ export const OVERFLOW_OPTIONS: readonly SegmentOption<CodeViewDisplayPrefs['over
       />
     ),
   },
+];
+
+export const IMAGE_COMPARE_MODE_OPTIONS: readonly SegmentOption<ImageCompareMode>[] = [
+  { value: '2up', label: '2-up' },
+  { value: 'swipe', label: 'Swipe' },
+  { value: 'onion', label: 'Onion' },
 ];
