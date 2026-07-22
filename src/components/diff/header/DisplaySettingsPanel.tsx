@@ -29,6 +29,7 @@ import {
   CODE_FONT_SIZE_OPTIONS,
   CODE_LINE_HEIGHT_OPTIONS,
   DIFF_INDICATOR_OPTIONS,
+  IMAGE_COMPARE_MODE_OPTIONS,
 } from './displaySettingsOptions';
 import { SegmentedControl } from './SegmentedControl';
 import { SettingsSwitch } from './SettingsSwitch';
@@ -477,6 +478,37 @@ export function DisplaySettingsPanel({
                 onCommit={commitCustomFontFeatures}
               />
             ) : null}
+          </div>
+        </section>
+
+        <section
+          className='gprv-settings-section'
+          aria-labelledby={`${id}-images-label`}
+        >
+          <h3
+            id={`${id}-images-label`}
+            className='gprv-settings-section-label'
+          >
+            Images
+          </h3>
+          <div className='gprv-settings-section-content'>
+            <div className='gprv-settings-row'>
+              <span className='gprv-settings-row-label'>Compare mode</span>
+              <SegmentedControl
+                ariaLabel='Default image comparison mode'
+                options={IMAGE_COMPARE_MODE_OPTIONS}
+                value={displayPrefs.imageCompareMode}
+                onChange={(imageCompareMode) => onChange({ imageCompareMode })}
+              />
+            </div>
+            <div className='gprv-settings-row'>
+              <span className='gprv-settings-row-label'>Checkerboard</span>
+              <SettingsSwitch
+                label='Image transparency checkerboard'
+                checked={displayPrefs.imageCheckerboard}
+                onChange={(imageCheckerboard) => onChange({ imageCheckerboard })}
+              />
+            </div>
           </div>
         </section>
 

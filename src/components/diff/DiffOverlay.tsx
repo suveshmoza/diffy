@@ -19,6 +19,9 @@ import {
   type SetStateAction,
 } from 'react';
 
+import { BinaryFilePanel } from '@/components/diff/BinaryFilePanel';
+import { ImageDiffLightbox } from '@/components/diff/ImageDiffLightbox';
+import { ImageDiffViewer } from '@/components/diff/ImageDiffViewer';
 import { NotificationErrorBar } from '@/components/diff/NotificationErrorBar';
 import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
@@ -29,6 +32,7 @@ import {
 } from '@/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewReviewMutations } from '@/hooks/useCodeViewReviewMutations';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
+import { usePrefetchImageDiffs } from '@/hooks/useImageDiffSources';
 import { useRestoreReviewSession } from '@/hooks/useRestoreReviewSession';
 import { useReviewQueue } from '@/hooks/useReviewQueue';
 import { pickTreeThemeCustomProperties, useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
@@ -43,12 +47,14 @@ import {
   type CodeViewDisplayPrefs,
 } from '@/lib/diff/display-prefs';
 import { ensureGoogleFontsLoaded, resolveFontCssVariables } from '@/lib/diff/font-prefs';
+import { bumpImageDiffPriority } from '@/lib/diff/image-diff-cache';
 import {
   DEFAULT_DIFF_LAYOUT,
   readDiffLayoutPreference,
   writeDiffLayoutPreference,
   type DiffLayout,
 } from '@/lib/diff/layout-prefs';
+import { classifyChangedFile } from '@/lib/diff/media-files';
 import {
   getRateLimitState,
   subscribeToRateLimitChanges,
@@ -115,6 +121,7 @@ export function DiffOverlay({
   const [selectedLines, setSelectedLines] = useState<CodeViewLineSelection | null>(null);
   const [hoveredThreadSelection, setHoveredThreadSelection] =
     useState<CodeViewLineSelection | null>(null);
+  const [lightboxImagePath, setLightboxImagePath] = useState<string | null>(null);
   const [diffLayout, setDiffLayout] = useState<DiffLayout>(DEFAULT_DIFF_LAYOUT);
   const [displayPrefs, setDisplayPrefs] = useState<CodeViewDisplayPrefs>(
     DEFAULT_CODE_VIEW_DISPLAY_PREFS,
@@ -131,7 +138,18 @@ export function DiffOverlay({
   hoveredThreadSelectionRef.current = hoveredThreadSelection;
 
   const orderedPaths = useMemo(() => data.files.map((file) => file.filename), [data.files]);
+  const imageFiles = useMemo(
+    () => data.files.filter((file) => classifyChangedFile(file) === 'image'),
+    [data.files],
+  );
+  const lightboxFile =
+    lightboxImagePath == null
+      ? null
+      : (imageFiles.find((file) => file.filename === lightboxImagePath) ?? null);
   const viewedFiles = useViewedFiles(data.ref, orderedPaths);
+
+  const { result: codeViewItems, isBuilding, error: codeViewBuildError } = useCodeViewItems(data);
+  usePrefetchImageDiffs(data);
 
   useEffect(() => {
     const modal = modalRef.current;
@@ -224,7 +242,6 @@ export function DiffOverlay({
     [chromeStyle, treeThemeVars, fontCssVariables, colorScheme],
   );
 
-  const { result: codeViewItems, isBuilding, error: codeViewBuildError } = useCodeViewItems(data);
   const isCodeViewHostReady = useCodeViewHostReady(codeViewHostRef);
   const isDiffThemeReady = useDiffThemeReady();
   const isCodeViewMounted =
@@ -361,6 +378,14 @@ export function DiffOverlay({
         return;
       }
 
+      if (lightboxImagePath) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        setLightboxImagePath(null);
+        return;
+      }
+
       const modal = modalRef.current;
       if (!modal) {
         return;
@@ -383,7 +408,7 @@ export function DiffOverlay({
 
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [handleCloseOverlay, isPublishDialogOpen]);
+  }, [handleCloseOverlay, isPublishDialogOpen, lightboxImagePath]);
 
   const reviewCommentCountByPath = useMemo(() => {
     if (!codeViewItems) {
@@ -642,6 +667,7 @@ export function DiffOverlay({
         return;
       }
 
+      bumpImageDiffPriority(data.ref, data.pullRequest, file);
       const id = getCodeViewItemIdForFile(file, codeViewItems.diffPathSet);
       viewerRef.current?.scrollTo({
         type: 'item',
@@ -654,7 +680,7 @@ export function DiffOverlay({
         closeSidebar();
       }
     },
-    [closeSidebar, codeViewItems],
+    [closeSidebar, codeViewItems, data.pullRequest, data.ref],
   );
 
   handleTreeSelectRef.current = handleTreeSelect;
@@ -710,6 +736,21 @@ export function DiffOverlay({
     event.stopPropagation();
   }, []);
 
+  const handleExpandImage = useCallback((path: string) => {
+    setLightboxImagePath(path);
+  }, []);
+
+  const handleNavigateImage = useCallback(
+    (path: string) => {
+      const file = imageFiles.find((candidate) => candidate.filename === path);
+      if (file) {
+        bumpImageDiffPriority(data.ref, data.pullRequest, file);
+      }
+      setLightboxImagePath(path);
+    },
+    [data.pullRequest, data.ref, imageFiles],
+  );
+
   const renderReviewAnnotation = useCallback(
     (
       annotation:
@@ -720,6 +761,44 @@ export function DiffOverlay({
       const metadata = annotation.metadata;
       if (!metadata) {
         return null;
+      }
+
+      if (metadata.kind === 'media-image' || metadata.kind === 'media-binary') {
+        const path = getItemPath(item);
+        const file = codeViewItems?.fileByPath.get(path);
+        if (!file) {
+          return null;
+        }
+
+        if (metadata.kind === 'media-image') {
+          return (
+            <div
+              className='gprv-media-annotation'
+              data-media-pane={metadata.pane}
+            >
+              <ImageDiffViewer
+                file={file}
+                pullRequest={data.pullRequest}
+                pullRequestRef={data.ref}
+                pane={metadata.pane}
+                checkerboard={displayPrefs.imageCheckerboard}
+                onExpand={handleExpandImage}
+              />
+            </div>
+          );
+        }
+
+        return (
+          <div className='gprv-media-annotation'>
+            <BinaryFilePanel
+              file={file}
+              owner={data.ref.owner}
+              repo={data.ref.repo}
+              baseSha={data.pullRequest.base.sha}
+              headSha={data.pullRequest.head.sha}
+            />
+          </div>
+        );
       }
 
       if (metadata.kind === 'draft') {
@@ -761,7 +840,17 @@ export function DiffOverlay({
         />
       );
     },
-    [data.ref, handleCancelDraft, handleImmediateCommentSuccess, handleQueueComment, isBatchMode],
+    [
+      codeViewItems?.fileByPath,
+      data.pullRequest,
+      data.ref,
+      displayPrefs.imageCheckerboard,
+      handleCancelDraft,
+      handleExpandImage,
+      handleImmediateCommentSuccess,
+      handleQueueComment,
+      isBatchMode,
+    ],
   );
 
   const renderReviewHeaderMetadata = useCallback(
@@ -791,11 +880,20 @@ export function DiffOverlay({
   );
 
   const renderHeaderPrefix = useStableCallback((item: CodeViewItem<ReviewAnnotationMetadata>) => {
+    const isMediaItem = item.id.startsWith('media:');
     return (
-      <CollapseDiffButton
-        collapsed={item.collapsed}
-        onToggle={() => handleToggleItemCollapsed(item.id)}
-      />
+      <>
+        {isMediaItem ? (
+          <span
+            className='gprv-media-file-marker'
+            hidden
+          />
+        ) : null}
+        <CollapseDiffButton
+          collapsed={item.collapsed}
+          onToggle={() => handleToggleItemCollapsed(item.id)}
+        />
+      </>
     );
   });
 
@@ -842,6 +940,22 @@ export function DiffOverlay({
           />
 
           {isPublishDialogOpen ? <PublishReviewDialog /> : null}
+          {lightboxFile ? (
+            <ImageDiffLightbox
+              file={lightboxFile}
+              imageFiles={imageFiles}
+              pullRequest={data.pullRequest}
+              pullRequestRef={data.ref}
+              mode={displayPrefs.imageCompareMode}
+              checkerboard={displayPrefs.imageCheckerboard}
+              onModeChange={(imageCompareMode) => updateDisplayPrefs({ imageCompareMode })}
+              onCheckerboardChange={(imageCheckerboard) =>
+                updateDisplayPrefs({ imageCheckerboard })
+              }
+              onNavigate={handleNavigateImage}
+              onClose={() => setLightboxImagePath(null)}
+            />
+          ) : null}
 
           <div className='gprv-modal-main'>
             <GitHubAuthProvider>
