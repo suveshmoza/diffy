@@ -40,10 +40,23 @@ export type ReviewQueuedMetadata = {
   body: string;
 };
 
+export type ReviewMediaImagePane = 'before' | 'after' | 'only';
+
+export type ReviewMediaMetadata =
+  | {
+      kind: 'media-image';
+      /** Which image to render in this annotation slot (split left/right or unified). */
+      pane: ReviewMediaImagePane;
+    }
+  | {
+      kind: 'media-binary';
+    };
+
 export type ReviewAnnotationMetadata =
   | ReviewThreadMetadata
   | ReviewDraftMetadata
-  | ReviewQueuedMetadata;
+  | ReviewQueuedMetadata
+  | ReviewMediaMetadata;
 
 export type ReviewCommentItemMaps = {
   inlineByItemId: Map<
@@ -144,9 +157,11 @@ export function attachReviewCommentsToItems(
         return item as CodeViewItem<ReviewAnnotationMetadata>;
       }
 
+      const existing =
+        (item.annotations as LineAnnotation<ReviewAnnotationMetadata>[] | undefined) ?? [];
       return {
         ...item,
-        annotations: fileAnnotations,
+        annotations: [...existing, ...fileAnnotations],
       };
     }
 
@@ -159,9 +174,11 @@ export function attachReviewCommentsToItems(
       return item as CodeViewItem<ReviewAnnotationMetadata>;
     }
 
+    const existing =
+      (item.annotations as DiffLineAnnotation<ReviewAnnotationMetadata>[] | undefined) ?? [];
     return {
       ...item,
-      annotations: diffAnnotations,
+      annotations: [...existing, ...diffAnnotations],
     };
   });
 }
