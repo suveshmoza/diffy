@@ -71,6 +71,7 @@ function tolerateNullCustomElements(): Plugin {
 export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './src/modules/shiki-pruner.ts'],
   srcDir: 'src',
+  outDir: 'dist',
   hooks: {
     // Copy Pierre's self-contained portable worker into the extension at a
     // stable, same-origin path. Runs in both dev and build, so `new Worker()`
