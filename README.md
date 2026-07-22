@@ -7,12 +7,12 @@
 
 <strong>A better way to review GitHub pull requests</strong>
 
-<p>Full-screen diffs, searchable file tree, inline comments, batch reviews, viewed-file tracking, split/unified layout, 100+ languages, 50+ themes, and under 2 MB.</p>
+<p>Full-screen diffs, searchable file tree, inline comments, batch reviews, viewed-file tracking, split/unified layout, custom fonts, experimental image diffs, 100+ languages, 50+ themes, and under 2 MB.</p>
 </div>
 
-**diffy** is a browser extension for reviewing GitHub pull requests in a full-screen, continuous view, with inline comments, batch reviews, and the tooling reviewers actually need. Powered by [Pierre Trees](https://trees.software) and [Pierre Diffs](https://diffs.com).
+**diffy** is a browser extension for reviewing GitHub pull requests in a full-screen, continuous view, with inline comments, batch reviews, and the tooling reviewers actually need. Powered by Pierre [Trees](https://trees.software) and [Diffs](https://diffs.com).
 
-https://github.com/user-attachments/assets/a3682856-963a-4261-b77a-ad5038d9ef7e
+<https://github.com/user-attachments/assets/a3682856-963a-4261-b77a-ad5038d9ef7e>
 
 <h3 align="center">Install</h3>
 
@@ -44,12 +44,14 @@ https://github.com/user-attachments/assets/a3682856-963a-4261-b77a-ad5038d9ef7e
 - **Fast and smooth**: a responsive full-screen review experience
 - **Under 2 MB**: lightweight install despite 100+ languages, 50+ themes, and full PR rendering
 - **File tree with search**: jump to any changed file, even in huge PRs; comment badges mark files with threads
-- **Collapse files**: expand or collapse individual files; viewed files auto-collapse
-- **PR sidebar**: file/line/comment stats, branches, author, state, labels, and reviewers at a glance
+- **Collapse files**: expand or collapse individual files, or expand/collapse all at once; viewed files auto-collapse
+- **PR sidebar**: file/line/comment stats, branches (with copy), author, state, labels, and reviewers at a glance
 - **Split or unified layout**: switch between side-by-side and stacked views
-- **Display settings**: diff indicators (classic/bars/none), hunk separators, line numbers, wrap vs horizontal scroll
+- **Display settings**: diff indicators (classic/bars/none), hunk separators, line numbers, wrap vs horizontal scroll, and custom code/tree fonts
 - **Syntax highlighting**: 100+ languages with clear, colorized diffs and sticky file headers
 - **50+ themes**: Auto/Light/Dark mode with separate light and dark theme picks (Pierre, GitHub, Catppuccin, Dracula, Nord, Tokyo Night, and more)
+- **Image diffs (experimental)**: preview changed images inline with before/after panes; expand into a lightbox with 2-up, swipe, and onion compare modes
+- **Binary files**: placeholder for non-image binaries with a link to open on GitHub
 - **Open in new tab**: detach the overlay into a standalone browser tab
 - **Refresh**: reload the latest PR data after new commits land
 
