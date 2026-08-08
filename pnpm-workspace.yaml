@@ -3,4 +3,4 @@ allowBuilds:
   sharp: true
   spawn-sync: true
 patchedDependencies:
-  '@pierre/trees': patches/@pierre__trees.patch
+  '@pierre/trees@1.0.0-beta.6': patches/@pierre__trees@1.0.0-beta.6.patch

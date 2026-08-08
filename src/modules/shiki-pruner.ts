@@ -143,7 +143,7 @@ async function pruneUnusedShikiChunks(
     }
 
     for (const match of code.matchAll(specifierRe)) {
-      const base = match[1].split('/').pop();
+      const base = match[1]?.split('/').pop();
       if (base) {
         keepAndFollow(base);
       }

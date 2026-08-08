@@ -26,7 +26,9 @@ function toAscii(): Plugin {
       for (const fileName in bundle) {
         if (!fileName.startsWith('src/content-scripts/') || !fileName.endsWith('.js')) continue;
         const chunk = bundle[fileName];
-        if (chunk.type === 'chunk') chunk.code = escapeToAscii(chunk.code);
+        if (chunk != null && chunk.type === 'chunk') {
+          chunk.code = escapeToAscii(chunk.code);
+        }
       }
     },
     async writeBundle(options, bundle) {
@@ -69,7 +71,9 @@ function tolerateNullCustomElements(): Plugin {
 }
 
 export default defineConfig({
-  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons', './src/modules/shiki-pruner.ts'],
+  modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
+  // Auto-load local modules (relative paths in `modules` break on WXT 0.21 + Node).
+  modulesDir: 'src/modules',
   srcDir: 'src',
   outDir: 'dist',
   hooks: {
@@ -125,6 +129,11 @@ export default defineConfig({
     },
   },
   vite: () => ({
+    // Vite defaults to **/*.html; with outDir `dist` that also picks up built
+    // extension HTML and breaks dep scanning (UNRESOLVED_ENTRY under dist/).
+    optimizeDeps: {
+      entries: ['src/entrypoints/**/*.{html,ts,tsx}'],
+    },
     resolve: {
       alias: {
         '@': resolve(import.meta.dirname, 'src'),
