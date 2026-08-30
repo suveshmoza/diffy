@@ -1,6 +1,8 @@
-import { IconAlertTriangle, IconCheck } from '@tabler/icons-react';
+import { IconCheck, IconCiWarning } from '@pierre/icons';
 
+import { Badge } from '@/components/ui/badge';
 import type { FileViewedState } from '@/lib/github/graphql';
+import { cn } from '@/lib/utils';
 
 type FileViewedCheckboxProps = {
   state: FileViewedState | undefined;
@@ -13,37 +15,50 @@ export function FileViewedCheckbox({ state, disabled = false, onToggle }: FileVi
   const isDismissed = state === 'DISMISSED';
 
   return (
-    <span className='gprv-viewed-control'>
+    <span className='inline-flex items-center gap-2'>
       {isDismissed ? (
-        <span
-          className='gprv-file-dismissed-badge'
+        <Badge
+          variant='destructive'
+          className='h-5 gap-1 px-1.5 text-[11px] font-semibold'
           title='This file changed since you last viewed it.'
         >
-          <IconAlertTriangle
+          <IconCiWarning
             size={11}
-            stroke={2}
+            aria-hidden='true'
           />
           Changed since viewed
-        </span>
+        </Badge>
       ) : null}
       <label
-        className={`gprv-viewed-checkbox${isViewed ? ' gprv-viewed-checkbox-checked' : ''}`}
+        className={cn(
+          'inline-flex items-center gap-1.5 text-xs font-semibold select-none',
+          disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+          isViewed
+            ? 'text-[var(--trees-theme-sidebar-fg,var(--foreground))]'
+            : 'text-[var(--trees-theme-sidebar-header-fg,var(--muted-foreground))]',
+        )}
         title={isViewed ? 'Mark as not viewed' : 'Mark as viewed'}
         onClick={(event) => event.stopPropagation()}
       >
         <input
           type='checkbox'
+          className='sr-only'
           checked={isViewed}
           disabled={disabled}
           onChange={(event) => onToggle(event.target.checked)}
         />
         <span
-          className='gprv-viewed-checkbox-box'
+          className={cn(
+            'inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border-[1.5px]',
+            'border-[var(--gprv-header-control-border,var(--border))]',
+            isViewed &&
+              'border-[var(--trees-theme-git-added-fg,var(--color-green-600))] bg-[var(--trees-theme-git-added-fg,var(--color-green-600))] text-white',
+          )}
           aria-hidden='true'
         >
           <IconCheck
             size={11}
-            stroke={3}
+            className={cn('transition-opacity', isViewed ? 'opacity-100' : 'opacity-0')}
           />
         </span>
         Viewed

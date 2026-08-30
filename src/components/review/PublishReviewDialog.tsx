@@ -1,8 +1,20 @@
-import { IconCheck, IconMessageCircle, IconX } from '@tabler/icons-react';
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { IconCheck, IconComment, IconX } from '@pierre/icons';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { ReviewEvent } from '@/lib/github/review-write';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
+import { cn } from '@/lib/utils';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 
 const EVENT_OPTIONS: ReadonlyArray<{ value: ReviewEvent; label: string }> = [
@@ -58,10 +70,9 @@ export function PublishReviewDialog() {
     }
   }, [body, event, onPublish]);
 
-  const handleKeyDown = useCallback(
-    (keyEvent: KeyboardEvent) => {
-      keyEvent.stopPropagation();
-      if (keyEvent.key === 'Escape' && !isSubmitting) {
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open && !isSubmitting) {
         onClose();
       }
     },
@@ -69,161 +80,157 @@ export function PublishReviewDialog() {
   );
 
   return (
-    <div
-      className='gprv-publish-overlay'
-      onKeyDown={handleKeyDown}
+    <Dialog
+      open
+      onOpenChange={handleOpenChange}
     >
-      <div
-        className='gprv-publish-backdrop'
-        onClick={isSubmitting ? undefined : onClose}
-      />
-      <div
-        className='gprv-publish-dialog'
-        role='dialog'
-        aria-modal='true'
-        aria-label='Publish review'
+      <DialogContent
+        className='diffy-dialog flex max-h-[80vh] w-[calc(100%-3rem)] max-w-lg flex-col gap-0 p-0 sm:max-w-lg'
+        showCloseButton={false}
       >
-        <header className='gprv-publish-header'>
-          <h2 className='gprv-publish-title'>Publish review</h2>
-          <button
+        <DialogHeader className='flex-row items-center justify-between space-y-0 border-b px-4 py-3.5'>
+          <DialogTitle>Publish review</DialogTitle>
+          <Button
             type='button'
-            className='gprv-header-icon-button'
+            variant='ghost'
+            size='icon-sm'
             onClick={onClose}
             disabled={isSubmitting}
             aria-label='Close'
           >
-            <IconX
-              size={16}
-              stroke={2}
-            />
-          </button>
-        </header>
+            <IconX size={16} />
+          </Button>
+        </DialogHeader>
 
-        <div className='gprv-publish-body'>
-          <section className='gprv-publish-section'>
-            <p className='gprv-publish-section-label'>
-              {queue.length} queued {queue.length === 1 ? 'comment' : 'comments'}
-            </p>
-            {queue.length > 0 ? (
-              <ul className='gprv-publish-queue-list'>
-                {queue.map((entry) => (
-                  <li
-                    key={entry.queuedId}
-                    className='gprv-publish-queue-item'
-                  >
-                    <div className='gprv-publish-queue-meta'>
-                      <span className='gprv-publish-queue-path'>{entry.path}</span>
-                      <span className='gprv-publish-queue-range'>
-                        {formatSelectedLineRangeLabel(entry.range)}
-                      </span>
-                    </div>
-                    <p className='gprv-publish-queue-body'>{entry.body}</p>
-                    <button
-                      type='button'
-                      className='gprv-publish-queue-remove'
-                      onClick={() => onRemoveQueued(entry.queuedId)}
-                      disabled={isSubmitting}
-                      aria-label='Remove queued comment'
+        <ScrollArea className='max-h-[min(60vh,520px)]'>
+          <div className='flex flex-col gap-4 p-4'>
+            <section className='flex flex-col gap-2'>
+              <Label className='text-xs text-muted-foreground'>
+                {queue.length} queued {queue.length === 1 ? 'comment' : 'comments'}
+              </Label>
+              {queue.length > 0 ? (
+                <ul className='flex flex-col gap-2'>
+                  {queue.map((entry) => (
+                    <li
+                      key={entry.queuedId}
+                      className='relative rounded-lg border bg-card p-2.5 pr-9'
                     >
-                      <IconX
-                        size={14}
-                        stroke={2}
-                      />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className='gprv-publish-empty'>
-                No queued comments. Choose a verdict below. Add a summary or inline comments if you
-                want.
-              </p>
-            )}
-          </section>
+                      <div className='mb-1 flex gap-2'>
+                        <span className='truncate text-xs font-semibold'>{entry.path}</span>
+                        <span className='shrink-0 text-xs text-muted-foreground'>
+                          {formatSelectedLineRangeLabel(entry.range)}
+                        </span>
+                      </div>
+                      <p className='line-clamp-2 text-sm whitespace-pre-wrap'>{entry.body}</p>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon-xs'
+                        className='absolute top-2 right-2 text-muted-foreground'
+                        onClick={() => onRemoveQueued(entry.queuedId)}
+                        disabled={isSubmitting}
+                        aria-label='Remove queued comment'
+                      >
+                        <IconX size={14} />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className='text-sm text-muted-foreground'>
+                  No queued comments. Choose a verdict below. Add a summary or inline comments if
+                  you want.
+                </p>
+              )}
+            </section>
 
-          <section className='gprv-publish-section'>
-            <label className='gprv-publish-section-label'>Summary (optional)</label>
-            <textarea
-              ref={textareaRef}
-              className='gprv-review-composer-input'
-              value={body}
-              onChange={(changeEvent) => setBody(changeEvent.target.value)}
-              placeholder='Leave an overall comment'
-              rows={3}
-              disabled={isSubmitting}
-            />
-          </section>
+            <section className='flex flex-col gap-2'>
+              <Label htmlFor='publish-review-summary'>Summary (optional)</Label>
+              <textarea
+                ref={textareaRef}
+                id='publish-review-summary'
+                className={cn(
+                  'flex min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none',
+                  'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+                  'disabled:cursor-not-allowed disabled:opacity-50',
+                )}
+                value={body}
+                onChange={(changeEvent) => setBody(changeEvent.target.value)}
+                placeholder='Leave an overall comment'
+                rows={3}
+                disabled={isSubmitting}
+              />
+            </section>
 
-          <section className='gprv-publish-section'>
-            <span className='gprv-publish-section-label'>Verdict</span>
-            <div className='gprv-publish-verdict'>
-              {EVENT_OPTIONS.map((option) => (
-                <label
-                  key={option.value}
-                  className={`gprv-publish-verdict-option${event === option.value ? ' gprv-publish-verdict-option-active' : ''}`}
-                >
-                  <input
-                    type='radio'
-                    name='gprv-review-event'
+            <section className='flex flex-col gap-2'>
+              <Label>Verdict</Label>
+              <ToggleGroup
+                variant='outline'
+                spacing={0}
+                value={[event]}
+                onValueChange={(next) => {
+                  const selected = next[0];
+                  if (selected) {
+                    setEvent(selected as ReviewEvent);
+                  }
+                }}
+                className='w-full'
+              >
+                {EVENT_OPTIONS.map((option) => (
+                  <ToggleGroupItem
+                    key={option.value}
                     value={option.value}
-                    checked={event === option.value}
-                    onChange={() => setEvent(option.value)}
                     disabled={isSubmitting}
-                  />
-                  {option.value === 'APPROVE' ? (
-                    <IconCheck
-                      size={14}
-                      stroke={2}
-                    />
-                  ) : option.value === 'COMMENT' ? (
-                    <IconMessageCircle
-                      size={14}
-                      stroke={2}
-                    />
-                  ) : (
-                    <IconX
-                      size={14}
-                      stroke={2}
-                    />
-                  )}
-                  {option.label}
-                </label>
-              ))}
-            </div>
-          </section>
+                    className='flex-1 gap-1.5'
+                  >
+                    {option.value === 'APPROVE' ? (
+                      <IconCheck size={14} />
+                    ) : option.value === 'COMMENT' ? (
+                      <IconComment size={14} />
+                    ) : (
+                      <IconX size={14} />
+                    )}
+                    {option.label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </section>
 
-          {error ? <p className='gprv-review-composer-error'>{error}</p> : null}
-        </div>
+            {error ? <p className='text-sm text-destructive'>{error}</p> : null}
+          </div>
+        </ScrollArea>
 
-        <footer className='gprv-publish-footer'>
-          <button
+        <DialogFooter className='flex-row items-center justify-between gap-2 border-t bg-muted/30 px-4 py-3 sm:justify-between'>
+          <Button
             type='button'
-            className='gprv-review-composer-button gprv-review-composer-button-danger'
+            variant='ghost'
+            size='sm'
             onClick={onDiscardAll}
             disabled={isSubmitting || queue.length === 0}
           >
             Discard all
-          </button>
-          <div className='gprv-publish-footer-primary'>
-            <button
+          </Button>
+          <div className='flex gap-2'>
+            <Button
               type='button'
-              className='gprv-review-composer-button gprv-review-composer-button-secondary'
+              variant='outline'
+              size='sm'
               onClick={onClose}
               disabled={isSubmitting}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type='button'
-              className='gprv-review-composer-button gprv-review-composer-button-primary'
+              size='sm'
               onClick={() => void handlePublish()}
               disabled={isSubmitting || !canPublishReview(event, queue.length, body)}
             >
-              {isSubmitting ? 'Publishing…' : 'Publish review'}
-            </button>
+              {isSubmitting ? 'Publishing…' : 'Publish'}
+            </Button>
           </div>
-        </footer>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
