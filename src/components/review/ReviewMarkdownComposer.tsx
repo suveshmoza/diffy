@@ -11,7 +11,7 @@ import {
 
 import type { GitHubPullRequestRef } from '@/lib/github/api';
 import { cn } from '@/lib/utils';
-import { useReview } from '@/providers/ReviewContext';
+import { useReviewOptional } from '@/providers/ReviewContext';
 
 import { ReviewCommentBody } from './ReviewCommentBody';
 import {
@@ -79,8 +79,8 @@ export const ReviewMarkdownComposer = forwardRef(function ReviewMarkdownComposer
   }: ReviewMarkdownComposerProps,
   ref: Ref<HTMLTextAreaElement>,
 ) {
-  const { meta } = useReview();
-  const pullRequestRef = pullRequestRefProp ?? meta.pullRequestRef;
+  const reviewContext = useReviewOptional();
+  const pullRequestRef = pullRequestRefProp ?? reviewContext?.meta.pullRequestRef;
   const [mode, setMode] = useState<ComposerMode>('write');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const setTextareaRef = useCallback(

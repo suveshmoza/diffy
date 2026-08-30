@@ -56,8 +56,9 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   onCollapseAll,
 }: DiffOverlayHeaderProps) {
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
-  const { isBatchMode, queue, toggleBatchMode, openPublishDialog } = useReviewQueueContext();
+  const { isBatchMode, queue, startReview, stopReview, expandReviewDock } = useReviewQueueContext();
   const queuedCount = queue.length;
+  const stopReviewLabel = queuedCount > 0 ? 'Discard review' : 'Stop review';
   const { base, head } = pullRequest;
   const isRateLimitExhausted = rateLimit != null && rateLimit.remaining <= 0;
   const isStandalone = isStandaloneOverlay();
@@ -113,25 +114,27 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
             <div className='inline-flex items-center gap-1'>
               <Button
                 type='button'
-                variant={isBatchMode ? 'secondary' : 'outline'}
+                variant={isBatchMode ? 'destructive' : 'outline'}
                 size='sm'
-                onClick={toggleBatchMode}
+                onClick={isBatchMode ? stopReview : startReview}
                 aria-pressed={isBatchMode}
                 title={
                   isBatchMode
-                    ? 'Comments are collected into one review. Click to stop collecting.'
+                    ? queuedCount > 0
+                      ? 'Discard queued comments and stop reviewing'
+                      : 'Stop reviewing without publishing'
                     : 'Collect comments into a single review before publishing'
                 }
               >
                 <IconConvo />
-                {isBatchMode ? 'Reviewing' : 'Review'}
+                {isBatchMode ? stopReviewLabel : 'Review'}
               </Button>
               {isBatchMode ? (
                 <Button
                   type='button'
                   variant='default'
                   size='sm'
-                  onClick={openPublishDialog}
+                  onClick={expandReviewDock}
                   title={
                     queuedCount > 0
                       ? 'Review and publish queued comments'

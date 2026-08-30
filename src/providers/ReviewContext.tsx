@@ -62,3 +62,8 @@ export function useReview(): ReviewContextValue {
   }
   return context;
 }
+
+/** Like {@link useReview}, but returns null outside a provider instead of throwing. */
+export function useReviewOptional(): ReviewContextValue | null {
+  return use(ReviewContext);
+}

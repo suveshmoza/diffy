@@ -87,10 +87,10 @@ import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
 
 import { FileViewedCheckbox } from '../review/FileViewedCheckbox';
 import { OrphanedReviewCommentsBadge } from '../review/OrphanedReviewCommentsBadge';
-import { PublishReviewDialog } from '../review/PublishReviewDialog';
 import { QueuedCommentCard } from '../review/QueuedCommentCard';
 import { ReviewCommentComposer } from '../review/ReviewCommentComposer';
 import { ReviewCommentThread } from '../review/ReviewCommentThread';
+import { ReviewDock } from '../review/ReviewDock';
 import { DiffOverlayHeader } from './DiffOverlayHeader';
 import { FileTreePanel } from './FileTreePanel';
 
@@ -335,14 +335,16 @@ export function DiffOverlay({
   const {
     isBatchMode,
     queue,
-    isPublishDialogOpen,
-    setIsPublishDialogOpen,
+    isReviewDockExpanded,
+    expandReviewDock,
+    collapseReviewDock,
     handleQueueComment,
     handleRemoveQueued,
     handleEditQueued,
     handlePublishReview,
     handleDiscardQueue,
-    handleToggleBatchMode,
+    handleStartReview,
+    handleStopReview,
     handleCloseOverlay,
     withQueueConfirm,
   } = useReviewQueue({
@@ -363,9 +365,11 @@ export function DiffOverlay({
 
   const reviewQueueContextValue = useMemo<ReviewQueueContextValue>(
     () => ({
+      pullRequestRef: data.ref,
       isBatchMode,
       queue,
-      toggleBatchMode: handleToggleBatchMode,
+      startReview: handleStartReview,
+      stopReview: handleStopReview,
       queueComment: handleQueueComment,
       removeQueued: handleRemoveQueued,
       removeQueuedById: (queuedId: string) => {
@@ -377,25 +381,30 @@ export function DiffOverlay({
       editQueued: handleEditQueued,
       publishReview: handlePublishReview,
       discardQueue: handleDiscardQueue,
-      openPublishDialog: () => setIsPublishDialogOpen(true),
-      closePublishDialog: () => setIsPublishDialogOpen(false),
+      isReviewDockExpanded,
+      expandReviewDock,
+      collapseReviewDock,
     }),
     [
+      collapseReviewDock,
+      data.ref,
+      expandReviewDock,
       handleDiscardQueue,
       handleEditQueued,
       handlePublishReview,
       handleQueueComment,
       handleRemoveQueued,
-      handleToggleBatchMode,
+      handleStartReview,
+      handleStopReview,
       isBatchMode,
+      isReviewDockExpanded,
       queue,
-      setIsPublishDialogOpen,
     ],
   );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || isPublishDialogOpen) {
+      if (event.key !== 'Escape') {
         return;
       }
 
@@ -404,6 +413,22 @@ export function DiffOverlay({
         event.stopPropagation();
         event.stopImmediatePropagation();
         setLightboxImagePath(null);
+        return;
+      }
+
+      if (isReviewDockExpanded) {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLElement &&
+          (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        collapseReviewDock();
         return;
       }
 
@@ -429,7 +454,7 @@ export function DiffOverlay({
 
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [handleCloseOverlay, isPublishDialogOpen, lightboxImagePath]);
+  }, [collapseReviewDock, handleCloseOverlay, isReviewDockExpanded, lightboxImagePath]);
 
   const reviewCommentCountByPath = useMemo(() => {
     if (!codeViewItems) {
@@ -964,7 +989,6 @@ export function DiffOverlay({
               onCollapseAll={handleCollapseAll}
             />
 
-            {isPublishDialogOpen ? <PublishReviewDialog /> : null}
             {lightboxFile ? (
               <ImageDiffLightbox
                 key={lightboxFile.filename}
@@ -1041,66 +1065,69 @@ export function DiffOverlay({
                       )}
                     </aside>
 
-                    <div
-                      ref={codeViewHostRef}
-                      className='gprv-code-view-host relative h-full min-h-0 min-w-0 overflow-hidden'
-                    >
-                      {codeViewBuildError ? (
-                        <div className='flex h-full items-center justify-center p-6 text-center text-destructive'>
-                          {codeViewBuildError}
-                        </div>
-                      ) : codeViewItems && codeViewItems.items.length === 0 ? (
-                        <div className='flex h-full items-center justify-center p-6 text-center'>
-                          <div className='flex max-w-sm flex-col items-center gap-3'>
-                            <IconXSquircle
-                              size={48}
-                              className='text-muted-foreground'
-                            />
-                            <p className='text-sm font-medium text-foreground'>
-                              This pull request has no code changes.
-                            </p>
-                            <p className='text-sm text-muted-foreground'>
-                              The diff viewer requires at least one changed file.
-                            </p>
+                    <div className='flex min-h-0 min-w-0 flex-col overflow-hidden'>
+                      <div
+                        ref={codeViewHostRef}
+                        className='gprv-code-view-host relative min-h-0 min-w-0 flex-1 overflow-hidden'
+                      >
+                        {codeViewBuildError ? (
+                          <div className='flex h-full items-center justify-center p-6 text-center text-destructive'>
+                            {codeViewBuildError}
                           </div>
-                        </div>
-                      ) : isCodeViewMounted && codeViewItems ? (
-                        <ThemedCodeView<ReviewAnnotationMetadata>
-                          key={`codeview-${refreshGeneration}`}
-                          ref={viewerRef}
-                          containerRef={handleCodeViewContainer}
-                          initialItems={codeViewItems.items}
-                          className='gprv-code-view'
-                          style={codeViewStyle}
-                          renderAnnotation={renderReviewAnnotation}
-                          renderHeaderPrefix={renderHeaderPrefix}
-                          renderHeaderMetadata={renderReviewHeaderMetadata}
-                          options={codeViewOptionsWithInteractions ?? codeViewOptions}
-                          selectedLines={hoveredThreadSelection ?? selectedLines}
-                          onSelectedLinesChange={handleSelectedLinesChange}
-                        />
-                      ) : (
-                        <div className='flex h-full items-center justify-center p-6 text-center text-muted-foreground'>
-                          {isBuilding ? (
-                            'Building diff…'
-                          ) : (
-                            <div
-                              className='flex flex-col items-center gap-3'
-                              role='status'
-                              aria-live='polite'
-                              aria-label='Preparing diff viewer'
-                            >
-                              <IconSpinner
+                        ) : codeViewItems && codeViewItems.items.length === 0 ? (
+                          <div className='flex h-full items-center justify-center p-6 text-center'>
+                            <div className='flex max-w-sm flex-col items-center gap-3'>
+                              <IconXSquircle
                                 size={48}
-                                className='animate-spin text-muted-foreground'
+                                className='text-muted-foreground'
                               />
                               <p className='text-sm font-medium text-foreground'>
-                                Preparing diff viewer…
+                                This pull request has no code changes.
+                              </p>
+                              <p className='text-sm text-muted-foreground'>
+                                The diff viewer requires at least one changed file.
                               </p>
                             </div>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        ) : isCodeViewMounted && codeViewItems ? (
+                          <ThemedCodeView<ReviewAnnotationMetadata>
+                            key={`codeview-${refreshGeneration}`}
+                            ref={viewerRef}
+                            containerRef={handleCodeViewContainer}
+                            initialItems={codeViewItems.items}
+                            className='gprv-code-view'
+                            style={codeViewStyle}
+                            renderAnnotation={renderReviewAnnotation}
+                            renderHeaderPrefix={renderHeaderPrefix}
+                            renderHeaderMetadata={renderReviewHeaderMetadata}
+                            options={codeViewOptionsWithInteractions ?? codeViewOptions}
+                            selectedLines={hoveredThreadSelection ?? selectedLines}
+                            onSelectedLinesChange={handleSelectedLinesChange}
+                          />
+                        ) : (
+                          <div className='flex h-full items-center justify-center p-6 text-center text-muted-foreground'>
+                            {isBuilding ? (
+                              'Building diff…'
+                            ) : (
+                              <div
+                                className='flex flex-col items-center gap-3'
+                                role='status'
+                                aria-live='polite'
+                                aria-label='Preparing diff viewer'
+                              >
+                                <IconSpinner
+                                  size={48}
+                                  className='animate-spin text-muted-foreground'
+                                />
+                                <p className='text-sm font-medium text-foreground'>
+                                  Preparing diff viewer…
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {isBatchMode ? <ReviewDock /> : null}
                     </div>
                   </div>
                 </ReviewProvider>
