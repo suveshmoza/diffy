@@ -4,7 +4,6 @@ import { memo, useCallback, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
-import { renderGitHubCommentBody } from '@/lib/github/comments/markdown';
 import {
   formatReviewCommentHiddenLabel,
   isReviewCommentHidden,
@@ -19,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 import { useReview } from '@/providers/ReviewContext';
 
+import { ReviewCommentBody } from './ReviewCommentBody';
 import { ReviewCommentEditComposer } from './ReviewCommentEditComposer';
 import {
   reviewAvatarClassName,
@@ -290,9 +290,10 @@ const CommentReplySlot = memo(function CommentReplySlot({
               onSave={handleSaveEdit}
             />
           ) : (
-            <div className='flex flex-col text-sm text-foreground'>
-              {renderGitHubCommentBody(comment.body, { pullRequestRef })}
-            </div>
+            <ReviewCommentBody
+              body={comment.body}
+              pullRequestRef={pullRequestRef}
+            />
           )}
           {canReply && !isHidden && !isEditing ? (
             <Button

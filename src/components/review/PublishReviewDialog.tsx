@@ -14,8 +14,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { ReviewEvent } from '@/lib/github/review-write';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
-import { cn } from '@/lib/utils';
+import { useReview } from '@/providers/ReviewContext';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
+
+import { ReviewCommentBody } from './ReviewCommentBody';
+import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 const EVENT_OPTIONS: ReadonlyArray<{ value: ReviewEvent; label: string }> = [
   { value: 'COMMENT', label: 'Comment' },
@@ -43,6 +46,7 @@ export function PublishReviewDialog() {
     discardQueue: onDiscardAll,
     closePublishDialog: onClose,
   } = useReviewQueueContext();
+  const { meta } = useReview();
   const [event, setEvent] = useState<ReviewEvent>('COMMENT');
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -121,7 +125,12 @@ export function PublishReviewDialog() {
                           {formatSelectedLineRangeLabel(entry.range)}
                         </span>
                       </div>
-                      <p className='line-clamp-2 text-sm whitespace-pre-wrap'>{entry.body}</p>
+                      <ReviewCommentBody
+                        body={entry.body}
+                        pullRequestRef={meta.pullRequestRef}
+                        clamp
+                        className='mt-0'
+                      />
                       <Button
                         type='button'
                         variant='ghost'
@@ -146,16 +155,11 @@ export function PublishReviewDialog() {
 
             <section className='flex flex-col gap-2'>
               <Label htmlFor='publish-review-summary'>Summary (optional)</Label>
-              <textarea
+              <ReviewMarkdownComposer
                 ref={textareaRef}
                 id='publish-review-summary'
-                className={cn(
-                  'flex min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none',
-                  'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                )}
                 value={body}
-                onChange={(changeEvent) => setBody(changeEvent.target.value)}
+                onChange={setBody}
                 placeholder='Leave an overall comment'
                 rows={3}
                 disabled={isSubmitting}

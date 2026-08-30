@@ -2,7 +2,6 @@ import type { SelectedLineRange } from '@pierre/diffs';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { createImmediateReviewComment, GitHubReviewWriteError } from '@/lib/github/review-write';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
@@ -15,10 +14,10 @@ import {
   reviewCommentRowClassName,
   reviewComposerActionsClassName,
   reviewLineRangeClassName,
-  reviewTextareaClassName,
   reviewThreadCardClassName,
   reviewThreadShellClassName,
 } from './reviewComposerStyles';
+import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewCommentComposerProps = {
   path: string;
@@ -150,19 +149,18 @@ export function ReviewCommentComposer({
                 <strong className='text-sm font-semibold'>{viewerUser.login}</strong>
               </div>
             ) : null}
-            <Label className='mt-2 block w-full'>
-              <span className='sr-only'>Comment</span>
-              <textarea
+            <div className='mt-2 block w-full'>
+              <ReviewMarkdownComposer
                 ref={textareaRef}
-                className={reviewTextareaClassName}
                 value={body}
-                onChange={(event) => handleBodyChange(event.target.value)}
+                onChange={handleBodyChange}
                 onKeyDown={handleKeyDown}
                 placeholder='Leave a comment'
                 rows={3}
                 disabled={isSubmitting}
+                aria-label='Comment'
               />
-            </Label>
+            </div>
             {!hasToken ? (
               <p className='mt-2 text-xs text-muted-foreground'>
                 Add a GitHub token in the diffy popup to post comments.

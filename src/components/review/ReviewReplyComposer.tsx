@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { createReviewCommentReply, GitHubReviewWriteError } from '@/lib/github/review-write';
 import { cn } from '@/lib/utils';
@@ -12,8 +11,8 @@ import {
   reviewCommentContentClassName,
   reviewCommentRowClassName,
   reviewComposerActionsClassName,
-  reviewTextareaClassName,
 } from './reviewComposerStyles';
+import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewReplyComposerProps = {
   pullRequestRef: GitHubPullRequestRef;
@@ -32,11 +31,12 @@ export function ReviewReplyComposer({
 }: ReviewReplyComposerProps) {
   const { viewerUser, hasToken } = useGitHubAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = useCallback(async () => {
-    const trimmed = textareaRef.current?.value.trim() ?? '';
+    const trimmed = body.trim();
     if (!trimmed) {
       setError('Write a reply before submitting.');
       return;
@@ -65,7 +65,7 @@ export function ReviewReplyComposer({
     } finally {
       setIsSubmitting(false);
     }
-  }, [hasToken, inReplyToId, onSuccess, pullRequestRef]);
+  }, [body, hasToken, inReplyToId, onSuccess, pullRequestRef]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -114,18 +114,18 @@ export function ReviewReplyComposer({
               <strong className='text-sm font-semibold'>{viewerUser.login}</strong>
             </div>
           ) : null}
-          <Label className='mt-2 block w-full'>
-            <span className='sr-only'>Reply</span>
-            <textarea
+          <div className='mt-2 block w-full'>
+            <ReviewMarkdownComposer
               ref={textareaRef}
-              className={reviewTextareaClassName}
-              defaultValue=''
+              value={body}
+              onChange={setBody}
               onKeyDown={handleKeyDown}
               placeholder='Leave a reply'
               rows={3}
               disabled={isSubmitting}
+              aria-label='Reply'
             />
-          </Label>
+          </div>
           {!hasToken ? (
             <p className='mt-2 text-xs text-muted-foreground'>
               Add a GitHub token in the diffy popup to reply.
@@ -146,7 +146,7 @@ export function ReviewReplyComposer({
               type='button'
               size='sm'
               onClick={() => void handleSubmit()}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !body.trim()}
             >
               {isSubmitting ? 'Posting…' : 'Reply'}
             </Button>

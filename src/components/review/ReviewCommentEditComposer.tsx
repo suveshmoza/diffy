@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { GitHubReviewWriteError } from '@/lib/github/review-write';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 
-import { reviewComposerActionsClassName, reviewTextareaClassName } from './reviewComposerStyles';
+import { reviewComposerActionsClassName } from './reviewComposerStyles';
+import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewCommentEditComposerProps = {
   comment: GitHubPullRequestReviewComment;
@@ -81,19 +81,18 @@ export function ReviewCommentEditComposer({
 
   return (
     <div className='mt-1 grid gap-2'>
-      <Label className='mt-2 block w-full'>
-        <span className='sr-only'>Edit comment</span>
-        <textarea
+      <div className='mt-2 block w-full'>
+        <ReviewMarkdownComposer
           ref={textareaRef}
-          className={reviewTextareaClassName}
           value={body}
-          onChange={(event) => setBody(event.target.value)}
+          onChange={setBody}
           onKeyDown={handleKeyDown}
           placeholder='Edit comment'
           rows={3}
           disabled={isSubmitting}
+          aria-label='Edit comment'
         />
-      </Label>
+      </div>
       {!hasToken ? (
         <p className='text-xs text-muted-foreground'>
           Add a GitHub token in the diffy popup to edit comments.

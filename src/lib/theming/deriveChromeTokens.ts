@@ -23,19 +23,63 @@ export interface ChromeTokens {
 }
 
 const MIN_MUTED_RATIO = 4.5;
+const MIN_ACCENT_RATIO = 3;
 const DIFF_BORDER_MIX = 22;
 const DEFAULT_PRIMARY_DARK = '#2f81f7';
 const DEFAULT_PRIMARY_LIGHT = '#0969da';
 
+/** VS Code keys tried in order; focusBorder is last — often transparent or near-bg on Shiki themes. */
+const ACCENT_COLOR_KEYS = [
+  'textLink.foreground',
+  'textLink.activeForeground',
+  'activityBarBadge.background',
+  'button.background',
+  'charts.blue',
+  'terminal.ansiBlue',
+  'focusBorder',
+  'list.focusOutline',
+] as const;
+
 const cache = new WeakMap<ThemeLike, ChromeTokens | undefined>();
 
-function pickFirstColor(...candidates: Array<string | undefined>): string | undefined {
-  for (const candidate of candidates) {
-    if (candidate != null && candidate !== '') {
-      return candidate;
+function compositeOnBg(color: string | undefined, bg: string | undefined): string | undefined {
+  if (color == null || color === '') return undefined;
+  if (bg == null || bg === '') return color;
+  return colorUtils.compositeOverBg(color, bg) ?? color;
+}
+
+function meetsContrastOnBg(color: string, bg: string | undefined, minRatio: number): boolean {
+  if (bg == null) return true;
+  const bgL = colorUtils.relativeLuminance(bg);
+  const colorL = colorUtils.relativeLuminance(color);
+  if (bgL == null || colorL == null) return false;
+  return colorUtils.contrastRatio(bgL, colorL) >= minRatio;
+}
+
+function pickAccentColor(
+  rawColors: Record<string, string | undefined>,
+  bg: string | undefined,
+  surfaceIsDark: boolean,
+): string {
+  for (const key of ACCENT_COLOR_KEYS) {
+    const raw = rawColors[key];
+    if (raw == null || raw === '' || colorUtils.isFullyTransparent(raw)) {
+      continue;
+    }
+    const composited = compositeOnBg(raw, bg) ?? raw;
+    if (meetsContrastOnBg(composited, bg, MIN_ACCENT_RATIO)) {
+      return composited;
     }
   }
-  return undefined;
+  return surfaceIsDark ? DEFAULT_PRIMARY_DARK : DEFAULT_PRIMARY_LIGHT;
+}
+
+function pickForegroundOnBg(
+  bg: string | undefined,
+  ...candidates: Array<string | undefined>
+): string | undefined {
+  const composited = candidates.map((candidate) => compositeOnBg(candidate, bg) ?? candidate);
+  return colorUtils.pickReadableForeground(bg, composited);
 }
 
 function pickReadableMuted(
@@ -43,31 +87,23 @@ function pickReadableMuted(
   mutedCandidate: string | undefined,
 ): string | undefined {
   if (mutedCandidate == null || mutedCandidate === '') return undefined;
-  const composited = colorUtils.compositeOverBg(mutedCandidate, bg) ?? mutedCandidate;
-  const compositedL = colorUtils.relativeLuminance(composited);
-  const bgL = colorUtils.relativeLuminance(bg);
-  if (compositedL == null || bgL == null) {
-    return mutedCandidate;
+  const composited = compositeOnBg(mutedCandidate, bg) ?? mutedCandidate;
+  if (!meetsContrastOnBg(composited, bg, MIN_MUTED_RATIO)) {
+    return undefined;
   }
-  return colorUtils.contrastRatio(bgL, compositedL) >= MIN_MUTED_RATIO ? mutedCandidate : undefined;
+  return composited;
 }
 
 function pickPrimaryColors(
   rawColors: Record<string, string | undefined>,
+  bg: string | undefined,
   surfaceIsDark: boolean,
 ): { primary: string; primaryForeground: string } {
-  const primary =
-    pickFirstColor(
-      rawColors['focusBorder'],
-      rawColors['textLink.foreground'],
-      rawColors['textLink.activeForeground'],
-      rawColors['button.background'],
-      rawColors['activityBarBadge.background'],
-    ) ?? (surfaceIsDark ? DEFAULT_PRIMARY_DARK : DEFAULT_PRIMARY_LIGHT);
+  const primary = pickAccentColor(rawColors, bg, surfaceIsDark);
 
   const primaryForeground =
     colorUtils.pickReadableForeground(primary, ['#ffffff', '#f0f6fc', '#0d1117', '#010409']) ??
-    (surfaceIsDark ? '#ffffff' : '#ffffff');
+    '#ffffff';
 
   return { primary, primaryForeground };
 }
@@ -80,11 +116,12 @@ export function deriveChromeTokens(theme: ThemeLike): ChromeTokens | undefined {
   const resolved = normalizeThemeColors(theme).colors ?? {};
 
   const sidebarBg = resolved['sideBar.background'];
-  const fg = colorUtils.pickReadableForeground(sidebarBg, [
+  const fg = pickForegroundOnBg(
+    sidebarBg,
     rawColors['sideBar.foreground'],
     rawColors['editor.foreground'],
     theme.fg,
-  ]);
+  );
   if (fg == null) {
     cache.set(theme, undefined);
     return undefined;
@@ -103,9 +140,8 @@ export function deriveChromeTokens(theme: ThemeLike): ChromeTokens | undefined {
       ? borderOpaque
       : `color-mix(in srgb, ${editorFg} ${DIFF_BORDER_MIX}%, ${editorBg})`;
 
-  const { primary, primaryForeground } = pickPrimaryColors(rawColors, surfaceIsDark);
-  const ring =
-    pickFirstColor(rawColors['focusBorder'], rawColors['list.focusOutline'], primary) ?? primary;
+  const { primary, primaryForeground } = pickPrimaryColors(rawColors, sidebarBg, surfaceIsDark);
+  const ring = primary;
 
   const tokens = Object.freeze({
     additionFg: surfaceIsDark ? '#34d399' : '#047857',

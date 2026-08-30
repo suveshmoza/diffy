@@ -53,17 +53,26 @@ export function SegmentedControl<T extends string | number>({
           aria-label={showLabels ? undefined : option.label}
           title={option.label}
           size='default'
-          className={cn(!showLabels && 'px-2')}
+          className={cn(
+            'not-aria-pressed:bg-transparent not-aria-pressed:hover:bg-muted/70 not-aria-pressed:hover:text-foreground',
+            'aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm',
+            'aria-pressed:hover:bg-background aria-pressed:hover:text-foreground',
+            !showLabels && 'px-2',
+          )}
         >
-          {option.icon ? (
-            <span
-              className='inline-flex shrink-0'
-              aria-hidden='true'
-            >
-              {option.icon}
+          {option.icon || showLabels ? (
+            <span className='inline-flex items-center gap-1.5'>
+              {option.icon ? (
+                <span
+                  className='inline-flex shrink-0'
+                  aria-hidden='true'
+                >
+                  {option.icon}
+                </span>
+              ) : null}
+              {showLabels ? <span>{option.label}</span> : null}
             </span>
           ) : null}
-          {showLabels ? <span>{option.label}</span> : null}
         </ToggleGroupItem>
       ))}
     </ToggleGroup>

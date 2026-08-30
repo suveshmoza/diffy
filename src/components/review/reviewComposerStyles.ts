@@ -22,3 +22,9 @@ export const reviewCommentContentClassName = 'min-w-0 max-w-full flex-1';
 export const reviewLineRangeClassName = 'mb-2.5 text-xs font-semibold text-foreground/65';
 
 export const reviewComposerActionsClassName = 'mt-2.5 flex flex-wrap justify-end gap-2';
+
+export const reviewComposerToolbarClassName = 'flex items-center';
+
+export const reviewPreviewPaneClassName = cn(
+  'flex min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm',
+);

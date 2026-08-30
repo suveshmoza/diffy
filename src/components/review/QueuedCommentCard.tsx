@@ -14,13 +14,14 @@ import { cn } from '@/lib/utils';
 import { useReview } from '@/providers/ReviewContext';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 
+import { ReviewCommentBody } from './ReviewCommentBody';
 import {
   reviewComposerActionsClassName,
   reviewLineRangeClassName,
-  reviewTextareaClassName,
   reviewThreadCardClassName,
   reviewThreadShellClassName,
 } from './reviewComposerStyles';
+import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type QueuedCommentCardProps = {
   queuedId: string;
@@ -31,7 +32,7 @@ type QueuedCommentCardProps = {
 
 export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedCommentCardProps) {
   const { removeQueued, editQueued } = useReviewQueueContext();
-  const { actions } = useReview();
+  const { actions, meta } = useReview();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(body);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -121,11 +122,10 @@ export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedComme
         </div>
         {isEditing ? (
           <div className='flex flex-col gap-2'>
-            <textarea
+            <ReviewMarkdownComposer
               ref={editRef}
-              className={reviewTextareaClassName}
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={setDraft}
               onKeyDown={handleKeyDown}
               rows={3}
             />
@@ -149,7 +149,11 @@ export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedComme
             </div>
           </div>
         ) : (
-          <p className='text-sm leading-snug whitespace-pre-wrap wrap-break-word'>{body}</p>
+          <ReviewCommentBody
+            body={body}
+            pullRequestRef={meta.pullRequestRef}
+            className='mt-0'
+          />
         )}
       </div>
     </div>
