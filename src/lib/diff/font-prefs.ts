@@ -22,13 +22,36 @@ export type TreeFontPreference = FontPreference<TreeFontPreset>;
 export const DEFAULT_CODE_FONT: CodeFontPreference = { preset: 'system' };
 export const DEFAULT_TREE_FONT: TreeFontPreference = { preset: 'open-sans' };
 
-export const CODE_FONT_SIZES = [12, 13, 14, 16] as const;
-export type CodeFontSize = (typeof CODE_FONT_SIZES)[number];
-export const DEFAULT_CODE_FONT_SIZE: CodeFontSize = 13;
+export const MIN_CODE_FONT_SIZE = 8;
+export const MAX_CODE_FONT_SIZE = 32;
+export type CodeFontSize = number;
+export const DEFAULT_CODE_FONT_SIZE = 13;
 
-export const CODE_LINE_HEIGHTS = [18, 20, 22, 24] as const;
-export type CodeLineHeight = (typeof CODE_LINE_HEIGHTS)[number];
-export const DEFAULT_CODE_LINE_HEIGHT: CodeLineHeight = 20;
+export const MIN_CODE_LINE_HEIGHT = 12;
+export const MAX_CODE_LINE_HEIGHT = 48;
+export type CodeLineHeight = number;
+export const DEFAULT_CODE_LINE_HEIGHT = 20;
+
+function clampCodeMetric(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function parseCodeMetric(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    const parsed = Number.parseInt(trimmed, 10);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
 
 export const CODE_FONT_FEATURE_PRESETS = ['normal', 'ligatures', 'custom'] as const;
 export type CodeFontFeaturesPreset = (typeof CODE_FONT_FEATURE_PRESETS)[number];
@@ -149,15 +172,19 @@ export function normalizeFontPreference<TPreset extends string>(
 }
 
 export function normalizeCodeFontSize(value: unknown): CodeFontSize {
-  return typeof value === 'number' && (CODE_FONT_SIZES as readonly number[]).includes(value)
-    ? (value as CodeFontSize)
-    : DEFAULT_CODE_FONT_SIZE;
+  const parsed = parseCodeMetric(value);
+  if (parsed == null) {
+    return DEFAULT_CODE_FONT_SIZE;
+  }
+  return clampCodeMetric(parsed, MIN_CODE_FONT_SIZE, MAX_CODE_FONT_SIZE);
 }
 
 export function normalizeCodeLineHeight(value: unknown): CodeLineHeight {
-  return typeof value === 'number' && (CODE_LINE_HEIGHTS as readonly number[]).includes(value)
-    ? (value as CodeLineHeight)
-    : DEFAULT_CODE_LINE_HEIGHT;
+  const parsed = parseCodeMetric(value);
+  if (parsed == null) {
+    return DEFAULT_CODE_LINE_HEIGHT;
+  }
+  return clampCodeMetric(parsed, MIN_CODE_LINE_HEIGHT, MAX_CODE_LINE_HEIGHT);
 }
 
 export function normalizeCodeFontFeatures(value: unknown): CodeFontFeaturesPreference {

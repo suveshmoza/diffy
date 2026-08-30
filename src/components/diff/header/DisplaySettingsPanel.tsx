@@ -8,7 +8,7 @@ import {
   IconType,
 } from '@pierre/icons';
 import type { ColorMode } from '@pierre/theming';
-import { useState, type KeyboardEvent } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,12 @@ import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import {
   CODE_FONT_FEATURE_OPTIONS,
   CODE_FONT_OPTIONS,
+  MAX_CODE_FONT_SIZE,
+  MAX_CODE_LINE_HEIGHT,
+  MIN_CODE_FONT_SIZE,
+  MIN_CODE_LINE_HEIGHT,
+  normalizeCodeFontSize,
+  normalizeCodeLineHeight,
   sanitizeFontFamilyName,
   sanitizeFontFeatures,
   TREE_FONT_OPTIONS,
@@ -35,12 +41,7 @@ import { diffyThemeCatalog } from '@/lib/theming/themeCatalog';
 import { cn } from '@/lib/utils';
 import { useThemeSelection } from '@/providers/theming/useThemeSelection';
 
-import {
-  CODE_FONT_SIZE_OPTIONS,
-  CODE_LINE_HEIGHT_OPTIONS,
-  DIFF_INDICATOR_OPTIONS,
-  IMAGE_COMPARE_MODE_OPTIONS,
-} from './displaySettingsOptions';
+import { DIFF_INDICATOR_OPTIONS, IMAGE_COMPARE_MODE_OPTIONS } from './displaySettingsOptions';
 import {
   OVERFLOW_MENU_ICON,
   OVERFLOW_MENU_SECTION_ICON,
@@ -341,19 +342,25 @@ export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
             ) : null}
 
             <OverflowMenuSettingsRow label='Size'>
-              <SegmentedControl
+              <CodeMetricInput
+                id={`${id}-font-size`}
                 ariaLabel='Code font size'
-                options={CODE_FONT_SIZE_OPTIONS}
                 value={displayPrefs.codeFontSize}
+                min={MIN_CODE_FONT_SIZE}
+                max={MAX_CODE_FONT_SIZE}
+                normalize={normalizeCodeFontSize}
                 onChange={(codeFontSize) => onChange({ codeFontSize })}
               />
             </OverflowMenuSettingsRow>
 
             <OverflowMenuSettingsRow label='Line height'>
-              <SegmentedControl
+              <CodeMetricInput
+                id={`${id}-line-height`}
                 ariaLabel='Code line height'
-                options={CODE_LINE_HEIGHT_OPTIONS}
                 value={displayPrefs.codeLineHeight}
+                min={MIN_CODE_LINE_HEIGHT}
+                max={MAX_CODE_LINE_HEIGHT}
+                normalize={normalizeCodeLineHeight}
                 onChange={(codeLineHeight) => onChange({ codeLineHeight })}
               />
             </OverflowMenuSettingsRow>
@@ -571,6 +578,66 @@ function CustomFontInput({
         onBlur={onCommit}
         onKeyDown={handleKeyDown}
       />
+    </div>
+  );
+}
+
+type CodeMetricInputProps = {
+  id: string;
+  ariaLabel: string;
+  value: number;
+  min: number;
+  max: number;
+  normalize: (value: unknown) => number;
+  onChange: (value: number) => void;
+};
+
+function CodeMetricInput({
+  id,
+  ariaLabel,
+  value,
+  min,
+  max,
+  normalize,
+  onChange,
+}: CodeMetricInputProps) {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commit = () => {
+    const normalized = normalize(draft);
+    setDraft(String(normalized));
+    if (normalized !== value) {
+      onChange(normalized);
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      commit();
+    }
+  };
+
+  return (
+    <div className='flex items-center gap-1.5'>
+      <Input
+        id={id}
+        type='number'
+        inputMode='numeric'
+        min={min}
+        max={max}
+        value={draft}
+        aria-label={ariaLabel}
+        className='h-8 w-16 text-sm'
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={handleKeyDown}
+      />
+      <span className='text-xs text-muted-foreground'>px</span>
     </div>
   );
 }
