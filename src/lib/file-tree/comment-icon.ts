@@ -1,4 +1,4 @@
-const COMMENT_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 9h8"/><path d="M8 13h6"/><path d="M9 18h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-3l-3 3l-3 -3"/></svg>`;
+const COMMENT_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="black"><path d="M8 1.5a6.5 6.5 0 0 0-4.596 11.096.75.75 0 0 1 0 1.06l-.843.844H8a6.5 6.5 0 1 0 0-13M0 8a8 8 0 1 1 8 8H.75a.75.75 0 0 1-.53-1.28l1.618-1.618A7.97 7.97 0 0 1 0 8"/></svg>`;
 
 export const FILE_TREE_COMMENT_ICON_MASK_URL = `url("data:image/svg+xml,${encodeURIComponent(
   COMMENT_ICON_SVG,
