@@ -4,7 +4,6 @@ import { IconSearch, IconX } from '@tabler/icons-react';
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -23,7 +22,9 @@ import {
 } from '@/lib/file-tree/comment-icon';
 import { createFileTreeInput } from '@/lib/file-tree/input';
 import type { GitHubPullRequest, GitHubPullRequestFile } from '@/lib/github/api';
+import type { ViewedProgress } from '@/lib/review/viewed-files';
 
+import { ReviewProgress } from '../review/ReviewProgress';
 import { SidebarPrInfo } from './SidebarPrInfo';
 import { SidebarPrStats } from './SidebarPrStats';
 
@@ -37,6 +38,8 @@ type FileTreePanelProps = {
   onSelectPath: (path: string) => void;
   pullRequest: GitHubPullRequest;
   reviewCommentCount: number;
+  reviewProgress?: ViewedProgress | null;
+  onJumpToNextUnviewed?: () => void;
 };
 
 const FILE_TREE_COMMENT_BADGE_CSS = `
@@ -172,6 +175,8 @@ export function FileTreePanel({
   onSelectPath,
   pullRequest,
   reviewCommentCount,
+  reviewProgress,
+  onJumpToNextUnviewed,
 }: FileTreePanelProps) {
   const treeThemeStyles = useTreeThemeStyles();
   const treeInput = useMemo(
@@ -182,14 +187,10 @@ export function FileTreePanel({
     () => `${FILE_TREE_PANEL_BASE_CSS}\n${buildCommentBadgeCountCss(reviewCommentCountByPath)}`,
     [reviewCommentCountByPath],
   );
-  const annotationsByPathRef = useRef(treeInput.annotationsByPath);
   const pathsSignatureRef = useRef(treeInput.pathsSignature);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const keepSearchFocusRef = useRef(false);
   const isProgrammaticSelectionRef = useRef(false);
-  const searchQueryRef = useRef(searchQuery);
-  searchQueryRef.current = searchQuery;
   const handleSelectionChange = useCallback(
     (selectedPaths: readonly string[]) => {
       if (isProgrammaticSelectionRef.current) {
@@ -205,14 +206,21 @@ export function FileTreePanel({
   );
 
   const handleSearchQueryChange = useCallback((query: string) => {
-    keepSearchFocusRef.current = document.activeElement === searchInputRef.current;
+    const shouldKeepFocus = document.activeElement === searchInputRef.current;
     setSearchQuery(query);
+    if (shouldKeepFocus) {
+      queueMicrotask(() => {
+        searchInputRef.current?.focus({ preventScroll: true });
+      });
+    }
   }, []);
-  annotationsByPathRef.current = treeInput.annotationsByPath;
 
-  const renderRowDecoration = useCallback<FileTreeRowDecorationRenderer>(({ item }) => {
-    return annotationsByPathRef.current.get(item.path) ?? null;
-  }, []);
+  const renderRowDecoration = useCallback<FileTreeRowDecorationRenderer>(
+    ({ item }) => {
+      return treeInput.annotationsByPath.get(item.path) ?? null;
+    },
+    [treeInput.annotationsByPath],
+  );
 
   const { model } = useFileTree({
     preparedInput: treeInput.preparedInput,
@@ -239,24 +247,13 @@ export function FileTreePanel({
     }
   }, [model, searchQuery]);
 
-  // Pierre auto-focuses a hidden internal search input when search opens.
-  useLayoutEffect(() => {
-    if (!keepSearchFocusRef.current) {
-      return;
-    }
-
-    keepSearchFocusRef.current = false;
-    searchInputRef.current?.focus({ preventScroll: true });
-  }, [searchQuery]);
-
   useEffect(() => {
     return model.subscribe(() => {
-      const query = searchQueryRef.current;
-      if (query && model.getSearchValue() !== query) {
-        model.setSearch(query);
+      if (searchQuery && model.getSearchValue() !== searchQuery) {
+        model.setSearch(searchQuery);
       }
     });
-  }, [model]);
+  }, [model, searchQuery]);
 
   useEffect(() => {
     if (pathsSignatureRef.current === treeInput.pathsSignature) {
@@ -308,10 +305,21 @@ export function FileTreePanel({
       className='gprv-tree-panel'
       style={treeThemeStyles}
     >
-      <SidebarPrStats
-        pullRequest={pullRequest}
-        reviewCommentCount={reviewCommentCount}
-      />
+      <div className='gprv-tree-panel-top'>
+        <SidebarPrStats
+          pullRequest={pullRequest}
+          reviewCommentCount={reviewCommentCount}
+        />
+        {reviewProgress && onJumpToNextUnviewed ? (
+          <div className='gprv-tree-review-progress'>
+            <ReviewProgress
+              viewed={reviewProgress.viewed}
+              total={reviewProgress.total}
+              onJumpToNextUnviewed={onJumpToNextUnviewed}
+            />
+          </div>
+        ) : null}
+      </div>
       <FileTreeSearchHeader
         inputRef={searchInputRef}
         matchingPaths={search.matchingPaths}

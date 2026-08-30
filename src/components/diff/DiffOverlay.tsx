@@ -134,8 +134,13 @@ export function DiffOverlay({
     [data.ref],
   );
 
-  selectedLinesRef.current = selectedLines;
-  hoveredThreadSelectionRef.current = hoveredThreadSelection;
+  useEffect(() => {
+    selectedLinesRef.current = selectedLines;
+  }, [selectedLines]);
+
+  useEffect(() => {
+    hoveredThreadSelectionRef.current = hoveredThreadSelection;
+  }, [hoveredThreadSelection]);
 
   const orderedPaths = useMemo(() => data.files.map((file) => file.filename), [data.files]);
   const imageFiles = useMemo(
@@ -424,24 +429,6 @@ export function DiffOverlay({
     },
   );
 
-  const handleToggleItemCollapsed = useStableCallback((itemId: string) => {
-    const viewer = viewerRef.current;
-    const item = viewer?.getItem(itemId);
-    if (!viewer || !item) {
-      return;
-    }
-
-    viewer.updateItem({
-      ...item,
-      collapsed: !item.collapsed,
-      version: item.version != null ? item.version + 1 : 1,
-    });
-
-    // Keep the allCollapsed flag in sync after a single-item toggle.
-    // Expanding any file means not-all-collapsed; only scan when collapsing.
-    setAllCollapsed(item.collapsed ? false : computeAllCollapsed());
-  });
-
   const codeViewOptionsWithInteractions =
     useMemo((): CodeViewOptions<ReviewAnnotationMetadata> | null => {
       if (!codeViewOptions) {
@@ -457,9 +444,11 @@ export function DiffOverlay({
       };
     }, [codeViewOptions, handleGutterUtilityClick]);
 
-  orphanedThreadsByItemIdRef.current = codeViewItems?.orphanedReviewThreadsByItemId as
-    | ReadonlyMap<string, ReviewThreadMetadata[]>
-    | undefined;
+  useEffect(() => {
+    orphanedThreadsByItemIdRef.current = codeViewItems?.orphanedReviewThreadsByItemId as
+      | ReadonlyMap<string, ReviewThreadMetadata[]>
+      | undefined;
+  }, [codeViewItems?.orphanedReviewThreadsByItemId]);
 
   useEffect(() => {
     if (!isCodeViewMounted) {
@@ -487,7 +476,7 @@ export function DiffOverlay({
       window.clearTimeout(delayedKick);
       window.removeEventListener(OVERLAY_LAYOUT_KICK_EVENT, onLayoutKick);
     };
-  }, [isCodeViewMounted, codeViewItems]);
+  }, [isCodeViewMounted]);
 
   const handleThreadHighlight = useStableCallback((selection: CodeViewLineSelection) => {
     setHoveredThreadSelection(selection);
@@ -554,6 +543,24 @@ export function DiffOverlay({
 
   const [allCollapsed, setAllCollapsed] = useState(false);
 
+  const handleToggleItemCollapsed = useStableCallback((itemId: string) => {
+    const viewer = viewerRef.current;
+    const item = viewer?.getItem(itemId);
+    if (!viewer || !item) {
+      return;
+    }
+
+    viewer.updateItem({
+      ...item,
+      collapsed: !item.collapsed,
+      version: item.version != null ? item.version + 1 : 1,
+    });
+
+    // Keep the allCollapsed flag in sync after a single-item toggle.
+    // Expanding any file means not-all-collapsed; only scan when collapsing.
+    setAllCollapsed(item.collapsed ? false : computeAllCollapsed());
+  });
+
   const handleCollapseAll = useCallback(() => {
     if (!codeViewItems) {
       return;
@@ -564,7 +571,7 @@ export function DiffOverlay({
     }
 
     setAllCollapsed(computeAllCollapsed());
-  }, [codeViewItems, computeAllCollapsed, setItemCollapsed]);
+  }, [codeViewItems, computeAllCollapsed, setItemCollapsed, setAllCollapsed]);
 
   const handleExpandAll = useCallback(() => {
     if (!codeViewItems) {
@@ -576,7 +583,7 @@ export function DiffOverlay({
     }
 
     setAllCollapsed(computeAllCollapsed());
-  }, [codeViewItems, computeAllCollapsed, setItemCollapsed]);
+  }, [codeViewItems, computeAllCollapsed, setItemCollapsed, setAllCollapsed]);
 
   const handleToggleViewed = useCallback(
     (path: string, next: boolean) => {
@@ -591,7 +598,7 @@ export function DiffOverlay({
 
       setAllCollapsed(computeAllCollapsed());
     },
-    [codeViewItems, computeAllCollapsed, setItemCollapsed, viewedFiles],
+    [codeViewItems, computeAllCollapsed, setItemCollapsed, setAllCollapsed, viewedFiles],
   );
 
   const didInitialViewedCollapseRef = useRef(false);
@@ -624,6 +631,7 @@ export function DiffOverlay({
     viewedFiles.viewedByPath,
     setItemCollapsed,
     computeAllCollapsed,
+    setAllCollapsed,
   ]);
 
   const handleJumpToNextUnviewed = useCallback(() => {
@@ -683,7 +691,9 @@ export function DiffOverlay({
     [closeSidebar, codeViewItems, data.pullRequest, data.ref],
   );
 
-  handleTreeSelectRef.current = handleTreeSelect;
+  useEffect(() => {
+    handleTreeSelectRef.current = handleTreeSelect;
+  }, [handleTreeSelect]);
 
   const handleSelectedLinesChange = useStableCallback((selection: CodeViewLineSelection | null) => {
     const viewer = viewerRef.current;
@@ -926,8 +936,6 @@ export function DiffOverlay({
                 ? formatViewedFilesError(viewedFiles.error)
                 : null
             }
-            reviewProgress={viewedFiles.hasToken ? viewedFiles.progress : null}
-            onJumpToNextUnviewed={handleJumpToNextUnviewed}
             canReview={viewedFiles.hasToken}
             onDiffLayoutChange={updateDiffLayout}
             onDisplayPrefsChange={updateDisplayPrefs}
@@ -990,6 +998,8 @@ export function DiffOverlay({
                         onSelectPath={handleTreeSelect}
                         pullRequest={data.pullRequest}
                         reviewCommentCount={data.reviewComments.length}
+                        reviewProgress={viewedFiles.hasToken ? viewedFiles.progress : null}
+                        onJumpToNextUnviewed={handleJumpToNextUnviewed}
                       />
                     ) : (
                       <div className='gprv-state'>
