@@ -1,5 +1,6 @@
-import { IconGhost2, IconAlertTriangle } from '@tabler/icons-react';
+import { IconCiWarning } from '@pierre/icons';
 
+import { IconGhost } from '@/components/icons/Ghost';
 import { isGitHubRateLimitError } from '@/lib/github/api';
 
 import { ChromeModal } from './ChromeModal';
@@ -21,15 +22,13 @@ export function ErrorOverlay({ message, onRetry, onClose }: ErrorOverlayProps) {
       <div className='gprv-modal-body'>
         <div className='gprv-error-panel'>
           {isRateLimit ? (
-            <IconAlertTriangle
+            <IconCiWarning
               size={128}
-              stroke={2}
               color='var(--gprv-danger)'
             />
           ) : (
-            <IconGhost2
+            <IconGhost
               size={128}
-              stroke={2}
               color='var(--gprv-error)'
             />
           )}

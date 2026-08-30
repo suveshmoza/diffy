@@ -1,14 +1,8 @@
-import {
-  IconAlertCircle,
-  IconAlertTriangle,
-  IconCircleCheck,
-  IconLoader,
-  IconLoader2,
-  IconUser,
-} from '@tabler/icons-react';
+import { IconCheckCircle, IconCiWarning, IconInfo, IconPerson } from '@pierre/icons';
 import { createRoot } from 'react-dom/client';
 
 import logoUrl from '@/assets/logo.png';
+import { IconSpinner } from '@/components/icons/Spinner';
 import { usePopup } from '@/hooks/use-popup';
 import {
   FINE_GRAINED_WARNING_DETAIL,
@@ -24,9 +18,8 @@ function ViewedFilesTokenHint() {
       role='note'
       title={FINE_GRAINED_WARNING_DETAIL}
     >
-      <IconAlertTriangle
+      <IconCiWarning
         size={14}
-        stroke={2}
         aria-hidden
       />
       <span>{FINE_GRAINED_WARNING_SUMMARY}</span>
@@ -60,10 +53,9 @@ function PopupApp() {
           role='status'
           aria-live='polite'
         >
-          <IconLoader
+          <IconSpinner
             className='popup-spinner'
             size={28}
-            stroke={2}
           />
           <p className='status-text'>Loading&hellip;</p>
         </section>
@@ -82,10 +74,7 @@ function PopupApp() {
               className='error-banner'
               role='alert'
             >
-              <IconAlertCircle
-                size={16}
-                stroke={2}
-              />
+              <IconInfo size={16} />
               <span>{state.message}</span>
             </div>
           )}
@@ -114,10 +103,9 @@ function PopupApp() {
                 disabled={state.status === 'validating'}
               >
                 {state.status === 'validating' ? (
-                  <IconLoader2
+                  <IconSpinner
                     className='popup-spinner'
                     size={20}
-                    stroke={2}
                   />
                 ) : (
                   'Save'
@@ -135,10 +123,7 @@ function PopupApp() {
           <div className='card-header'>
             <h2>GitHub token</h2>
             <span className='badge badge-saved'>
-              <IconCircleCheck
-                size={12}
-                stroke={2}
-              />
+              <IconCheckCircle size={12} />
               Verified
             </span>
           </div>
@@ -155,10 +140,7 @@ function PopupApp() {
                 />
               ) : (
                 <div className='viewer-avatar viewer-avatar-fallback'>
-                  <IconUser
-                    size={18}
-                    stroke={2}
-                  />
+                  <IconPerson size={18} />
                 </div>
               )}
               <span className='viewer-login'>@{state.viewer.login}</span>

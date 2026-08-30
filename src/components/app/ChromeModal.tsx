@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 
 import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
+import { cn } from '@/lib/utils';
 import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
 import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
 
@@ -28,7 +29,7 @@ export function ChromeModal({ title, children, onClose }: ChromeModalProps) {
         onClick={onClose}
       />
       <section
-        className='gprv-modal'
+        className={cn('gprv-modal', colorScheme === 'dark' && 'dark')}
         style={modalStyle}
         role='dialog'
         aria-modal='true'
