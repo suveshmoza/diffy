@@ -1,4 +1,4 @@
-import { IconConvo, IconSidebarLeft, IconX } from '@pierre/icons';
+import { IconConvo, IconSidebarLeft, IconSidebarLeftOpen, IconX } from '@pierre/icons';
 import { memo, useCallback } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -82,11 +82,11 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           size='icon-sm'
           type='button'
           onClick={toggleSidebar}
-          aria-label={isSidebarCollapsed ? 'Show file list' : 'Hide file list'}
+          aria-label='Toggle Sidebar'
           aria-pressed={!isSidebarCollapsed}
-          title={isSidebarCollapsed ? 'Show files' : 'Hide files'}
+          title='Toggle Sidebar'
         >
-          <IconSidebarLeft />
+          {isSidebarCollapsed ? <IconSidebarLeftOpen /> : <IconSidebarLeft />}
         </Button>
 
         <div className='flex min-w-0 flex-1 flex-col justify-center gap-0.5'>
