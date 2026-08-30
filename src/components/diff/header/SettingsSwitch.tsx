@@ -1,3 +1,5 @@
+import { Switch } from '@/components/ui/switch';
+
 type SettingsSwitchProps = {
   checked: boolean;
   onChange: (checked: boolean) => void;
@@ -6,22 +8,11 @@ type SettingsSwitchProps = {
 
 export function SettingsSwitch({ checked, onChange, label }: SettingsSwitchProps) {
   return (
-    <button
-      type='button'
-      role='switch'
-      className='gprv-settings-switch'
-      data-checked={checked ? '' : undefined}
-      aria-checked={checked}
+    <Switch
+      checked={checked}
+      onCheckedChange={onChange}
       aria-label={label}
       title={label}
-      onClick={() => onChange(!checked)}
-    >
-      <span
-        className='gprv-settings-switch-track'
-        aria-hidden='true'
-      >
-        <span className='gprv-settings-switch-thumb' />
-      </span>
-    </button>
+    />
   );
 }

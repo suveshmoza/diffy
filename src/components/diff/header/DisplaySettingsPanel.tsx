@@ -1,28 +1,38 @@
-import type { ColorMode } from '@pierre/theming';
 import {
-  IconChevronLeft,
-  IconCode,
-  IconDeviceDesktop,
-  IconFolder,
-  IconMoon,
-  IconSun,
-  IconTypography,
-} from '@tabler/icons-react';
-import { useEffect, useState, type KeyboardEvent } from 'react';
+  IconColorAuto,
+  IconColorDark,
+  IconColorLight,
+  IconImage,
+  IconListUnordered,
+  IconThemes,
+  IconType,
+} from '@pierre/icons';
+import type { ColorMode } from '@pierre/theming';
+import { useState, type KeyboardEvent } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import {
   CODE_FONT_FEATURE_OPTIONS,
   CODE_FONT_OPTIONS,
-  getCodeFontFeaturesLabel,
-  getCodeFontLabel,
-  getTreeFontLabel,
   sanitizeFontFamilyName,
   sanitizeFontFeatures,
   TREE_FONT_OPTIONS,
   type CodeFontFeaturesPreset,
+  type CodeFontPreset,
+  type TreeFontPreset,
 } from '@/lib/diff/font-prefs';
 import { diffyThemeCatalog } from '@/lib/theming/themeCatalog';
+import { cn } from '@/lib/utils';
 import { useThemeSelection } from '@/providers/theming/useThemeSelection';
 
 import {
@@ -31,62 +41,75 @@ import {
   DIFF_INDICATOR_OPTIONS,
   IMAGE_COMPARE_MODE_OPTIONS,
 } from './displaySettingsOptions';
+import {
+  OVERFLOW_MENU_ICON,
+  OVERFLOW_MENU_SECTION_ICON,
+  OverflowMenuBackHeader,
+  OverflowMenuItem,
+  overflowMenuItemClassName,
+  OverflowMenuPanel,
+  OverflowMenuPickerItem,
+  OverflowMenuSettingsRow,
+  OverflowMenuSettingsSection,
+} from './overflowMenuUi';
 import { SegmentedControl } from './SegmentedControl';
 import { SettingsSwitch } from './SettingsSwitch';
 
-type SettingsView = 'main' | 'light' | 'dark' | 'code-font' | 'tree-font' | 'font-features';
-type TransitionDirection = 'none' | 'forward' | 'back';
+type SettingsView = 'main' | 'light' | 'dark';
+
+type DisplaySettingsScope = 'appearance' | 'display';
 
 const MODE_OPTIONS = [
   {
     value: 'system' as const,
     label: 'Auto',
-    icon: (
-      <IconDeviceDesktop
-        size={14}
-        stroke={2}
-      />
-    ),
+    icon: <IconColorAuto {...OVERFLOW_MENU_ICON} />,
   },
   {
     value: 'light' as const,
     label: 'Light',
-    icon: (
-      <IconSun
-        size={14}
-        stroke={2}
-      />
-    ),
+    icon: <IconColorLight {...OVERFLOW_MENU_ICON} />,
   },
   {
     value: 'dark' as const,
     label: 'Dark',
-    icon: (
-      <IconMoon
-        size={14}
-        stroke={2}
-      />
-    ),
+    icon: <IconColorDark {...OVERFLOW_MENU_ICON} />,
   },
 ];
 
 type DisplaySettingsPanelProps = {
   id: string;
-  displayPrefs: CodeViewDisplayPrefs;
-  onChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
   onClose: () => void;
   onBack?: () => void;
+  backLabel?: string;
+  active?: boolean;
   embedded?: boolean;
-};
+  scope?: DisplaySettingsScope;
+} & (
+  | {
+      scope?: 'display';
+      displayPrefs: CodeViewDisplayPrefs;
+      onChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
+    }
+  | {
+      scope: 'appearance';
+      displayPrefs?: never;
+      onChange?: never;
+    }
+);
 
-export function DisplaySettingsPanel({
-  id,
-  displayPrefs,
-  onChange,
-  onClose,
-  onBack,
-  embedded = false,
-}: DisplaySettingsPanelProps) {
+export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
+  const {
+    id,
+    onClose,
+    onBack,
+    backLabel,
+    active = true,
+    embedded = false,
+    scope = 'display',
+  } = props;
+  const displayPrefs = scope === 'display' ? props.displayPrefs : null;
+  const onChange = scope === 'display' ? props.onChange : null;
   const {
     colorMode,
     lightThemeName,
@@ -99,251 +122,135 @@ export function DisplaySettingsPanel({
     pickTheme,
   } = useThemeSelection();
   const [view, setView] = useState<SettingsView>('main');
-  const [transitionDirection, setTransitionDirection] = useState<TransitionDirection>('none');
+  const [prevActive, setPrevActive] = useState(active);
+  if (active !== prevActive) {
+    setPrevActive(active);
+    if (!active) {
+      setView('main');
+    }
+  }
+
   const [customCodeFontDraft, setCustomCodeFontDraft] = useState(
-    displayPrefs.codeFont.custom ?? '',
+    displayPrefs?.codeFont.custom ?? '',
   );
-  const [customTreeFontDraft, setCustomTreeFontDraft] = useState(
-    displayPrefs.treeFont.custom ?? '',
-  );
-  const [customFontFeaturesDraft, setCustomFontFeaturesDraft] = useState(
-    displayPrefs.codeFontFeatures.custom ?? '',
-  );
-
-  useEffect(() => {
+  const [prevCodeFontCustom, setPrevCodeFontCustom] = useState(displayPrefs?.codeFont.custom);
+  if (displayPrefs && displayPrefs.codeFont.custom !== prevCodeFontCustom) {
+    setPrevCodeFontCustom(displayPrefs.codeFont.custom);
     setCustomCodeFontDraft(displayPrefs.codeFont.custom ?? '');
-  }, [displayPrefs.codeFont.custom]);
+  }
 
-  useEffect(() => {
+  const [customTreeFontDraft, setCustomTreeFontDraft] = useState(
+    displayPrefs?.treeFont.custom ?? '',
+  );
+  const [prevTreeFontCustom, setPrevTreeFontCustom] = useState(displayPrefs?.treeFont.custom);
+  if (displayPrefs && displayPrefs.treeFont.custom !== prevTreeFontCustom) {
+    setPrevTreeFontCustom(displayPrefs.treeFont.custom);
     setCustomTreeFontDraft(displayPrefs.treeFont.custom ?? '');
-  }, [displayPrefs.treeFont.custom]);
+  }
 
-  useEffect(() => {
+  const [customFontFeaturesDraft, setCustomFontFeaturesDraft] = useState(
+    displayPrefs?.codeFontFeatures.custom ?? '',
+  );
+  const [prevFontFeaturesCustom, setPrevFontFeaturesCustom] = useState(
+    displayPrefs?.codeFontFeatures.custom,
+  );
+  if (displayPrefs && displayPrefs.codeFontFeatures.custom !== prevFontFeaturesCustom) {
+    setPrevFontFeaturesCustom(displayPrefs.codeFontFeatures.custom);
     setCustomFontFeaturesDraft(displayPrefs.codeFontFeatures.custom ?? '');
-  }, [displayPrefs.codeFontFeatures.custom]);
+  }
 
   const openNestedView = (nextView: Exclude<SettingsView, 'main'>) => {
-    setTransitionDirection('forward');
     setView(nextView);
   };
 
   const returnToMainView = () => {
-    setTransitionDirection('back');
     setView('main');
   };
-
   const themesAreCustom =
     lightThemeName !== diffyThemeCatalog.defaultLightThemeName ||
     darkThemeName !== diffyThemeCatalog.defaultDarkThemeName;
 
   const commitCustomCodeFont = () => {
+    if (!displayPrefs || !onChange) {
+      return;
+    }
     const custom = sanitizeFontFamilyName(customCodeFontDraft);
     setCustomCodeFontDraft(custom);
     onChange({ codeFont: { preset: 'custom', custom } });
   };
 
   const commitCustomTreeFont = () => {
+    if (!displayPrefs || !onChange) {
+      return;
+    }
     const custom = sanitizeFontFamilyName(customTreeFontDraft);
     setCustomTreeFontDraft(custom);
     onChange({ treeFont: { preset: 'custom', custom } });
   };
 
   const commitCustomFontFeatures = () => {
+    if (!displayPrefs || !onChange) {
+      return;
+    }
     const custom = sanitizeFontFeatures(customFontFeaturesDraft);
     setCustomFontFeaturesDraft(custom);
     onChange({ codeFontFeatures: { preset: 'custom', custom } });
   };
 
-  if (view === 'code-font') {
-    return (
-      <FontPickerView
-        id={id}
-        embedded={embedded}
-        label='Code font'
-        options={CODE_FONT_OPTIONS}
-        value={displayPrefs.codeFont}
-        customDraft={customCodeFontDraft}
-        customPlaceholder='Berkeley Mono'
-        transitionDirection={transitionDirection}
-        onBack={returnToMainView}
-        onCustomDraftChange={setCustomCodeFontDraft}
-        onCommitCustom={commitCustomCodeFont}
-        onSelectPreset={(preset) => {
-          if (preset === 'custom') {
-            onChange({
-              codeFont: {
-                preset: 'custom',
-                custom: sanitizeFontFamilyName(customCodeFontDraft),
-              },
-            });
-            return;
-          }
-          onChange({ codeFont: { preset } });
-          returnToMainView();
-        }}
-      />
-    );
-  }
-
-  if (view === 'tree-font') {
-    return (
-      <FontPickerView
-        id={id}
-        embedded={embedded}
-        label='File tree font'
-        options={TREE_FONT_OPTIONS}
-        value={displayPrefs.treeFont}
-        customDraft={customTreeFontDraft}
-        customPlaceholder='SF Pro Text'
-        transitionDirection={transitionDirection}
-        onBack={returnToMainView}
-        onCustomDraftChange={setCustomTreeFontDraft}
-        onCommitCustom={commitCustomTreeFont}
-        onSelectPreset={(preset) => {
-          if (preset === 'custom') {
-            onChange({
-              treeFont: {
-                preset: 'custom',
-                custom: sanitizeFontFamilyName(customTreeFontDraft),
-              },
-            });
-            return;
-          }
-          onChange({ treeFont: { preset } });
-          returnToMainView();
-        }}
-      />
-    );
-  }
-
-  if (view === 'font-features') {
-    return (
-      <FontPickerView
-        id={id}
-        embedded={embedded}
-        label='Font features'
-        options={CODE_FONT_FEATURE_OPTIONS}
-        value={displayPrefs.codeFontFeatures}
-        customDraft={customFontFeaturesDraft}
-        customPlaceholder='"liga" 1, "calt" 1'
-        transitionDirection={transitionDirection}
-        onBack={returnToMainView}
-        onCustomDraftChange={setCustomFontFeaturesDraft}
-        onCommitCustom={commitCustomFontFeatures}
-        onSelectPreset={(preset: CodeFontFeaturesPreset) => {
-          if (preset === 'custom') {
-            onChange({
-              codeFontFeatures: {
-                preset: 'custom',
-                custom: sanitizeFontFeatures(customFontFeaturesDraft),
-              },
-            });
-            return;
-          }
-          onChange({ codeFontFeatures: { preset } });
-          returnToMainView();
-        }}
-      />
-    );
-  }
-
-  if (view === 'light' || view === 'dark') {
+  if (scope === 'appearance' && (view === 'light' || view === 'dark')) {
     const themeNames = view === 'light' ? lightThemeNames : darkThemeNames;
     const selectedThemeName = view === 'light' ? lightThemeName : darkThemeName;
     const label = view === 'light' ? 'Light themes' : 'Dark themes';
 
     return (
-      <div
+      <OverflowMenuPanel
         id={id}
-        className={`gprv-settings-menu gprv-settings-menu-nested${embedded ? ' gprv-settings-menu-embedded' : ''}`}
-        role='dialog'
-        aria-label={label}
+        ariaLabel={label}
+        className='p-0'
       >
-        <div
-          key={view}
-          className='gprv-settings-menu-view gprv-settings-menu-view-nested'
-          data-direction={transitionDirection}
+        <OverflowMenuBackHeader
+          label={label}
+          onClick={returnToMainView}
+        />
+        <ul
+          className='flex flex-col gap-0.5 p-1'
+          role='listbox'
+          aria-label={label}
         >
-          <button
-            type='button'
-            className='gprv-header-popover-option gprv-theme-picker-back'
-            onClick={returnToMainView}
-          >
-            <IconChevronLeft
-              size={14}
-              stroke={2}
-            />
-            <span>{label}</span>
-          </button>
-          <ul
-            className='gprv-theme-picker-list'
-            role='listbox'
-            aria-label={label}
-          >
-            {themeNames.map((themeName) => {
-              const isSelected = themeName === selectedThemeName;
-              return (
-                <li key={themeName}>
-                  <button
-                    type='button'
-                    className='gprv-header-popover-option'
-                    role='option'
-                    aria-selected={isSelected}
-                    data-selected={isSelected ? '' : undefined}
-                    onClick={() => {
-                      pickTheme(view, themeName);
-                      onClose();
-                    }}
-                  >
-                    {themeName}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </div>
+          {themeNames.map((themeName) => {
+            const isSelected = themeName === selectedThemeName;
+            return (
+              <li key={themeName}>
+                <OverflowMenuItem
+                  label={themeName}
+                  selected={isSelected}
+                  role='option'
+                  onClick={() => {
+                    pickTheme(view, themeName);
+                    onClose();
+                  }}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </OverflowMenuPanel>
     );
   }
 
-  return (
-    <div
-      id={id}
-      className={`gprv-settings-menu${embedded ? ' gprv-settings-menu-embedded' : ''}`}
-      role='dialog'
-      aria-label='Settings'
-    >
-      <div
-        key={view}
-        className='gprv-settings-menu-view'
-        data-direction={transitionDirection}
-      >
-        {onBack ? (
-          <button
-            type='button'
-            className='gprv-header-popover-option gprv-theme-picker-back'
-            onClick={onBack}
-          >
-            <IconChevronLeft
-              size={14}
-              stroke={2}
-            />
-            <span>Header actions</span>
-          </button>
-        ) : null}
-        <section
-          className='gprv-settings-section'
-          aria-labelledby={`${id}-display-label`}
-        >
-          <h3
+  const panelLabel = scope === 'appearance' ? 'Appearance settings' : 'Display settings';
+  const resolvedBackLabel = backLabel ?? panelLabel;
+
+  const mainContent = (
+    <div className={cn('flex flex-col gap-1', !embedded && 'p-1 pt-0')}>
+      {scope === 'display' && displayPrefs && onChange ? (
+        <>
+          <OverflowMenuSettingsSection
             id={`${id}-display-label`}
-            className='gprv-settings-section-label'
+            label='Display'
+            icon={<IconListUnordered {...OVERFLOW_MENU_SECTION_ICON} />}
           >
-            Display
-          </h3>
-          <div className='gprv-settings-section-content'>
-            <div className='gprv-settings-row'>
-              <span className='gprv-settings-row-label'>Diff indicators</span>
+            <OverflowMenuSettingsRow label='Diff indicators'>
               <SegmentedControl
                 ariaLabel='Diff indicators'
                 options={DIFF_INDICATOR_OPTIONS}
@@ -351,53 +258,48 @@ export function DisplaySettingsPanel({
                 onChange={(diffIndicators) => onChange({ diffIndicators })}
                 showLabels={false}
               />
-            </div>
+            </OverflowMenuSettingsRow>
 
-            <div className='gprv-settings-row'>
-              <span className='gprv-settings-row-label'>Line numbers</span>
+            <OverflowMenuSettingsRow label='Line numbers'>
               <SettingsSwitch
                 label='Line numbers'
                 checked={!displayPrefs.disableLineNumbers}
                 onChange={(show) => onChange({ disableLineNumbers: !show })}
               />
-            </div>
+            </OverflowMenuSettingsRow>
 
-            <div className='gprv-settings-row'>
-              <span className='gprv-settings-row-label'>Word wrap</span>
+            <OverflowMenuSettingsRow label='Word wrap'>
               <SettingsSwitch
                 label='Word wrap'
                 checked={displayPrefs.overflow === 'wrap'}
                 onChange={(wrap) => onChange({ overflow: wrap ? 'wrap' : 'scroll' })}
               />
-            </div>
-          </div>
-        </section>
+            </OverflowMenuSettingsRow>
+          </OverflowMenuSettingsSection>
 
-        <section
-          className='gprv-settings-section'
-          aria-labelledby={`${id}-fonts-label`}
-        >
-          <h3
+          <OverflowMenuSettingsSection
             id={`${id}-fonts-label`}
-            className='gprv-settings-section-label'
+            label='Fonts'
+            icon={<IconType {...OVERFLOW_MENU_SECTION_ICON} />}
           >
-            Fonts
-          </h3>
-          <div className='gprv-settings-section-content'>
-            <button
-              type='button'
-              className='gprv-header-popover-option gprv-theme-picker-row'
-              onClick={() => openNestedView('code-font')}
-            >
-              <IconCode
-                size={14}
-                stroke={2}
-              />
-              <span className='gprv-theme-picker-row-label'>Code font</span>
-              <span className='gprv-theme-picker-row-value'>
-                {getCodeFontLabel(displayPrefs.codeFont)}
-              </span>
-            </button>
+            <FontPresetSelectRow
+              id={`${id}-code-font`}
+              label='Code font'
+              options={CODE_FONT_OPTIONS}
+              value={displayPrefs.codeFont.preset}
+              onValueChange={(preset: CodeFontPreset) => {
+                if (preset === 'custom') {
+                  onChange({
+                    codeFont: {
+                      preset: 'custom',
+                      custom: sanitizeFontFamilyName(customCodeFontDraft),
+                    },
+                  });
+                  return;
+                }
+                onChange({ codeFont: { preset } });
+              }}
+            />
             {displayPrefs.codeFont.preset === 'custom' ? (
               <CustomFontInput
                 id={`${id}-code-font-custom`}
@@ -409,20 +311,24 @@ export function DisplaySettingsPanel({
               />
             ) : null}
 
-            <button
-              type='button'
-              className='gprv-header-popover-option gprv-theme-picker-row'
-              onClick={() => openNestedView('tree-font')}
-            >
-              <IconFolder
-                size={14}
-                stroke={2}
-              />
-              <span className='gprv-theme-picker-row-label'>File tree font</span>
-              <span className='gprv-theme-picker-row-value'>
-                {getTreeFontLabel(displayPrefs.treeFont)}
-              </span>
-            </button>
+            <FontPresetSelectRow
+              id={`${id}-tree-font`}
+              label='File tree font'
+              options={TREE_FONT_OPTIONS}
+              value={displayPrefs.treeFont.preset}
+              onValueChange={(preset: TreeFontPreset) => {
+                if (preset === 'custom') {
+                  onChange({
+                    treeFont: {
+                      preset: 'custom',
+                      custom: sanitizeFontFamilyName(customTreeFontDraft),
+                    },
+                  });
+                  return;
+                }
+                onChange({ treeFont: { preset } });
+              }}
+            />
             {displayPrefs.treeFont.preset === 'custom' ? (
               <CustomFontInput
                 id={`${id}-tree-font-custom`}
@@ -434,40 +340,42 @@ export function DisplaySettingsPanel({
               />
             ) : null}
 
-            <div className='gprv-settings-row'>
-              <span className='gprv-settings-row-label'>Size</span>
+            <OverflowMenuSettingsRow label='Size'>
               <SegmentedControl
                 ariaLabel='Code font size'
                 options={CODE_FONT_SIZE_OPTIONS}
                 value={displayPrefs.codeFontSize}
                 onChange={(codeFontSize) => onChange({ codeFontSize })}
               />
-            </div>
+            </OverflowMenuSettingsRow>
 
-            <div className='gprv-settings-row'>
-              <span className='gprv-settings-row-label'>Line height</span>
+            <OverflowMenuSettingsRow label='Line height'>
               <SegmentedControl
                 ariaLabel='Code line height'
                 options={CODE_LINE_HEIGHT_OPTIONS}
                 value={displayPrefs.codeLineHeight}
                 onChange={(codeLineHeight) => onChange({ codeLineHeight })}
               />
-            </div>
+            </OverflowMenuSettingsRow>
 
-            <button
-              type='button'
-              className='gprv-header-popover-option gprv-theme-picker-row'
-              onClick={() => openNestedView('font-features')}
-            >
-              <IconTypography
-                size={14}
-                stroke={2}
-              />
-              <span className='gprv-theme-picker-row-label'>Features</span>
-              <span className='gprv-theme-picker-row-value'>
-                {getCodeFontFeaturesLabel(displayPrefs.codeFontFeatures)}
-              </span>
-            </button>
+            <FontPresetSelectRow
+              id={`${id}-font-features`}
+              label='Features'
+              options={CODE_FONT_FEATURE_OPTIONS}
+              value={displayPrefs.codeFontFeatures.preset}
+              onValueChange={(preset: CodeFontFeaturesPreset) => {
+                if (preset === 'custom') {
+                  onChange({
+                    codeFontFeatures: {
+                      preset: 'custom',
+                      custom: sanitizeFontFeatures(customFontFeaturesDraft),
+                    },
+                  });
+                  return;
+                }
+                onChange({ codeFontFeatures: { preset } });
+              }}
+            />
             {displayPrefs.codeFontFeatures.preset === 'custom' ? (
               <CustomFontInput
                 id={`${id}-font-features-custom`}
@@ -478,197 +386,142 @@ export function DisplaySettingsPanel({
                 onCommit={commitCustomFontFeatures}
               />
             ) : null}
-          </div>
-        </section>
+          </OverflowMenuSettingsSection>
 
-        <section
-          className='gprv-settings-section'
-          aria-labelledby={`${id}-images-label`}
-        >
-          <h3
+          <OverflowMenuSettingsSection
             id={`${id}-images-label`}
-            className='gprv-settings-section-label'
+            label='Images'
+            icon={<IconImage {...OVERFLOW_MENU_SECTION_ICON} />}
+            isLast
           >
-            Images
-          </h3>
-          <div className='gprv-settings-section-content'>
-            <div className='gprv-settings-row'>
-              <span className='gprv-settings-row-label'>Compare mode</span>
+            <OverflowMenuSettingsRow label='Compare mode'>
               <SegmentedControl
                 ariaLabel='Default image comparison mode'
                 options={IMAGE_COMPARE_MODE_OPTIONS}
                 value={displayPrefs.imageCompareMode}
                 onChange={(imageCompareMode) => onChange({ imageCompareMode })}
               />
-            </div>
-            <div className='gprv-settings-row'>
-              <span className='gprv-settings-row-label'>Checkerboard</span>
+            </OverflowMenuSettingsRow>
+            <OverflowMenuSettingsRow label='Checkerboard'>
               <SettingsSwitch
                 label='Image transparency checkerboard'
                 checked={displayPrefs.imageCheckerboard}
                 onChange={(imageCheckerboard) => onChange({ imageCheckerboard })}
               />
-            </div>
-          </div>
-        </section>
-
-        <section
-          className='gprv-settings-section'
-          aria-labelledby={`${id}-appearance-label`}
+            </OverflowMenuSettingsRow>
+          </OverflowMenuSettingsSection>
+        </>
+      ) : (
+        <OverflowMenuSettingsSection
+          id={`${id}-appearance-label`}
+          label='Appearance'
+          icon={<IconThemes {...OVERFLOW_MENU_SECTION_ICON} />}
+          isLast
         >
-          <h3
-            id={`${id}-appearance-label`}
-            className='gprv-settings-section-label'
-          >
-            Appearance
-          </h3>
-          <div className='gprv-settings-section-content'>
-            <div className='gprv-settings-row'>
-              <span className='gprv-settings-row-label'>Color mode</span>
-              <SegmentedControl
-                ariaLabel='Color mode'
-                options={MODE_OPTIONS}
-                value={colorMode}
-                onChange={(mode: ColorMode) => setColorMode(mode)}
-                showLabels={false}
-              />
-            </div>
+          <OverflowMenuSettingsRow label='Color mode'>
+            <SegmentedControl
+              ariaLabel='Color mode'
+              options={MODE_OPTIONS}
+              value={colorMode}
+              onChange={(mode: ColorMode) => setColorMode(mode)}
+              showLabels={false}
+            />
+          </OverflowMenuSettingsRow>
 
-            <button
+          <OverflowMenuPickerItem
+            icon={<IconColorLight {...OVERFLOW_MENU_ICON} />}
+            label='Light theme'
+            value={lightThemeName}
+            onClick={() => openNestedView('light')}
+          />
+          <OverflowMenuPickerItem
+            icon={<IconColorDark {...OVERFLOW_MENU_ICON} />}
+            label='Dark theme'
+            value={darkThemeName}
+            onClick={() => openNestedView('dark')}
+          />
+          {themesAreCustom ? (
+            <Button
               type='button'
-              className='gprv-header-popover-option gprv-theme-picker-row'
-              onClick={() => openNestedView('light')}
+              variant='ghost'
+              size='sm'
+              className={cn(overflowMenuItemClassName, 'text-muted-foreground')}
+              onClick={() => {
+                setLightThemeName(diffyThemeCatalog.defaultLightThemeName);
+                setDarkThemeName(diffyThemeCatalog.defaultDarkThemeName);
+              }}
             >
-              <IconSun
-                size={14}
-                stroke={2}
-              />
-              <span className='gprv-theme-picker-row-label'>Light theme</span>
-              <span className='gprv-theme-picker-row-value'>{lightThemeName}</span>
-            </button>
-            <button
-              type='button'
-              className='gprv-header-popover-option gprv-theme-picker-row'
-              onClick={() => openNestedView('dark')}
-            >
-              <IconMoon
-                size={14}
-                stroke={2}
-              />
-              <span className='gprv-theme-picker-row-label'>Dark theme</span>
-              <span className='gprv-theme-picker-row-value'>{darkThemeName}</span>
-            </button>
-            {themesAreCustom ? (
-              <button
-                type='button'
-                className='gprv-header-popover-option gprv-theme-picker-reset'
-                onClick={() => {
-                  setLightThemeName(diffyThemeCatalog.defaultLightThemeName);
-                  setDarkThemeName(diffyThemeCatalog.defaultDarkThemeName);
-                }}
-              >
-                Reset to default themes
-              </button>
-            ) : null}
-          </div>
-        </section>
-      </div>
+              Reset to default themes
+            </Button>
+          ) : null}
+        </OverflowMenuSettingsSection>
+      )}
     </div>
+  );
+
+  if (embedded) {
+    return mainContent;
+  }
+
+  return (
+    <OverflowMenuPanel
+      id={id}
+      ariaLabel={panelLabel}
+      className='p-0'
+    >
+      {onBack ? (
+        <OverflowMenuBackHeader
+          label={resolvedBackLabel}
+          onClick={onBack}
+        />
+      ) : null}
+      {mainContent}
+    </OverflowMenuPanel>
   );
 }
 
-type FontPickerViewProps<TPreset extends string> = {
+type FontPresetSelectRowProps<T extends string> = {
   id: string;
-  embedded: boolean;
   label: string;
-  options: readonly { value: TPreset; label: string }[];
-  value: FontPreferenceLike<TPreset>;
-  customDraft: string;
-  customPlaceholder: string;
-  transitionDirection: TransitionDirection;
-  onBack: () => void;
-  onCustomDraftChange: (value: string) => void;
-  onCommitCustom: () => void;
-  onSelectPreset: (preset: TPreset) => void;
+  options: readonly { value: T; label: string }[];
+  value: T;
+  onValueChange: (value: T) => void;
 };
 
-type FontPreferenceLike<TPreset extends string> = {
-  preset: TPreset;
-  custom?: string;
-};
-
-function FontPickerView<TPreset extends string>({
+function FontPresetSelectRow<T extends string>({
   id,
-  embedded,
   label,
   options,
   value,
-  customDraft,
-  customPlaceholder,
-  transitionDirection,
-  onBack,
-  onCustomDraftChange,
-  onCommitCustom,
-  onSelectPreset,
-}: FontPickerViewProps<TPreset>) {
+  onValueChange,
+}: FontPresetSelectRowProps<T>) {
   return (
-    <div
-      id={id}
-      className={`gprv-settings-menu gprv-settings-menu-nested${embedded ? ' gprv-settings-menu-embedded' : ''}`}
-      role='dialog'
-      aria-label={label}
-    >
-      <div
-        key={label}
-        className='gprv-settings-menu-view gprv-settings-menu-view-nested'
-        data-direction={transitionDirection}
+    <OverflowMenuSettingsRow label={label}>
+      <Select
+        value={value}
+        items={options}
+        onValueChange={(next) => onValueChange(next as T)}
       >
-        <button
-          type='button'
-          className='gprv-header-popover-option gprv-theme-picker-back'
-          onClick={onBack}
-        >
-          <IconChevronLeft
-            size={14}
-            stroke={2}
-          />
-          <span>{label}</span>
-        </button>
-        <ul
-          className='gprv-theme-picker-list'
-          role='listbox'
+        <SelectTrigger
+          id={id}
+          size='sm'
+          className='w-[9.5rem]'
           aria-label={label}
         >
-          {options.map((option) => {
-            const isSelected = option.value === value.preset;
-            return (
-              <li key={option.value}>
-                <button
-                  type='button'
-                  className='gprv-header-popover-option'
-                  role='option'
-                  aria-selected={isSelected}
-                  data-selected={isSelected ? '' : undefined}
-                  onClick={() => onSelectPreset(option.value)}
-                >
-                  {option.label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        {value.preset === ('custom' as TPreset) ? (
-          <CustomFontInput
-            id={`${id}-custom`}
-            label={`Custom ${label.toLowerCase()}`}
-            value={customDraft}
-            placeholder={customPlaceholder}
-            onChange={onCustomDraftChange}
-            onCommit={onCommitCustom}
-          />
-        ) : null}
-      </div>
-    </div>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent align='end'>
+          {options.map((option) => (
+            <SelectItem
+              key={option.value}
+              value={option.value}
+            >
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </OverflowMenuSettingsRow>
   );
 }
 
@@ -697,14 +550,15 @@ function CustomFontInput({
   };
 
   return (
-    <label
-      className='gprv-font-custom-field'
-      htmlFor={id}
-    >
-      <span className='gprv-font-custom-label'>{label}</span>
-      <input
+    <div className='flex flex-col gap-1.5 px-2 py-1'>
+      <Label
+        htmlFor={id}
+        className='text-xs text-muted-foreground'
+      >
+        {label}
+      </Label>
+      <Input
         id={id}
-        className='gprv-font-custom-input'
         type='text'
         value={value}
         placeholder={placeholder}
@@ -712,10 +566,11 @@ function CustomFontInput({
         autoComplete='off'
         autoCorrect='off'
         autoCapitalize='off'
+        className='h-8 text-sm'
         onChange={(event) => onChange(event.target.value)}
         onBlur={onCommit}
         onKeyDown={handleKeyDown}
       />
-    </label>
+    </div>
   );
 }

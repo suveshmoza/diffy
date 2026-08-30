@@ -1,12 +1,7 @@
 import type { DiffIndicators } from '@pierre/diffs';
-import {
-  IconArrowsHorizontal,
-  IconEyeOff,
-  IconLayoutDistributeVertical,
-  IconPlusMinus,
-  IconTextWrap,
-} from '@tabler/icons-react';
+import { IconCodeStyleBars, IconEyeSlash, IconSymbolDiffstat, IconWordWrap } from '@pierre/icons';
 
+import { IconArrowsHorizontal } from '@/components/icons/ArrowsHorizontal';
 import type {
   CodeViewDisplayPrefs,
   HunkSeparatorStyle,
@@ -42,32 +37,17 @@ export const DIFF_INDICATOR_OPTIONS: readonly SegmentOption<DiffIndicators>[] = 
   {
     value: 'classic',
     label: 'Classic',
-    icon: (
-      <IconPlusMinus
-        size={ICON_SIZE}
-        stroke={2}
-      />
-    ),
+    icon: <IconSymbolDiffstat size={ICON_SIZE} />,
   },
   {
     value: 'bars',
     label: 'Bars',
-    icon: (
-      <IconLayoutDistributeVertical
-        size={ICON_SIZE}
-        stroke={2}
-      />
-    ),
+    icon: <IconCodeStyleBars size={ICON_SIZE} />,
   },
   {
     value: 'none',
     label: 'None',
-    icon: (
-      <IconEyeOff
-        size={ICON_SIZE}
-        stroke={2}
-      />
-    ),
+    icon: <IconEyeSlash size={ICON_SIZE} />,
   },
 ];
 
@@ -87,22 +67,12 @@ export const OVERFLOW_OPTIONS: readonly SegmentOption<CodeViewDisplayPrefs['over
   {
     value: 'scroll',
     label: 'Scroll',
-    icon: (
-      <IconArrowsHorizontal
-        size={ICON_SIZE}
-        stroke={2}
-      />
-    ),
+    icon: <IconArrowsHorizontal size={ICON_SIZE} />,
   },
   {
     value: 'wrap',
     label: 'Wrap',
-    icon: (
-      <IconTextWrap
-        size={ICON_SIZE}
-        stroke={2}
-      />
-    ),
+    icon: <IconWordWrap size={ICON_SIZE} />,
   },
 ];
 

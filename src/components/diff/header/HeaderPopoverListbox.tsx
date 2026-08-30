@@ -1,6 +1,9 @@
-import { useCallback, useId, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useId, useState, type ReactNode } from 'react';
 
-import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+import { OverflowMenuItem } from './overflowMenuUi';
 
 export type HeaderPopoverOption<T extends string> = {
   value: T;
@@ -31,64 +34,62 @@ export function HeaderPopoverListbox<T extends string>({
   onSelect,
 }: HeaderPopoverListboxProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
-
-  const close = useCallback(() => {
-    setIsOpen(false);
-  }, []);
-
-  usePopoverDismiss(isOpen, rootRef, close);
 
   const handleSelect = useCallback(
     (next: T) => {
       onSelect(next);
-      close();
+      setIsOpen(false);
     },
-    [close, onSelect],
+    [onSelect],
   );
 
   return (
-    <div
-      ref={rootRef}
-      className='gprv-header-popover'
+    <Popover
+      open={isOpen}
+      onOpenChange={setIsOpen}
     >
-      <button
-        type='button'
-        className='gprv-header-icon-button gprv-header-popover-trigger'
-        aria-label={label}
-        aria-haspopup='listbox'
-        aria-expanded={isOpen}
-        aria-controls={listboxId}
-        title={label}
-        onClick={() => setIsOpen((open) => !open)}
+      <PopoverTrigger
+        render={
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon-sm'
+            aria-label={label}
+            aria-haspopup='listbox'
+            aria-expanded={isOpen}
+            aria-controls={isOpen ? listboxId : undefined}
+            title={label}
+          />
+        }
       >
         {icon}
-      </button>
-
-      {isOpen ? (
+      </PopoverTrigger>
+      <PopoverContent
+        id={listboxId}
+        align='end'
+        className='w-44 p-1'
+      >
         <ul
-          id={listboxId}
-          className='gprv-header-popover-menu'
           role='listbox'
           aria-label={menuLabel}
+          className='flex flex-col gap-0.5'
         >
-          {options.map((option) => (
-            <li key={option.value}>
-              <button
-                type='button'
-                className='gprv-header-popover-option'
-                role='option'
-                aria-selected={option.value === value}
-                data-selected={option.value === value ? '' : undefined}
-                onClick={() => handleSelect(option.value)}
-              >
-                {option.label}
-              </button>
-            </li>
-          ))}
+          {options.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <li key={option.value}>
+                <OverflowMenuItem
+                  label={option.label}
+                  selected={isSelected}
+                  role='option'
+                  onClick={() => handleSelect(option.value)}
+                />
+              </li>
+            );
+          })}
         </ul>
-      ) : null}
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 }
