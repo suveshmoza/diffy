@@ -1,14 +1,19 @@
-import { IconLayoutSidebar, IconMessages, IconX } from '@tabler/icons-react';
+import { IconConvo, IconSidebarLeft, IconX } from '@pierre/icons';
 import { memo, useCallback } from 'react';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
 import { isStandaloneOverlay } from '@/lib/overlay/standalone';
+import { cn } from '@/lib/utils';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 import { useSidebarContext } from '@/providers/SidebarContext';
 
+import { AppearanceSettingsMenu } from './header/AppearanceSettingsMenu';
 import { BranchContextPopover } from './header/BranchContextPopover';
+import { CollapseAllToggle } from './header/CollapseAllToggle';
 import { DiffLayoutToggle } from './header/DiffLayoutToggle';
 import { HeaderOverflowMenu } from './header/HeaderOverflowMenu';
 import { HeaderStatusStrip } from './header/HeaderStatusStrip';
@@ -64,28 +69,34 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
 
   return (
     <div
-      className={`gprv-diff-header-shell${isRateLimitExhausted ? ' gprv-diff-header-rate-limited' : ''}`}
+      className={cn(
+        'shrink-0 border-b border-border',
+        isRateLimitExhausted && 'border-destructive/40',
+      )}
     >
-      <header className='gprv-header gprv-diff-header'>
-        <button
-          className='gprv-header-icon-button gprv-header-sidebar-toggle'
+      <header className='flex min-h-11.25 items-center gap-3 bg-background px-2 py-1 text-foreground'>
+        <Button
+          variant='ghost'
+          size='icon-sm'
           type='button'
           onClick={toggleSidebar}
           aria-label={isSidebarCollapsed ? 'Show file list' : 'Hide file list'}
           aria-pressed={!isSidebarCollapsed}
           title={isSidebarCollapsed ? 'Show files' : 'Hide files'}
         >
-          <IconLayoutSidebar
-            size={16}
-            stroke={2}
-          />
-        </button>
+          <IconSidebarLeft />
+        </Button>
 
-        <div className='gprv-header-leading'>
-          <div className='gprv-title gprv-title-compact'>
-            <span className='gprv-pr-badge'>#{pullRequest.number}</span>
+        <div className='flex min-w-0 flex-1 flex-col justify-center gap-0.5'>
+          <div className='flex min-w-0 items-center gap-2'>
+            <Badge
+              variant='outline'
+              className='shrink-0 border-primary/30 bg-primary/15 text-primary'
+            >
+              #{pullRequest.number}
+            </Badge>
             <strong
-              className='gprv-title-text'
+              className='min-w-0 flex-1 truncate text-sm font-semibold leading-snug'
               title={pullRequest.title}
             >
               {pullRequest.title}
@@ -97,81 +108,78 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           />
         </div>
 
-        <div className='gprv-header-toolbar'>
-          <div className='gprv-header-primary-actions'>
-            {canReview ? (
-              <>
-                <button
-                  className={`gprv-review-cta${isBatchMode ? ' gprv-review-cta-active' : ''}`}
+        <div className='inline-flex shrink-0 items-center gap-1'>
+          {canReview ? (
+            <div className='inline-flex items-center gap-1'>
+              <Button
+                type='button'
+                variant={isBatchMode ? 'secondary' : 'outline'}
+                size='sm'
+                onClick={toggleBatchMode}
+                aria-pressed={isBatchMode}
+                title={
+                  isBatchMode
+                    ? 'Comments are collected into one review. Click to stop collecting.'
+                    : 'Collect comments into a single review before publishing'
+                }
+              >
+                <IconConvo size={15} />
+                {isBatchMode ? 'Reviewing' : 'Review'}
+              </Button>
+              {isBatchMode ? (
+                <Button
                   type='button'
-                  onClick={toggleBatchMode}
-                  aria-pressed={isBatchMode}
+                  variant='default'
+                  size='sm'
+                  onClick={openPublishDialog}
                   title={
-                    isBatchMode
-                      ? 'Comments are collected into one review. Click to stop collecting.'
-                      : 'Collect comments into a single review before publishing'
+                    queuedCount > 0
+                      ? 'Review and publish queued comments'
+                      : 'Submit your review verdict to GitHub'
                   }
                 >
-                  <IconMessages
-                    size={15}
-                    stroke={2}
-                  />
-                  <span className='gprv-review-cta-label'>
-                    {isBatchMode ? 'Reviewing' : 'Review'}
-                  </span>
-                </button>
-                {isBatchMode ? (
-                  <button
-                    className='gprv-publish-cta'
-                    type='button'
-                    onClick={openPublishDialog}
-                    title={
-                      queuedCount > 0
-                        ? 'Review and publish queued comments'
-                        : 'Submit your review verdict to GitHub'
-                    }
-                  >
-                    {queuedCount > 0 ? `Publish (${queuedCount})` : 'Finish'}
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-          </div>
+                  {queuedCount > 0 ? `Publish (${queuedCount})` : 'Finish'}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
 
           <DiffLayoutToggle
             value={diffLayout}
             onChange={onDiffLayoutChange}
           />
 
+          {onExpandAll && onCollapseAll ? (
+            <CollapseAllToggle
+              allCollapsed={allCollapsed}
+              onExpandAll={onExpandAll}
+              onCollapseAll={onCollapseAll}
+            />
+          ) : null}
+
+          <AppearanceSettingsMenu />
+
           <HeaderOverflowMenu
-            diffLayout={diffLayout}
             displayPrefs={displayPrefs}
-            allCollapsed={allCollapsed}
+            onDisplayPrefsChange={onDisplayPrefsChange}
             isRefreshing={isRefreshing}
-            canExpandOrCollapse={Boolean(onExpandAll && onCollapseAll)}
             canRefresh={Boolean(onRefresh)}
             canOpenInNewTab={canOpenInNewTab}
-            onDiffLayoutChange={onDiffLayoutChange}
-            onDisplayPrefsChange={onDisplayPrefsChange}
-            onExpandAll={onExpandAll}
-            onCollapseAll={onCollapseAll}
             onRefresh={onRefresh}
             onOpenInNewTab={openInNewTab}
           />
 
           {!isStandalone ? (
-            <button
-              className='gprv-close gprv-header-icon-button'
+            <Button
               type='button'
+              variant='ghost'
+              size='icon-sm'
               onClick={onClose}
               aria-label='Close diff viewer'
               title='Close'
             >
-              <IconX
-                size={16}
-                stroke={2}
-              />
-            </button>
+              <IconX />
+            </Button>
           ) : null}
         </div>
       </header>

@@ -1,7 +1,15 @@
-import { IconArrowNarrowLeft, IconCheck, IconCopy } from '@tabler/icons-react';
-import { memo, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { IconArrow, IconCheck, IconCopy } from '@pierre/icons';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
-import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
+import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 type BranchContextPopoverProps = {
   baseRef: string;
@@ -12,59 +20,52 @@ export const BranchContextPopover = memo(function BranchContextPopover({
   baseRef,
   headRef,
 }: BranchContextPopoverProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const panelId = useId();
   const summary = `${baseRef} ← ${headRef}`;
 
-  const close = useCallback(() => {
-    setIsOpen(false);
-  }, []);
-
-  usePopoverDismiss(isOpen, rootRef, close);
-
   return (
-    <div
-      ref={rootRef}
-      className='gprv-header-popover gprv-branch-context'
-    >
-      <button
-        type='button'
-        className='gprv-branch-context-trigger'
-        aria-haspopup='dialog'
-        aria-expanded={isOpen}
-        aria-controls={panelId}
-        title={summary}
-        onClick={() => setIsOpen((open) => !open)}
-      >
-        <span className='gprv-branch-context-summary'>
-          <span className='gprv-branch-context-base'>{baseRef}</span>
-          <IconArrowNarrowLeft
-            className='gprv-branch-context-arrow'
-            size={14}
-            aria-hidden='true'
-          />
-          <span className='gprv-branch-context-head'>{headRef}</span>
-        </span>
-      </button>
-
-      {isOpen ? (
-        <div
-          id={panelId}
-          className='gprv-header-popover-menu gprv-branch-context-menu'
-          role='dialog'
-          aria-label='Branch names'
+    <div className='w-fit max-w-full self-start'>
+      <Popover>
+        <PopoverTrigger
+          render={
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              className='h-auto w-fit max-w-full justify-start px-0 py-0 text-xs font-normal text-muted-foreground hover:bg-transparent hover:text-foreground data-popup-open:text-foreground'
+              title={summary}
+            />
+          }
         >
-          <CopyableBranchRow
-            label='Base'
-            name={baseRef}
-          />
-          <CopyableBranchRow
-            label='Head'
-            name={headRef}
-          />
-        </div>
-      ) : null}
+          <span className='inline-flex min-w-0 max-w-full items-center gap-1'>
+            <span className='truncate font-mono'>{baseRef}</span>
+            <IconArrow
+              className='shrink-0 opacity-70'
+              size={14}
+              aria-hidden='true'
+            />
+            <span className='truncate font-mono'>{headRef}</span>
+          </span>
+        </PopoverTrigger>
+        <PopoverContent
+          align='start'
+          side='bottom'
+          className='w-80'
+        >
+          <PopoverHeader>
+            <PopoverTitle>Branch names</PopoverTitle>
+          </PopoverHeader>
+          <div className='flex flex-col gap-2'>
+            <CopyableBranchRow
+              label='Base'
+              name={baseRef}
+            />
+            <CopyableBranchRow
+              label='Head'
+              name={headRef}
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 });
@@ -104,33 +105,38 @@ function CopyableBranchRow({ label, name }: CopyableBranchRowProps) {
   }, [name]);
 
   return (
-    <div className='gprv-branch-context-row'>
-      <span className='gprv-branch-context-row-label'>{label}</span>
-      <button
+    <div className='flex flex-col gap-1'>
+      <span className='text-xs font-medium text-muted-foreground'>{label}</span>
+      <Button
         type='button'
-        className='gprv-branch-context-copy'
+        variant='outline'
+        size='sm'
+        className='h-auto w-full justify-between gap-2 px-2 py-1.5 font-mono text-xs font-normal'
         title={`Copy ${name}`}
         aria-label={copied ? `Copied branch ${name}` : `Copy branch ${name}`}
         onClick={() => void copy()}
       >
-        <code className='gprv-branch-context-name'>{name}</code>
+        <code className='min-w-0 truncate'>{name}</code>
         <span
-          className='gprv-branch-copy-status'
-          data-copied={copied ? '' : undefined}
+          className='relative size-3.5 shrink-0'
           aria-hidden='true'
         >
           <IconCopy
-            className='gprv-branch-copy-icon'
+            className={cn(
+              'absolute inset-0 transition-all',
+              copied ? 'scale-75 opacity-0' : 'scale-100 opacity-70',
+            )}
             size={14}
-            stroke={2}
           />
           <IconCheck
-            className='gprv-branch-check-icon'
+            className={cn(
+              'absolute inset-0 text-green-500 transition-all',
+              copied ? 'scale-100 opacity-100' : 'scale-75 opacity-0',
+            )}
             size={14}
-            stroke={2.5}
           />
         </span>
-      </button>
+      </Button>
     </div>
   );
 }

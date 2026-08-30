@@ -1,5 +1,6 @@
-import { IconColumns, IconLayoutRows } from '@tabler/icons-react';
+import { IconDiffSplit, IconDiffUnified } from '@pierre/icons';
 
+import { Button } from '@/components/ui/button';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 
 type DiffLayoutToggleProps = {
@@ -13,24 +14,15 @@ export function DiffLayoutToggle({ value, onChange }: DiffLayoutToggleProps) {
   const nextLabel = isSideBySide ? 'unified diff' : 'side-by-side diff';
 
   return (
-    <button
+    <Button
       type='button'
-      className='gprv-header-icon-button'
+      variant='ghost'
+      size='icon-sm'
       onClick={() => onChange(nextLayout)}
       aria-label={`Switch to ${nextLabel}`}
       title={`Switch to ${nextLabel}`}
     >
-      {isSideBySide ? (
-        <IconColumns
-          size={16}
-          stroke={2}
-        />
-      ) : (
-        <IconLayoutRows
-          size={16}
-          stroke={2}
-        />
-      )}
-    </button>
+      {isSideBySide ? <IconDiffSplit size={16} /> : <IconDiffUnified size={16} />}
+    </Button>
   );
 }

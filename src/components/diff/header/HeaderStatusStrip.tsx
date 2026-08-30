@@ -1,7 +1,9 @@
-import { IconAlertTriangle } from '@tabler/icons-react';
+import { IconCiWarning } from '@pierre/icons';
 import { memo, useMemo } from 'react';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { RateLimitState } from '@/lib/github/api';
+import { cn } from '@/lib/utils';
 
 type HeaderStatusStripProps = {
   reviewCommentsLoadError?: string | null;
@@ -64,25 +66,25 @@ export const HeaderStatusStrip = memo(function HeaderStatusStrip({
   const hasDanger = items.some((item) => item.tone === 'danger');
 
   return (
-    <div
-      className={`gprv-header-status-strip${hasDanger ? ' gprv-header-status-strip-danger' : ''}`}
+    <Alert
+      variant={hasDanger ? 'destructive' : 'default'}
+      className={cn(
+        'rounded-none border-0 border-b px-3 py-1.5',
+        !hasDanger &&
+          'bg-amber-500/10 text-amber-100 **:data-[slot=alert-description]:text-amber-100/90',
+      )}
       role='status'
       aria-live='polite'
     >
-      <IconAlertTriangle
-        size={14}
-        stroke={2}
-        className='gprv-header-status-icon'
-        aria-hidden='true'
-      />
-      <p className='gprv-header-status-messages'>
+      <IconCiWarning aria-hidden='true' />
+      <AlertDescription className='truncate text-xs'>
         {items.map((item, index) => (
           <span key={item.id}>
-            {index > 0 ? <span className='gprv-header-status-separator'> · </span> : null}
+            {index > 0 ? <span className='text-muted-foreground'> · </span> : null}
             <span title={item.title}>{item.label}</span>
           </span>
         ))}
-      </p>
-    </div>
+      </AlertDescription>
+    </Alert>
   );
 });
