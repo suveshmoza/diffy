@@ -4,4 +4,4 @@ export const FILE_TREE_COMMENT_ICON_MASK_URL = `url("data:image/svg+xml,${encode
   COMMENT_ICON_SVG,
 )}")`;
 
-export const FILE_TREE_COMMENT_ICON_SIZE = '16px';
+export const FILE_TREE_COMMENT_ICON_SIZE = '14px';

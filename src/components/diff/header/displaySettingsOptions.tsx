@@ -37,17 +37,17 @@ export const DIFF_INDICATOR_OPTIONS: readonly SegmentOption<DiffIndicators>[] = 
   {
     value: 'classic',
     label: 'Classic',
-    icon: <IconSymbolDiffstat size={ICON_SIZE} />,
+    icon: <IconSymbolDiffstat />,
   },
   {
     value: 'bars',
     label: 'Bars',
-    icon: <IconCodeStyleBars size={ICON_SIZE} />,
+    icon: <IconCodeStyleBars />,
   },
   {
     value: 'none',
     label: 'None',
-    icon: <IconEyeSlash size={ICON_SIZE} />,
+    icon: <IconEyeSlash />,
   },
 ];
 

@@ -52,7 +52,7 @@ export function SegmentedControl<T extends string | number>({
           value={String(option.value)}
           aria-label={showLabels ? undefined : option.label}
           title={option.label}
-          size='sm'
+          size='default'
           className={cn(!showLabels && 'px-2')}
         >
           {option.icon ? (

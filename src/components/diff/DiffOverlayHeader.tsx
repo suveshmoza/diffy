@@ -123,7 +123,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
                     : 'Collect comments into a single review before publishing'
                 }
               >
-                <IconConvo size={15} />
+                <IconConvo />
                 {isBatchMode ? 'Reviewing' : 'Review'}
               </Button>
               {isBatchMode ? (

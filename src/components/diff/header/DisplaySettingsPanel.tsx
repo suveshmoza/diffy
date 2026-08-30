@@ -505,7 +505,7 @@ function FontPresetSelectRow<T extends string>({
         <SelectTrigger
           id={id}
           size='sm'
-          className='w-[9.5rem]'
+          className='w-38'
           aria-label={label}
         >
           <SelectValue />

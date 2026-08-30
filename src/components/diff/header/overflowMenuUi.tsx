@@ -106,7 +106,7 @@ export function OverflowMenuItem({
       ) : null}
       <span className='min-w-0 flex-1 truncate text-left'>{label}</span>
       {value ? (
-        <span className='max-w-[9rem] truncate text-xs text-muted-foreground'>{value}</span>
+        <span className='max-w-36 truncate text-xs text-muted-foreground'>{value}</span>
       ) : null}
       {suffix ? (
         <span className='inline-flex size-4 shrink-0 items-center justify-center opacity-70'>

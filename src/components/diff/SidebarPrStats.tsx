@@ -19,7 +19,7 @@ export const SidebarPrStats = memo(function SidebarPrStats({
         aria-label={`${pullRequest.changed_files} files changed, ${pullRequest.additions} additions, ${pullRequest.deletions} deletions`}
       >
         <IconFiles
-          size={16}
+          size={14}
           className='text-muted-foreground'
         />
         <span className='text-muted-foreground'>
@@ -29,7 +29,7 @@ export const SidebarPrStats = memo(function SidebarPrStats({
         <span className='text-red-500'>−{pullRequest.deletions}</span>
       </div>
       <div className='inline-flex items-center gap-1 text-xs text-muted-foreground'>
-        <IconComment size={16} />
+        <IconComment size={14} />
         <span>{reviewCommentCount}</span>
       </div>
     </div>
