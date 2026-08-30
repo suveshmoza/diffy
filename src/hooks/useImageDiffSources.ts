@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   clearImageDiffCache,
@@ -123,16 +123,30 @@ export function useImageDiffSources({
   enabled,
   pane = 'only',
 }: UseImageDiffSourcesParams): ImageDiffSourcesState {
+  const canLoad = Boolean(enabled && file && pullRequest && pullRequestRef);
+  const loadKey = canLoad
+    ? `${file!.filename}:${pane}:${pullRequest!.head.sha}:${pullRequestRef!.pullNumber}`
+    : null;
+
   const [state, setState] = useState<ImageDiffSourcesState>(() => {
-    if (!enabled || !file || !pullRequest || !pullRequestRef) {
+    if (!canLoad || !file || !pullRequest || !pullRequestRef) {
       return IDLE;
     }
     return readPaneState(file, pullRequest, pullRequestRef, pane);
   });
+  const [trackedLoadKey, setTrackedLoadKey] = useState(loadKey);
+
+  if (loadKey !== trackedLoadKey) {
+    setTrackedLoadKey(loadKey);
+    if (!canLoad || !file || !pullRequest || !pullRequestRef) {
+      setState(IDLE);
+    } else {
+      setState(readPaneState(file, pullRequest, pullRequestRef, pane));
+    }
+  }
 
   useEffect(() => {
-    if (!enabled || !file || !pullRequest || !pullRequestRef) {
-      setState(IDLE);
+    if (!canLoad || !file || !pullRequest || !pullRequestRef) {
       return;
     }
 
@@ -182,23 +196,18 @@ export function useImageDiffSources({
       cancelled = true;
       unsubscribe();
     };
-  }, [enabled, file, pane, pullRequest, pullRequestRef]);
+  }, [canLoad, file, pane, pullRequest, pullRequestRef]);
 
   return state;
 }
 
 /** Prefetch all PR image blobs as soon as diff data is ready (not only when scrolled into view). */
 export function usePrefetchImageDiffs(data: PullRequestDiffData): void {
-  const prefetchKey = `${data.ref.owner}/${data.ref.repo}#${data.ref.pullNumber}@${data.pullRequest.base.sha}:${data.pullRequest.head.sha}:${data.files.length}`;
-  const dataRef = useRef(data);
-  dataRef.current = data;
-
   useEffect(() => {
-    const current = dataRef.current;
-    prefetchImageDiffs(current.ref, current.pullRequest, current.files);
+    prefetchImageDiffs(data.ref, data.pullRequest, data.files);
 
     return () => {
       clearImageDiffCache();
     };
-  }, [prefetchKey]);
+  }, [data]);
 }

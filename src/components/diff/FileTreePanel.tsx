@@ -141,7 +141,7 @@ function FileTreeSearchHeader({
         />
         <Input
           ref={inputRef}
-          className='h-8 bg-[var(--trees-theme-input-bg,var(--background))] pr-8 pl-8 text-xs'
+          className='h-8 bg-(--trees-theme-input-bg,var(--background)) pr-8 pl-8 text-xs'
           type='text'
           inputMode='search'
           autoComplete='off'
@@ -162,7 +162,7 @@ function FileTreeSearchHeader({
             aria-label='Clear filter'
             onClick={() => onSearchQueryChange('')}
           >
-            <IconX size={12} />
+            <IconX />
           </Button>
         ) : null}
       </div>
@@ -198,6 +198,8 @@ export function FileTreePanel({
     [reviewCommentCountByPath],
   );
   const pathsSignatureRef = useRef(treeInput.pathsSignature);
+  const selectedPathRef = useRef(selectedPath);
+  const annotationsByPathRef = useRef(treeInput.annotationsByPath);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isProgrammaticSelectionRef = useRef(false);
@@ -247,7 +249,52 @@ export function FileTreePanel({
     onSelectionChange: handleSelectionChange,
   });
 
+  const modelRef = useRef(model);
+
   const search = useFileTreeSearch(model);
+
+  const syncExternalSelection = useCallback(() => {
+    const currentModel = modelRef.current;
+    const path = selectedPathRef.current;
+    const annotationsByPath = annotationsByPathRef.current;
+
+    isProgrammaticSelectionRef.current = true;
+    try {
+      if (!path) {
+        for (const selected of currentModel.getSelectedPaths()) {
+          currentModel.getItem(selected)?.deselect();
+        }
+        return;
+      }
+
+      if (!annotationsByPath.has(path)) {
+        return;
+      }
+
+      const selectedPaths = currentModel.getSelectedPaths();
+      if (selectedPaths.length === 1 && selectedPaths[0] === path) {
+        return;
+      }
+
+      for (const selected of selectedPaths) {
+        if (selected !== path) {
+          currentModel.getItem(selected)?.deselect();
+        }
+      }
+
+      if (!selectedPaths.includes(path)) {
+        currentModel.getItem(path)?.select();
+      }
+    } finally {
+      isProgrammaticSelectionRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    selectedPathRef.current = selectedPath;
+    annotationsByPathRef.current = treeInput.annotationsByPath;
+    syncExternalSelection();
+  }, [selectedPath, treeInput.annotationsByPath, syncExternalSelection]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -275,40 +322,14 @@ export function FileTreePanel({
     model.resetPaths(treeInput.paths, { preparedInput: treeInput.preparedInput });
     model.setGitStatus(treeInput.gitStatus);
     setSearchQuery('');
-  }, [model, treeInput]);
+    syncExternalSelection();
+  }, [model, treeInput, syncExternalSelection]);
 
   useEffect(() => {
-    isProgrammaticSelectionRef.current = true;
-    try {
-      if (!selectedPath) {
-        for (const path of model.getSelectedPaths()) {
-          model.getItem(path)?.deselect();
-        }
-        return;
-      }
-
-      if (!treeInput.annotationsByPath.has(selectedPath)) {
-        return;
-      }
-
-      const selectedPaths = model.getSelectedPaths();
-      if (selectedPaths.length === 1 && selectedPaths[0] === selectedPath) {
-        return;
-      }
-
-      for (const path of selectedPaths) {
-        if (path !== selectedPath) {
-          model.getItem(path)?.deselect();
-        }
-      }
-
-      if (!selectedPaths.includes(selectedPath)) {
-        model.getItem(selectedPath)?.select();
-      }
-    } finally {
-      isProgrammaticSelectionRef.current = false;
-    }
-  }, [model, selectedPath, treeInput.annotationsByPath]);
+    modelRef.current = model;
+    syncExternalSelection();
+    return model.subscribe(syncExternalSelection);
+  }, [model, syncExternalSelection]);
 
   return (
     <div

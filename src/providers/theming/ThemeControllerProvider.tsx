@@ -27,8 +27,13 @@ const ThemeReadyContext = createContext<ThemeControllerContextValue>({
 
 export function ThemeControllerProvider({ children }: { children: ReactNode }) {
   const [isReady, setIsReady] = useState(false);
-  const [resolutionError, setResolutionError] = useState<string | null>(null);
   const state = useThemeController(themeController);
+  const resolutionError =
+    state.resolutionError != null
+      ? state.resolutionError.error instanceof Error
+        ? state.resolutionError.error.message
+        : String(state.resolutionError.error)
+      : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -90,18 +95,6 @@ export function ThemeControllerProvider({ children }: { children: ReactNode }) {
     browser.storage.onChanged.addListener(onChange);
     return () => browser.storage.onChanged.removeListener(onChange);
   }, []);
-
-  useEffect(() => {
-    if (state.resolutionError != null) {
-      const message =
-        state.resolutionError.error instanceof Error
-          ? state.resolutionError.error.message
-          : String(state.resolutionError.error);
-      setResolutionError(message);
-      return;
-    }
-    setResolutionError(null);
-  }, [state.resolutionError]);
 
   const readyValue = useMemo(
     () => ({

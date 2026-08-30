@@ -36,22 +36,14 @@ function GitHubCommentMarkdown({ body, pullRequestRef }: GitHubCommentMarkdownPr
     return null;
   }
 
-  try {
-    return (
-      <MarkdownToJsx
-        className='gprv-review-prose'
-        options={MARKDOWN_OPTIONS}
-      >
-        {markdown}
-      </MarkdownToJsx>
-    );
-  } catch {
-    return (
-      <div className='gprv-review-prose'>
-        <p className='gprv-review-paragraph'>{body}</p>
-      </div>
-    );
-  }
+  return (
+    <MarkdownToJsx
+      className='gprv-review-prose'
+      options={MARKDOWN_OPTIONS}
+    >
+      {markdown}
+    </MarkdownToJsx>
+  );
 }
 
 const MARKDOWN_OPTIONS: MarkdownToJSX.Options = {

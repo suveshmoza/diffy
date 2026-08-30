@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useState } from 'react';
 
 import type { LoadProgress } from '@/lib/github/api';
 
@@ -38,22 +38,18 @@ export function LoadingOverlay({ onClose, progress }: LoadingOverlayProps) {
     ? formatProgress(progress)
     : 'Fetching pull request metadata and changed files…';
 
-  const maxPctRef = useRef(0);
-  const hasDeterminateRef = useRef(false);
-
   const rawPct = progress ? progressPercent(progress) : null;
+  const [maxPct, setMaxPct] = useState(0);
 
   if (!progress) {
-    maxPctRef.current = 0;
-    hasDeterminateRef.current = false;
-  } else if (rawPct !== null) {
-    hasDeterminateRef.current = true;
-    if (rawPct > maxPctRef.current) {
-      maxPctRef.current = rawPct;
+    if (maxPct !== 0) {
+      setMaxPct(0);
     }
+  } else if (rawPct !== null && rawPct > maxPct) {
+    setMaxPct(rawPct);
   }
 
-  const displayPct = Math.min(maxPctRef.current, 100);
+  const displayPct = Math.min(maxPct, 100);
   const complete = displayPct >= 100;
 
   const statusMessage = complete ? 'Opening diff viewer…' : message;

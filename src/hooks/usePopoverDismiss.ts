@@ -13,7 +13,10 @@ export function usePopoverDismiss(
   onDismiss: () => void,
 ): void {
   const onDismissRef = useRef(onDismiss);
-  onDismissRef.current = onDismiss;
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
 
   useEffect(() => {
     if (!isOpen) {

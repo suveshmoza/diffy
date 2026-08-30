@@ -276,7 +276,7 @@ export function DiffOverlay({
     return new Map(codeViewItems.items.map((item) => [item.id, item]));
   }, [codeViewItems]);
 
-  const layoutRefreshDeps = useMemo(
+  const layoutRefreshKey = useMemo(
     () => [
       codeViewItems,
       isSidebarCollapsed,
@@ -294,7 +294,7 @@ export function DiffOverlay({
   );
 
   const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
-    useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, layoutRefreshDeps);
+    useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, layoutRefreshKey);
 
   useRestoreReviewSession({
     ref: data.ref,
@@ -967,6 +967,7 @@ export function DiffOverlay({
             {isPublishDialogOpen ? <PublishReviewDialog /> : null}
             {lightboxFile ? (
               <ImageDiffLightbox
+                key={lightboxFile.filename}
                 file={lightboxFile}
                 imageFiles={imageFiles}
                 pullRequest={data.pullRequest}
@@ -1118,7 +1119,7 @@ function CollapseDiffButton({
       }}
     >
       <IconChevronDown
-        size={16}
+        size={12}
         aria-hidden='true'
         className={`gprv-code-view-collapse-icon${collapsed ? ' gprv-code-view-collapse-icon-collapsed' : ''}`}
       />

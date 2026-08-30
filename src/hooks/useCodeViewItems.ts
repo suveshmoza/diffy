@@ -40,6 +40,12 @@ export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsSta
 
     return { result: null, isBuilding: true, error: null };
   });
+  const [buildingForData, setBuildingForData] = useState(data);
+
+  if (isLarge && buildingForData !== data) {
+    setBuildingForData(data);
+    setLargeState({ result: null, isBuilding: true, error: null });
+  }
 
   useEffect(() => {
     if (!isLarge) {
@@ -47,7 +53,6 @@ export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsSta
     }
 
     let isCancelled = false;
-    setLargeState({ result: null, isBuilding: true, error: null });
 
     const build = () => {
       if (isCancelled) {

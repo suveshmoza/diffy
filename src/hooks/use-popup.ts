@@ -11,52 +11,63 @@ import {
 } from '@/lib/github/token-storage';
 import { popupReducer } from '@/reducers/popup-reducer';
 
+const storageAvailable = browser?.storage?.local != null;
+
 export function usePopup() {
-  const [state, dispatch] = useReducer(popupReducer, { status: 'loading' });
+  const [state, dispatch] = useReducer(
+    popupReducer,
+    storageAvailable ? { status: 'loading' } : { status: 'empty' },
+  );
   const [tokenInput, setTokenInput] = useState('');
 
   useEffect(() => {
-    void loadFromStorage();
-  }, []);
-
-  async function loadFromStorage() {
-    dispatch({ type: 'LOADING' });
-
-    if (!browser?.storage?.local) {
-      dispatch({ type: 'SET_EMPTY' });
+    if (!storageAvailable) {
       return;
     }
 
-    try {
-      const { token, viewerJson } = await readGitHubTokenCredentials();
+    let cancelled = false;
 
-      if (token) {
-        setTokenInput(token);
-
-        if (viewerJson) {
-          try {
-            const viewer = JSON.parse(viewerJson) as GitHubViewer;
-            dispatch({ type: 'SET_SAVED', viewer });
-            return;
-          } catch {
-            // Corrupt cache — fall through to saved without viewer
-          }
+    void (async () => {
+      try {
+        const { token, viewerJson } = await readGitHubTokenCredentials();
+        if (cancelled) {
+          return;
         }
 
-        dispatch({ type: 'SET_SAVED' });
-      } else {
-        dispatch({ type: 'SET_EMPTY' });
+        if (token) {
+          setTokenInput(token);
+
+          if (viewerJson) {
+            try {
+              const viewer = JSON.parse(viewerJson) as GitHubViewer;
+              dispatch({ type: 'SET_SAVED', viewer });
+              return;
+            } catch {
+              // Corrupt cache — fall through to saved without viewer
+            }
+          }
+
+          dispatch({ type: 'SET_SAVED' });
+        } else {
+          dispatch({ type: 'SET_EMPTY' });
+        }
+      } catch {
+        if (!cancelled) {
+          dispatch({ type: 'SET_EMPTY' });
+        }
       }
-    } catch {
-      dispatch({ type: 'SET_EMPTY' });
-    }
-  }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (state.status === 'validating') return;
 
-    if (!browser?.storage?.local) {
+    if (!storageAvailable) {
       dispatch({
         type: 'SET_ERROR',
         message: 'Extension storage is unavailable.',
@@ -101,7 +112,7 @@ export function usePopup() {
   }
 
   async function handleClear() {
-    if (!browser?.storage?.local) return;
+    if (!storageAvailable) return;
 
     await clearGitHubToken();
     setTokenInput('');

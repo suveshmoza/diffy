@@ -159,7 +159,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (isDeleting) {
       return;
     }
@@ -174,7 +174,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
     } finally {
       setIsDeleting(false);
     }
-  }, [actions, comment, isDeleting, isOrphaned, itemId]);
+  };
 
   const handleSaveEdit = useCallback(
     async (body: string) => {

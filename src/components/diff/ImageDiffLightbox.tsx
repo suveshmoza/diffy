@@ -2,6 +2,7 @@ import { IconMagnifyingGlassFocus, IconMinus, IconPlus, IconX } from '@pierre/ic
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -116,29 +117,21 @@ export function ImageDiffLightbox({
 
   const resetTransform = useCallback(() => {
     setTransform(INITIAL_TRANSFORM);
-  }, []);
+  }, [setTransform]);
 
-  const [prevFilename, setPrevFilename] = useState(file.filename);
-  if (file.filename !== prevFilename) {
-    setPrevFilename(file.filename);
-    setTransform(INITIAL_TRANSFORM);
-    setSwipePosition(50);
-    setOnionOpacity(50);
-    setBlinkActive(false);
-    setBlinkAfter(true);
-    setAnimationsPlaying(true);
-  }
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     dialogRef.current?.focus({ preventScroll: true });
-  }, [file.filename]);
-
-  const setZoom = useCallback((nextZoom: number) => {
-    setTransform((current) => ({
-      ...current,
-      zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom)),
-    }));
   }, []);
+
+  const setZoom = useCallback(
+    (nextZoom: number) => {
+      setTransform((current) => ({
+        ...current,
+        zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom)),
+      }));
+    },
+    [setTransform],
+  );
 
   const handleActualSize = useCallback(() => {
     const media = dialogRef.current?.querySelector<HTMLElement>('[data-primary-media]');
@@ -178,20 +171,23 @@ export function ImageDiffLightbox({
     event.currentTarget.dataset.panning = '';
   }, []);
 
-  const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) {
-      return;
-    }
-    const deltaX = event.clientX - drag.x;
-    const deltaY = event.clientY - drag.y;
-    dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
-    setTransform((current) => ({
-      ...current,
-      panX: current.panX + deltaX,
-      panY: current.panY + deltaY,
-    }));
-  }, []);
+  const handlePointerMove = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) {
+        return;
+      }
+      const deltaX = event.clientX - drag.x;
+      const deltaY = event.clientY - drag.y;
+      dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+      setTransform((current) => ({
+        ...current,
+        panX: current.panX + deltaX,
+        panY: current.panY + deltaY,
+      }));
+    },
+    [setTransform],
+  );
 
   const handlePointerUp = useCallback((event: PointerEvent<HTMLDivElement>) => {
     if (dragRef.current?.pointerId !== event.pointerId) {
@@ -248,7 +244,17 @@ export function ImageDiffLightbox({
         setBlinkAfter((current) => !current);
       }
     },
-    [hasBoth, mode, nextFile, onClose, onModeChange, onNavigate, previousFile],
+    [
+      hasBoth,
+      mode,
+      nextFile,
+      onClose,
+      onModeChange,
+      onNavigate,
+      previousFile,
+      setBlinkActive,
+      setBlinkAfter,
+    ],
   );
 
   const stageProps = {
