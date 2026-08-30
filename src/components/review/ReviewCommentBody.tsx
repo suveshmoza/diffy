@@ -21,7 +21,12 @@ export function ReviewCommentBody({
 
   if (!trimmed) {
     return (
-      <p className={cn('mt-1 min-w-0 text-sm leading-relaxed text-muted-foreground italic', className)}>
+      <p
+        className={cn(
+          'mt-1 min-w-0 text-sm leading-relaxed text-muted-foreground italic',
+          className,
+        )}
+      >
         {emptyMessage}
       </p>
     );

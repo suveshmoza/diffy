@@ -66,9 +66,15 @@ export function ReviewDock() {
     textareaRef.current?.focus({ preventScroll: true });
   }, [isReviewDockExpanded]);
 
-  useEffect(() => {
+  const handleBodyChange = useCallback((next: string) => {
+    setBody(next);
     setError(null);
-  }, [event, body]);
+  }, []);
+
+  const handleEventChange = useCallback((next: ReviewEvent) => {
+    setEvent(next);
+    setError(null);
+  }, []);
 
   const handlePublish = useCallback(async () => {
     if (event === 'REQUEST_CHANGES' && !body.trim()) {
@@ -203,7 +209,7 @@ export function ReviewDock() {
               ref={textareaRef}
               id='review-dock-summary'
               value={body}
-              onChange={setBody}
+              onChange={handleBodyChange}
               placeholder={summaryPlaceholder(event)}
               rows={3}
               disabled={isSubmitting}
@@ -220,7 +226,7 @@ export function ReviewDock() {
               ariaLabel='Review verdict'
               options={VERDICT_OPTIONS}
               value={event}
-              onChange={setEvent}
+              onChange={handleEventChange}
             />
             <p className='text-xs leading-relaxed text-muted-foreground'>
               {verdictHelperText(event, queuedCount)}

@@ -8,7 +8,7 @@ import {
   IconType,
 } from '@pierre/icons';
 import type { ColorMode } from '@pierre/theming';
-import { useEffect, useState, type KeyboardEvent } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -343,6 +343,7 @@ export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
 
             <OverflowMenuSettingsRow label='Size'>
               <CodeMetricInput
+                key={displayPrefs.codeFontSize}
                 id={`${id}-font-size`}
                 ariaLabel='Code font size'
                 value={displayPrefs.codeFontSize}
@@ -355,6 +356,7 @@ export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
 
             <OverflowMenuSettingsRow label='Line height'>
               <CodeMetricInput
+                key={displayPrefs.codeLineHeight}
                 id={`${id}-line-height`}
                 ariaLabel='Code line height'
                 value={displayPrefs.codeLineHeight}
@@ -602,10 +604,6 @@ function CodeMetricInput({
   onChange,
 }: CodeMetricInputProps) {
   const [draft, setDraft] = useState(String(value));
-
-  useEffect(() => {
-    setDraft(String(value));
-  }, [value]);
 
   const commit = () => {
     const normalized = normalize(draft);
