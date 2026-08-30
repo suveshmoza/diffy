@@ -7,7 +7,7 @@ import type {
   SelectedLineRange,
 } from '@pierre/diffs';
 import { useStableCallback, type CodeViewHandle } from '@pierre/diffs/react';
-import { IconChevronDown, IconCircleX, IconLoader } from '@tabler/icons-react';
+import { IconXSquircle } from '@pierre/icons';
 import {
   useCallback,
   useEffect,
@@ -24,6 +24,8 @@ import { ImageDiffLightbox } from '@/components/diff/ImageDiffLightbox';
 import { ImageDiffViewer } from '@/components/diff/ImageDiffViewer';
 import { NotificationErrorBar } from '@/components/diff/NotificationErrorBar';
 import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
+import { IconChevronDown } from '@/components/icons/Chevron';
+import { IconSpinner } from '@/components/icons/Spinner';
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import {
   kickCodeViewLayout,
@@ -73,7 +75,9 @@ import {
 import { bindReplySession } from '@/lib/review/reply-session';
 import { buildAnnotationThemeStyle } from '@/lib/theming/buildAnnotationThemeStyle';
 import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
+import { cn } from '@/lib/utils';
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
+import { OverlayPortalProvider } from '@/providers/OverlayPortalContext';
 import { ReviewProvider, type ReviewContextValue } from '@/providers/ReviewContext';
 import { ReviewQueueProvider, type ReviewQueueContextValue } from '@/providers/ReviewQueueContext';
 import { useSidebarContext, MOBILE_SIDEBAR_QUERY } from '@/providers/SidebarContext';
@@ -109,7 +113,12 @@ export function DiffOverlay({
 }: DiffOverlayProps) {
   const viewerRef = useRef<CodeViewHandle<ReviewAnnotationMetadata>>(null);
   const codeViewHostRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLElement>(null);
+  const modalRef = useRef<HTMLElement | null>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const handleModalRef = useCallback((node: HTMLElement | null) => {
+    modalRef.current = node;
+    setPortalContainer(node);
+  }, []);
   const selectedLinesRef = useRef<CodeViewLineSelection | null>(null);
   const hoveredThreadSelectionRef = useRef<CodeViewLineSelection | null>(null);
   const isOpeningDraftRef = useRef(false);
@@ -206,6 +215,13 @@ export function DiffOverlay({
     displayPrefs,
   });
   const colorScheme = useThemeColorScheme();
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', colorScheme === 'dark');
+    return () => {
+      document.documentElement.classList.remove('dark');
+    };
+  }, [colorScheme]);
   const treeThemeStyles = useTreeThemeStyles();
   const treeThemeVars = useMemo(
     () => pickTreeThemeCustomProperties(treeThemeStyles),
@@ -869,7 +885,7 @@ export function DiffOverlay({
       const path = getItemPath(item);
 
       return (
-        <span className='gprv-file-header-meta'>
+        <span className='inline-flex items-center gap-2.5'>
           {orphanedThreads?.length ? (
             <OrphanedReviewCommentsBadge
               threads={orphanedThreads}
@@ -914,8 +930,8 @@ export function DiffOverlay({
         onClick={handleCloseOverlay}
       />
       <section
-        ref={modalRef}
-        className='gprv-modal'
+        ref={handleModalRef}
+        className={cn('gprv-modal', colorScheme === 'dark' && 'dark')}
         style={modalStyle}
         role='dialog'
         aria-modal='true'
@@ -923,160 +939,160 @@ export function DiffOverlay({
         onKeyDown={stopGitHubKeybindings}
         onKeyUp={stopGitHubKeybindings}
       >
-        <ReviewQueueProvider value={reviewQueueContextValue}>
-          <DiffOverlayHeader
-            pullRequest={data.pullRequest}
-            pullRequestUrl={pullRequestUrl}
-            diffLayout={diffLayout}
-            displayPrefs={displayPrefs}
-            reviewCommentsLoadError={data.reviewCommentsLoadError}
-            rateLimit={rateLimit}
-            viewedFilesError={
-              viewedFiles.hasToken && viewedFiles.error
-                ? formatViewedFilesError(viewedFiles.error)
-                : null
-            }
-            canReview={viewedFiles.hasToken}
-            onDiffLayoutChange={updateDiffLayout}
-            onDisplayPrefsChange={updateDisplayPrefs}
-            onRefresh={handleRefresh}
-            isRefreshing={isRefreshing}
-            onClose={handleCloseOverlay}
-            allCollapsed={allCollapsed}
-            onExpandAll={handleExpandAll}
-            onCollapseAll={handleCollapseAll}
-          />
-
-          {isPublishDialogOpen ? <PublishReviewDialog /> : null}
-          {lightboxFile ? (
-            <ImageDiffLightbox
-              file={lightboxFile}
-              imageFiles={imageFiles}
+        <OverlayPortalProvider container={portalContainer}>
+          <ReviewQueueProvider value={reviewQueueContextValue}>
+            <DiffOverlayHeader
               pullRequest={data.pullRequest}
-              pullRequestRef={data.ref}
-              mode={displayPrefs.imageCompareMode}
-              checkerboard={displayPrefs.imageCheckerboard}
-              onModeChange={(imageCompareMode) => updateDisplayPrefs({ imageCompareMode })}
-              onCheckerboardChange={(imageCheckerboard) =>
-                updateDisplayPrefs({ imageCheckerboard })
+              pullRequestUrl={pullRequestUrl}
+              diffLayout={diffLayout}
+              displayPrefs={displayPrefs}
+              reviewCommentsLoadError={data.reviewCommentsLoadError}
+              rateLimit={rateLimit}
+              viewedFilesError={
+                viewedFiles.hasToken && viewedFiles.error
+                  ? formatViewedFilesError(viewedFiles.error)
+                  : null
               }
-              onNavigate={handleNavigateImage}
-              onClose={() => setLightboxImagePath(null)}
+              canReview={viewedFiles.hasToken}
+              onDiffLayoutChange={updateDiffLayout}
+              onDisplayPrefsChange={updateDisplayPrefs}
+              onRefresh={handleRefresh}
+              isRefreshing={isRefreshing}
+              onClose={handleCloseOverlay}
+              allCollapsed={allCollapsed}
+              onExpandAll={handleExpandAll}
+              onCollapseAll={handleCollapseAll}
             />
-          ) : null}
 
-          <div className='gprv-modal-main'>
-            <GitHubAuthProvider>
-              <ReviewProvider value={reviewContextValue}>
-                {notificationError ? (
-                  <NotificationErrorBar
-                    message={notificationError}
-                    onDismiss={() => setNotificationError(null)}
-                  />
-                ) : null}
-                <div
-                  className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}
-                >
-                  <button
-                    type='button'
-                    className='gprv-sidebar-backdrop'
-                    data-open={isSidebarCollapsed ? undefined : ''}
-                    aria-hidden={isSidebarCollapsed}
-                    aria-label='Close file list'
-                    tabIndex={isSidebarCollapsed ? -1 : 0}
-                    onClick={closeSidebar}
-                  />
-                  <aside
-                    className='gprv-sidebar'
-                    aria-hidden={isSidebarCollapsed}
-                  >
-                    {data.files.length > 0 && codeViewItems ? (
-                      <FileTreePanel
-                        files={data.files}
-                        selectedPath={selectedPath}
-                        reviewCommentCountByPath={reviewCommentCountByPath}
-                        onSelectPath={handleTreeSelect}
-                        pullRequest={data.pullRequest}
-                        reviewCommentCount={data.reviewComments.length}
-                        reviewProgress={viewedFiles.hasToken ? viewedFiles.progress : null}
-                        onJumpToNextUnviewed={handleJumpToNextUnviewed}
-                      />
-                    ) : (
-                      <div className='gprv-state'>
-                        {isBuilding ? 'Building file list…' : 'No changed files found.'}
-                      </div>
-                    )}
-                  </aside>
+            {isPublishDialogOpen ? <PublishReviewDialog /> : null}
+            {lightboxFile ? (
+              <ImageDiffLightbox
+                file={lightboxFile}
+                imageFiles={imageFiles}
+                pullRequest={data.pullRequest}
+                pullRequestRef={data.ref}
+                mode={displayPrefs.imageCompareMode}
+                checkerboard={displayPrefs.imageCheckerboard}
+                onModeChange={(imageCompareMode) => updateDisplayPrefs({ imageCompareMode })}
+                onCheckerboardChange={(imageCheckerboard) =>
+                  updateDisplayPrefs({ imageCheckerboard })
+                }
+                onNavigate={handleNavigateImage}
+                onClose={() => setLightboxImagePath(null)}
+              />
+            ) : null}
 
+            <div className='gprv-modal-main'>
+              <GitHubAuthProvider>
+                <ReviewProvider value={reviewContextValue}>
+                  {notificationError ? (
+                    <NotificationErrorBar
+                      message={notificationError}
+                      onDismiss={() => setNotificationError(null)}
+                    />
+                  ) : null}
                   <div
-                    ref={codeViewHostRef}
-                    className='gprv-code-view-host'
+                    className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}
                   >
-                    {codeViewBuildError ? (
-                      <div
-                        className='gprv-state'
-                        style={{ color: 'var(--gprv-error)' }}
-                      >
-                        {codeViewBuildError}
-                      </div>
-                    ) : codeViewItems && codeViewItems.items.length === 0 ? (
-                      <div className='gprv-state'>
-                        <div className='gprv-empty-state'>
-                          <IconCircleX
-                            size={48}
-                            stroke={2}
-                            color='var(--gprv-muted)'
-                          />
-                          <p className='gprv-loading-summary'>
-                            This pull request has no code changes.
-                          </p>
-                          <p className='gprv-loading-hint'>
-                            The diff viewer requires at least one changed file.
-                          </p>
+                    <button
+                      type='button'
+                      className='gprv-sidebar-backdrop'
+                      data-open={isSidebarCollapsed ? undefined : ''}
+                      aria-hidden={isSidebarCollapsed}
+                      aria-label='Close file list'
+                      tabIndex={isSidebarCollapsed ? -1 : 0}
+                      onClick={closeSidebar}
+                    />
+                    <aside
+                      className='gprv-sidebar'
+                      aria-hidden={isSidebarCollapsed}
+                    >
+                      {data.files.length > 0 && codeViewItems ? (
+                        <FileTreePanel
+                          files={data.files}
+                          selectedPath={selectedPath}
+                          reviewCommentCountByPath={reviewCommentCountByPath}
+                          onSelectPath={handleTreeSelect}
+                          pullRequest={data.pullRequest}
+                          reviewCommentCount={data.reviewComments.length}
+                          reviewProgress={viewedFiles.hasToken ? viewedFiles.progress : null}
+                          onJumpToNextUnviewed={handleJumpToNextUnviewed}
+                        />
+                      ) : (
+                        <div className='gprv-state'>
+                          {isBuilding ? 'Building file list…' : 'No changed files found.'}
                         </div>
-                      </div>
-                    ) : isCodeViewMounted && codeViewItems ? (
-                      <ThemedCodeView<ReviewAnnotationMetadata>
-                        key={`codeview-${refreshGeneration}`}
-                        ref={viewerRef}
-                        containerRef={handleCodeViewContainer}
-                        initialItems={codeViewItems.items}
-                        className='gprv-code-view'
-                        style={codeViewStyle}
-                        renderAnnotation={renderReviewAnnotation}
-                        renderHeaderPrefix={renderHeaderPrefix}
-                        renderHeaderMetadata={renderReviewHeaderMetadata}
-                        options={codeViewOptionsWithInteractions ?? codeViewOptions}
-                        selectedLines={hoveredThreadSelection ?? selectedLines}
-                        onSelectedLinesChange={handleSelectedLinesChange}
-                      />
-                    ) : (
-                      <div className='gprv-state'>
-                        {isBuilding ? (
-                          'Building diff…'
-                        ) : (
-                          <div
-                            className='gprv-loading-panel'
-                            role='status'
-                            aria-live='polite'
-                            aria-label='Preparing diff viewer'
-                          >
-                            <IconLoader
+                      )}
+                    </aside>
+
+                    <div
+                      ref={codeViewHostRef}
+                      className='gprv-code-view-host'
+                    >
+                      {codeViewBuildError ? (
+                        <div
+                          className='gprv-state'
+                          style={{ color: 'var(--gprv-error)' }}
+                        >
+                          {codeViewBuildError}
+                        </div>
+                      ) : codeViewItems && codeViewItems.items.length === 0 ? (
+                        <div className='gprv-state'>
+                          <div className='gprv-empty-state'>
+                            <IconXSquircle
                               size={48}
-                              stroke={2}
-                              className='gprv-loading-spinner'
+                              color='var(--gprv-muted)'
                             />
-                            <p className='gprv-loading-summary'>Preparing diff viewer…</p>
+                            <p className='gprv-loading-summary'>
+                              This pull request has no code changes.
+                            </p>
+                            <p className='gprv-loading-hint'>
+                              The diff viewer requires at least one changed file.
+                            </p>
                           </div>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      ) : isCodeViewMounted && codeViewItems ? (
+                        <ThemedCodeView<ReviewAnnotationMetadata>
+                          key={`codeview-${refreshGeneration}`}
+                          ref={viewerRef}
+                          containerRef={handleCodeViewContainer}
+                          initialItems={codeViewItems.items}
+                          className='gprv-code-view'
+                          style={codeViewStyle}
+                          renderAnnotation={renderReviewAnnotation}
+                          renderHeaderPrefix={renderHeaderPrefix}
+                          renderHeaderMetadata={renderReviewHeaderMetadata}
+                          options={codeViewOptionsWithInteractions ?? codeViewOptions}
+                          selectedLines={hoveredThreadSelection ?? selectedLines}
+                          onSelectedLinesChange={handleSelectedLinesChange}
+                        />
+                      ) : (
+                        <div className='gprv-state'>
+                          {isBuilding ? (
+                            'Building diff…'
+                          ) : (
+                            <div
+                              className='gprv-loading-panel'
+                              role='status'
+                              aria-live='polite'
+                              aria-label='Preparing diff viewer'
+                            >
+                              <IconSpinner
+                                size={48}
+                                className='gprv-loading-spinner'
+                              />
+                              <p className='gprv-loading-summary'>Preparing diff viewer…</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </ReviewProvider>
-            </GitHubAuthProvider>
-          </div>
-        </ReviewQueueProvider>
+                </ReviewProvider>
+              </GitHubAuthProvider>
+            </div>
+          </ReviewQueueProvider>
+        </OverlayPortalProvider>
       </section>
     </>
   );
@@ -1103,7 +1119,6 @@ function CollapseDiffButton({
     >
       <IconChevronDown
         size={16}
-        stroke={2}
         aria-hidden='true'
         className={`gprv-code-view-collapse-icon${collapsed ? ' gprv-code-view-collapse-icon-collapsed' : ''}`}
       />

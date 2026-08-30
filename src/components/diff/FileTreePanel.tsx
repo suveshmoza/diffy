@@ -1,6 +1,6 @@
+import { IconSearch, IconX } from '@pierre/icons';
 import type { FileTreeRowDecorationRenderer } from '@pierre/trees';
 import { FileTree, useFileTree, useFileTreeSearch } from '@pierre/trees/react';
-import { IconSearch, IconX } from '@tabler/icons-react';
 import {
   useCallback,
   useEffect,
@@ -11,6 +11,8 @@ import {
   type RefObject,
 } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
 import {
   buildCommentBadgeCountCss,
@@ -27,6 +29,13 @@ import type { ViewedProgress } from '@/lib/review/viewed-files';
 import { ReviewProgress } from '../review/ReviewProgress';
 import { SidebarPrInfo } from './SidebarPrInfo';
 import { SidebarPrStats } from './SidebarPrStats';
+
+const treePanelClassName =
+  'flex h-full min-h-0 flex-col border-[var(--trees-theme-sidebar-border,var(--border))]';
+const treePanelTopClassName =
+  'flex shrink-0 flex-col gap-2 border-b border-[var(--trees-theme-sidebar-border,var(--border))] bg-[var(--trees-theme-sidebar-bg,var(--background))] pb-2';
+const treeSearchWrapClassName =
+  'box-border flex w-full shrink-0 flex-col gap-1.5 border-b border-[var(--trees-theme-sidebar-border,var(--border))] bg-[var(--trees-theme-sidebar-bg,var(--background))] px-3 py-2.5';
 
 const TREE_INITIAL_VISIBLE_ROW_COUNT = 80;
 const TREE_OVERSCAN = 12;
@@ -121,19 +130,18 @@ function FileTreeSearchHeader({
 
   return (
     <div
-      className='gprv-tree-search-wrap'
+      className={treeSearchWrapClassName}
       onKeyDownCapture={stopGitHubKeybindings}
       onKeyUpCapture={stopGitHubKeybindings}
     >
-      <label className='gprv-tree-search-field'>
+      <div className='relative'>
         <IconSearch
           size={14}
-          stroke={2}
-          className='gprv-tree-search-icon'
+          className='pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground'
         />
-        <input
+        <Input
           ref={inputRef}
-          className='gprv-tree-search'
+          className='h-8 bg-[var(--trees-theme-input-bg,var(--background))] pr-8 pl-8 text-xs'
           type='text'
           inputMode='search'
           autoComplete='off'
@@ -146,19 +154,21 @@ function FileTreeSearchHeader({
           aria-label='Filter changed files'
         />
         {hasQuery ? (
-          <button
-            className='gprv-tree-search-clear'
+          <Button
             type='button'
+            variant='ghost'
+            size='icon-xs'
+            className='absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground'
             aria-label='Clear filter'
             onClick={() => onSearchQueryChange('')}
           >
             <IconX size={12} />
-          </button>
+          </Button>
         ) : null}
-      </label>
+      </div>
       {hasQuery ? (
         <p
-          className='gprv-tree-search-meta'
+          className='m-0 text-[11px] text-muted-foreground'
           aria-live='polite'
         >
           {matchCount} {matchCount === 1 ? 'match' : 'matches'}
@@ -302,16 +312,16 @@ export function FileTreePanel({
 
   return (
     <div
-      className='gprv-tree-panel'
+      className={treePanelClassName}
       style={treeThemeStyles}
     >
-      <div className='gprv-tree-panel-top'>
+      <div className={treePanelTopClassName}>
         <SidebarPrStats
           pullRequest={pullRequest}
           reviewCommentCount={reviewCommentCount}
         />
         {reviewProgress && onJumpToNextUnviewed ? (
-          <div className='gprv-tree-review-progress'>
+          <div className='px-3 pb-0.5'>
             <ReviewProgress
               viewed={reviewProgress.viewed}
               total={reviewProgress.total}
@@ -327,7 +337,7 @@ export function FileTreePanel({
         onSearchQueryChange={handleSearchQueryChange}
       />
       <FileTree
-        className='gprv-tree'
+        className='min-h-0 flex-1'
         model={model}
         style={{ height: '100%', colorScheme: treeThemeStyles.colorScheme }}
       />
