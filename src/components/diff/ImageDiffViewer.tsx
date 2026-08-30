@@ -1,5 +1,6 @@
-import { IconArrowsMaximize, IconLoader } from '@tabler/icons-react';
+import { IconArrowsExpand } from '@pierre/icons';
 
+import { IconSpinner } from '@/components/icons/Spinner';
 import { useImageDiffSources } from '@/hooks/useImageDiffSources';
 import { formatDimensions, formatImageBytes, getResizeDelta } from '@/lib/diff/image-diff-meta';
 import { formatFileChangeStatus, getImageDiffSides } from '@/lib/diff/media-files';
@@ -57,9 +58,8 @@ export function ImageDiffViewer({
             aria-live='polite'
             aria-label='Loading media'
           >
-            <IconLoader
+            <IconSpinner
               size={28}
-              stroke={2}
               className='gprv-loading-spinner'
             />
             <p className='gprv-media-panel-hint'>Loading media…</p>
@@ -85,10 +85,7 @@ export function ImageDiffViewer({
                 title='Expand image comparison'
                 onClick={() => onExpand(file.filename)}
               >
-                <IconArrowsMaximize
-                  size={16}
-                  stroke={2}
-                />
+                <IconArrowsExpand size={16} />
               </button>
               <img
                 className='gprv-image-diff-img'

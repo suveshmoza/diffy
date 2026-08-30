@@ -1,11 +1,4 @@
-import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconFocusCentered,
-  IconX,
-  IconZoomIn,
-  IconZoomOut,
-} from '@tabler/icons-react';
+import { IconMagnifyingGlassFocus, IconMinus, IconPlus, IconX } from '@pierre/icons';
 import {
   useCallback,
   useEffect,
@@ -20,6 +13,7 @@ import {
 } from 'react';
 
 import { SegmentedControl } from '@/components/diff/header/SegmentedControl';
+import { IconChevronLeft, IconChevronRight } from '@/components/icons/Chevron';
 import { useImageDiffSources } from '@/hooks/useImageDiffSources';
 import type { ImageCompareMode } from '@/lib/diff/display-prefs';
 import type { ImageDiffSideSource } from '@/lib/diff/image-diff-cache';
@@ -124,15 +118,20 @@ export function ImageDiffLightbox({
     setTransform(INITIAL_TRANSFORM);
   }, []);
 
-  useEffect(() => {
-    resetTransform();
+  const [prevFilename, setPrevFilename] = useState(file.filename);
+  if (file.filename !== prevFilename) {
+    setPrevFilename(file.filename);
+    setTransform(INITIAL_TRANSFORM);
     setSwipePosition(50);
     setOnionOpacity(50);
     setBlinkActive(false);
     setBlinkAfter(true);
     setAnimationsPlaying(true);
+  }
+
+  useEffect(() => {
     dialogRef.current?.focus({ preventScroll: true });
-  }, [file.filename, resetTransform]);
+  }, [file.filename]);
 
   const setZoom = useCallback((nextZoom: number) => {
     setTransform((current) => ({
@@ -298,10 +297,7 @@ export function ImageDiffLightbox({
             title='Close (Esc)'
             onClick={onClose}
           >
-            <IconX
-              size={18}
-              stroke={2}
-            />
+            <IconX size={18} />
           </button>
         </header>
 
@@ -338,10 +334,7 @@ export function ImageDiffLightbox({
               aria-label='Zoom out'
               onClick={() => setZoom(transform.zoom - ZOOM_STEP)}
             >
-              <IconZoomOut
-                size={17}
-                stroke={2}
-              />
+              <IconMinus size={17} />
             </button>
             <span>{Math.round(transform.zoom * 100)}%</span>
             <button
@@ -350,10 +343,7 @@ export function ImageDiffLightbox({
               aria-label='Zoom in'
               onClick={() => setZoom(transform.zoom + ZOOM_STEP)}
             >
-              <IconZoomIn
-                size={17}
-                stroke={2}
-              />
+              <IconPlus size={17} />
             </button>
             <button
               type='button'
@@ -362,10 +352,7 @@ export function ImageDiffLightbox({
               title='Fit'
               onClick={resetTransform}
             >
-              <IconFocusCentered
-                size={17}
-                stroke={2}
-              />
+              <IconMagnifyingGlassFocus size={17} />
             </button>
             <button
               type='button'
@@ -529,10 +516,7 @@ export function ImageDiffLightbox({
             disabled={!previousFile}
             onClick={() => previousFile && onNavigate(previousFile.filename)}
           >
-            <IconChevronLeft
-              size={18}
-              stroke={2}
-            />
+            <IconChevronLeft size={18} />
             Previous image
           </button>
           <span>
@@ -545,10 +529,7 @@ export function ImageDiffLightbox({
             onClick={() => nextFile && onNavigate(nextFile.filename)}
           >
             Next image
-            <IconChevronRight
-              size={18}
-              stroke={2}
-            />
+            <IconChevronRight size={18} />
           </button>
         </footer>
       </div>
