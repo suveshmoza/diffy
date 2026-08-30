@@ -1,9 +1,13 @@
+import type { DiffIndicators } from '@pierre/diffs';
 import {
   IconColorAuto,
   IconColorDark,
   IconColorLight,
+  IconCodeStyleBars,
+  IconEyeSlash,
   IconImage,
   IconListUnordered,
+  IconSymbolDiffstat,
   IconThemes,
   IconType,
 } from '@pierre/icons';
@@ -20,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
+import type { CodeViewDisplayPrefs, ImageCompareMode } from '@/lib/diff/display-prefs';
 import {
   CODE_FONT_FEATURE_OPTIONS,
   CODE_FONT_OPTIONS,
@@ -41,7 +45,6 @@ import { diffyThemeCatalog } from '@/lib/theming/themeCatalog';
 import { cn } from '@/lib/utils';
 import { useThemeSelection } from '@/providers/theming/useThemeSelection';
 
-import { DIFF_INDICATOR_OPTIONS, IMAGE_COMPARE_MODE_OPTIONS } from './displaySettingsOptions';
 import {
   OVERFLOW_MENU_ICON,
   OVERFLOW_MENU_SECTION_ICON,
@@ -53,8 +56,32 @@ import {
   OverflowMenuSettingsRow,
   OverflowMenuSettingsSection,
 } from './overflowMenuUi';
-import { SegmentedControl } from './SegmentedControl';
+import { SegmentedControl, type SegmentOption } from './SegmentedControl';
 import { SettingsSwitch } from './SettingsSwitch';
+
+const DIFF_INDICATOR_OPTIONS: readonly SegmentOption<DiffIndicators>[] = [
+  {
+    value: 'classic',
+    label: 'Classic',
+    icon: <IconSymbolDiffstat />,
+  },
+  {
+    value: 'bars',
+    label: 'Bars',
+    icon: <IconCodeStyleBars />,
+  },
+  {
+    value: 'none',
+    label: 'None',
+    icon: <IconEyeSlash />,
+  },
+];
+
+const IMAGE_COMPARE_MODE_OPTIONS: readonly SegmentOption<ImageCompareMode>[] = [
+  { value: '2up', label: '2-up' },
+  { value: 'swipe', label: 'Swipe' },
+  { value: 'onion', label: 'Onion' },
+];
 
 type SettingsView = 'main' | 'light' | 'dark';
 

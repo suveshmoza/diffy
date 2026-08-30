@@ -209,15 +209,6 @@ export function normalizeCodeFontFeatures(value: unknown): CodeFontFeaturesPrefe
   return { preset };
 }
 
-export function getCodeFontFeaturesLabel(features: CodeFontFeaturesPreference): string {
-  if (features.preset === 'custom') {
-    return features.custom?.trim() || 'Custom';
-  }
-  return (
-    CODE_FONT_FEATURE_OPTIONS.find((option) => option.value === features.preset)?.label ?? 'Normal'
-  );
-}
-
 export function resolveCodeFontFeatures(features: CodeFontFeaturesPreference): string | undefined {
   if (features.preset === 'normal') {
     return undefined;
@@ -227,20 +218,6 @@ export function resolveCodeFontFeatures(features: CodeFontFeaturesPreference): s
   }
   const custom = sanitizeFontFeatures(features.custom ?? '');
   return custom || undefined;
-}
-
-export function getCodeFontLabel(font: CodeFontPreference): string {
-  if (font.preset === 'custom') {
-    return font.custom?.trim() || 'Custom';
-  }
-  return CODE_FONT_OPTIONS.find((option) => option.value === font.preset)?.label ?? 'System Mono';
-}
-
-export function getTreeFontLabel(font: TreeFontPreference): string {
-  if (font.preset === 'custom') {
-    return font.custom?.trim() || 'Custom';
-  }
-  return TREE_FONT_OPTIONS.find((option) => option.value === font.preset)?.label ?? 'Open Sans';
 }
 
 function quoteCustomFontFamily(

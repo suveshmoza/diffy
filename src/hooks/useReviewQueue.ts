@@ -32,6 +32,7 @@ import {
 } from '@/lib/overlay/review-session';
 import { toBatchedReviewComments, type QueuedComment } from '@/lib/review/comment-queue';
 import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
+import { confirmDiscardQueuedComments } from '@/lib/review/publish-review';
 
 type UseReviewQueueParams = {
   viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata> | null>;
@@ -44,6 +45,20 @@ type UseReviewQueueParams = {
   clearSelectionIfNoDrafts: () => void;
   onClose: () => void;
 };
+
+function clearQueuedAnnotations(
+  viewer: CodeViewHandle<ReviewAnnotationMetadata>,
+  queue: readonly QueuedComment[],
+): void {
+  runCodeViewMutationPreservingScroll(viewer, () => {
+    for (const entry of queue) {
+      const item = viewer.getItem(entry.itemId);
+      if (item) {
+        viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
+      }
+    }
+  });
+}
 
 export function useReviewQueue({
   viewerRef,
@@ -176,14 +191,7 @@ export function useReviewQueue({
       }
 
       if (viewer) {
-        runCodeViewMutationPreservingScroll(viewer, () => {
-          for (const entry of queuedSnapshot) {
-            const item = viewer.getItem(entry.itemId);
-            if (item) {
-              viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
-            }
-          }
-        });
+        clearQueuedAnnotations(viewer, queuedSnapshot);
       }
 
       setQueue([]);
@@ -207,14 +215,7 @@ export function useReviewQueue({
   const handleDiscardQueue = useCallback(() => {
     const viewer = viewerRef.current;
     if (viewer) {
-      runCodeViewMutationPreservingScroll(viewer, () => {
-        for (const entry of queue) {
-          const item = viewer.getItem(entry.itemId);
-          if (item) {
-            viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
-          }
-        }
-      });
+      clearQueuedAnnotations(viewer, queue);
     }
 
     setQueue([]);
@@ -224,23 +225,13 @@ export function useReviewQueue({
 
   const handleStopReview = useCallback(() => {
     if (queue.length > 0) {
-      const confirmed = window.confirm(
-        `Discard ${queue.length} queued review ${queue.length === 1 ? 'comment' : 'comments'} and stop reviewing? They have not been published to GitHub.`,
-      );
-      if (!confirmed) {
+      if (!confirmDiscardQueuedComments(queue.length, { stopReview: true })) {
         return;
       }
 
       const viewer = viewerRef.current;
       if (viewer) {
-        runCodeViewMutationPreservingScroll(viewer, () => {
-          for (const entry of queue) {
-            const item = viewer.getItem(entry.itemId);
-            if (item) {
-              viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
-            }
-          }
-        });
+        clearQueuedAnnotations(viewer, queue);
       }
 
       setQueue([]);
@@ -265,13 +256,8 @@ export function useReviewQueue({
 
   const withQueueConfirm = useCallback(
     (action: () => void) => {
-      if (queue.length > 0) {
-        const confirmed = window.confirm(
-          `Discard ${queue.length} queued review ${queue.length === 1 ? 'comment' : 'comments'}? They have not been published to GitHub.`,
-        );
-        if (!confirmed) {
-          return;
-        }
+      if (!confirmDiscardQueuedComments(queue.length)) {
+        return;
       }
 
       action();

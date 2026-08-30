@@ -1,13 +1,17 @@
-export const REPLY_KEY_ATTR = 'data-active-reply-key';
-export const REPLY_SLOT_ATTR = 'data-reply-key';
-export const REPLY_DRAFT_ATTR = 'data-reply-draft';
-export const REPLY_COMPOSER_ATTR = 'data-reply-composer';
-export const REPLY_OPEN_ATTR = 'data-reply-open';
-export const REPLY_PREFILL_ATTR = 'data-reply-prefill';
+const REPLY_KEY_ATTR = 'data-active-reply-key';
+const REPLY_SLOT_ATTR = 'data-reply-key';
+const REPLY_DRAFT_ATTR = 'data-reply-draft';
+const REPLY_COMPOSER_ATTR = 'data-reply-composer';
+const REPLY_OPEN_ATTR = 'data-reply-open';
+const REPLY_PREFILL_ATTR = 'data-reply-prefill';
 
 const REPLY_TEXTAREA_SELECTOR = '[data-reply-composer] textarea';
 
 const draftByReplyKey = new Map<string, string>();
+
+export function getReviewReplyKey(itemId: string, inReplyToId: number): string {
+  return `${itemId}:${inReplyToId}`;
+}
 
 function getReplySlot(modal: HTMLElement, replyKey: string): HTMLElement | null {
   return modal.querySelector<HTMLElement>(`[${REPLY_SLOT_ATTR}="${CSS.escape(replyKey)}"]`);
@@ -45,8 +49,15 @@ function isComposerOpen(composer: HTMLElement): boolean {
   return !composer.hidden;
 }
 
-export function getActiveReplyKey(modal: HTMLElement | null): string | null {
-  return modal?.getAttribute(REPLY_KEY_ATTR) ?? null;
+function clearReplyDraft(modal: HTMLElement, replyKey: string): void {
+  const slot = getReplySlot(modal, replyKey);
+  const textarea = slot ? getReplyTextarea(slot) : null;
+
+  writeDraft(replyKey, slot, '');
+
+  if (textarea) {
+    textarea.value = '';
+  }
 }
 
 export function bindReplySession(modal: HTMLElement): () => void {
@@ -146,15 +157,4 @@ export function closeAllReplyComposers(modal: HTMLElement): void {
   }
 
   modal.removeAttribute(REPLY_KEY_ATTR);
-}
-
-export function clearReplyDraft(modal: HTMLElement, replyKey: string): void {
-  const slot = getReplySlot(modal, replyKey);
-  const textarea = slot ? getReplyTextarea(slot) : null;
-
-  writeDraft(replyKey, slot, '');
-
-  if (textarea) {
-    textarea.value = '';
-  }
 }

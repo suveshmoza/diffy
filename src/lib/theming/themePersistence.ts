@@ -26,10 +26,6 @@ export function endThemeHydration(): void {
   persistPaused = false;
 }
 
-export function isThemeHydrating(): boolean {
-  return hydrating;
-}
-
 export function isThemePersistencePaused(): boolean {
   return persistPaused || hydrating;
 }

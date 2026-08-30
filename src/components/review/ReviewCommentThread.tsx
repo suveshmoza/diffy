@@ -14,6 +14,7 @@ import {
   reviewCommentToSelectedLineRange,
 } from '@/lib/review/format-line-range';
 import { formatQuoteReplyPrefill } from '@/lib/review/format-quote-reply';
+import { getReviewReplyKey } from '@/lib/review/reply-session';
 import { cn } from '@/lib/utils';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 import { useReview } from '@/providers/ReviewContext';
@@ -29,10 +30,6 @@ import {
   reviewThreadShellClassName,
 } from './reviewComposerStyles';
 import { ReviewReplyComposer } from './ReviewReplyComposer';
-
-export function getReviewReplyKey(itemId: string, inReplyToId: number): string {
-  return `${itemId}:${inReplyToId}`;
-}
 
 type ReviewCommentThreadBaseProps = {
   annotation:

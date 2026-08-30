@@ -7,6 +7,7 @@ import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
 import { isStandaloneOverlay } from '@/lib/overlay/standalone';
+import { getStopReviewLabel } from '@/lib/review/publish-review';
 import { cn } from '@/lib/utils';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 import { useSidebarContext } from '@/providers/SidebarContext';
@@ -58,7 +59,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
   const { isBatchMode, queue, startReview, stopReview, expandReviewDock } = useReviewQueueContext();
   const queuedCount = queue.length;
-  const stopReviewLabel = queuedCount > 0 ? 'Discard review' : 'Stop review';
+  const stopReviewLabel = getStopReviewLabel(queuedCount);
   const { base, head } = pullRequest;
   const isRateLimitExhausted = rateLimit != null && rateLimit.remaining <= 0;
   const isStandalone = isStandaloneOverlay();

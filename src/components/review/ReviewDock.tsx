@@ -10,6 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ReviewEvent } from '@/lib/github/review-write';
 import {
   canPublishReview,
+  confirmDiscardQueuedComments,
+  getStopReviewLabel,
   publishButtonLabel,
   summaryLabel,
   summaryPlaceholder,
@@ -57,7 +59,7 @@ export function ReviewDock() {
 
   const canPublish = canPublishReview(event, queue.length, body);
   const queuedCount = queue.length;
-  const stopReviewLabel = queuedCount > 0 ? 'Discard review' : 'Stop review';
+  const stopReviewLabel = getStopReviewLabel(queuedCount);
 
   useEffect(() => {
     if (!isReviewDockExpanded) {
@@ -77,11 +79,6 @@ export function ReviewDock() {
   }, []);
 
   const handlePublish = useCallback(async () => {
-    if (event === 'REQUEST_CHANGES' && !body.trim()) {
-      setError('A summary is required when requesting changes.');
-      return;
-    }
-
     setIsSubmitting(true);
     setError(null);
 
@@ -117,10 +114,7 @@ export function ReviewDock() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Discard ${queuedCount} queued review ${queuedCount === 1 ? 'comment' : 'comments'}? They have not been published to GitHub.`,
-    );
-    if (!confirmed) {
+    if (!confirmDiscardQueuedComments(queuedCount)) {
       return;
     }
 

@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react';
-
 import type { ChromeTokens } from '@/lib/theming/deriveChromeTokens';
 
 export type ShadcnSemanticTokens = {
@@ -163,10 +161,4 @@ export function applyLegacyGprvTokens(
   if (scrollbarTrack != null) {
     style['--gprv-scrollbar-track-bg'] = scrollbarTrack;
   }
-}
-
-export function shadcnTokensToStyle(tokens: ShadcnSemanticTokens): CSSProperties {
-  const style: Record<string, string> = {};
-  applyShadcnSemanticTokens(style, tokens);
-  return style as CSSProperties;
 }

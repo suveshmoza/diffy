@@ -370,14 +370,7 @@ export function DiffOverlay({
       queue,
       startReview: handleStartReview,
       stopReview: handleStopReview,
-      queueComment: handleQueueComment,
       removeQueued: handleRemoveQueued,
-      removeQueuedById: (queuedId: string) => {
-        const entry = queue.find((item) => item.queuedId === queuedId);
-        if (entry) {
-          handleRemoveQueued(queuedId, entry.itemId);
-        }
-      },
       editQueued: handleEditQueued,
       publishReview: handlePublishReview,
       discardQueue: handleDiscardQueue,
@@ -392,7 +385,6 @@ export function DiffOverlay({
       handleDiscardQueue,
       handleEditQueued,
       handlePublishReview,
-      handleQueueComment,
       handleRemoveQueued,
       handleStartReview,
       handleStopReview,

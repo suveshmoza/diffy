@@ -1,4 +1,3 @@
-import type { SelectedLineRange } from '@pierre/diffs';
 import { createContext, use, type ReactNode } from 'react';
 
 import type { GitHubPullRequestRef } from '@/lib/github/api';
@@ -17,16 +16,7 @@ export interface ReviewQueueContextValue {
   queue: readonly QueuedComment[];
   startReview: () => void;
   stopReview: () => void;
-  queueComment: (
-    itemId: string,
-    path: string,
-    draftId: string,
-    range: SelectedLineRange,
-    body: string,
-  ) => void;
   removeQueued: (queuedId: string, itemId: string) => void;
-  /** Removes a queued comment by id, resolving its `itemId` internally. */
-  removeQueuedById: (queuedId: string) => void;
   editQueued: (queuedId: string, itemId: string, body: string) => void;
   publishReview: (event: ReviewEvent, body: string) => Promise<void>;
   discardQueue: () => void;

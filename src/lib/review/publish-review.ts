@@ -49,3 +49,22 @@ export function summaryPlaceholder(event: ReviewEvent): string {
     ? 'Explain what needs to change before this can merge…'
     : 'Leave an overall comment (optional)';
 }
+
+export function getStopReviewLabel(queuedCount: number): string {
+  return queuedCount > 0 ? 'Discard review' : 'Stop review';
+}
+
+export function confirmDiscardQueuedComments(
+  count: number,
+  options?: { stopReview?: boolean },
+): boolean {
+  if (count <= 0) {
+    return true;
+  }
+
+  const noun = count === 1 ? 'comment' : 'comments';
+  const stopReviewSuffix = options?.stopReview ? ' and stop reviewing' : '';
+  return window.confirm(
+    `Discard ${count} queued review ${noun}${stopReviewSuffix}? They have not been published to GitHub.`,
+  );
+}

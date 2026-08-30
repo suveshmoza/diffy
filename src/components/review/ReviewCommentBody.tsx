@@ -7,7 +7,6 @@ type ReviewCommentBodyProps = {
   pullRequestRef?: GitHubPullRequestRef;
   emptyMessage?: string;
   className?: string;
-  clamp?: boolean;
 };
 
 export function ReviewCommentBody({
@@ -15,7 +14,6 @@ export function ReviewCommentBody({
   pullRequestRef,
   emptyMessage = 'Nothing to preview',
   className,
-  clamp = false,
 }: ReviewCommentBodyProps) {
   const trimmed = body.trim();
 
@@ -33,13 +31,7 @@ export function ReviewCommentBody({
   }
 
   return (
-    <div
-      className={cn(
-        'mt-1 min-w-0 text-sm leading-relaxed text-foreground',
-        clamp && 'line-clamp-2 overflow-hidden',
-        className,
-      )}
-    >
+    <div className={cn('mt-1 min-w-0 text-sm leading-relaxed text-foreground', className)}>
       {renderGitHubCommentBody(body, { pullRequestRef })}
     </div>
   );

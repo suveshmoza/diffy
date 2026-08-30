@@ -9,7 +9,6 @@ import {
   type SetStateAction,
 } from 'react';
 
-import { getReviewReplyKey } from '@/components/review/ReviewCommentThread';
 import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
 import {
   addDraftAnnotation,
@@ -30,6 +29,7 @@ import {
 } from '@/lib/github/review-write';
 import { removeReviewDraft, upsertReviewDraft } from '@/lib/overlay/review-session';
 import { getItemPath, type ReviewAnnotationMetadata } from '@/lib/review/comments';
+import { getReviewReplyKey } from '@/lib/review/reply-session';
 import {
   closeAllReplyComposers,
   closeReplyComposer,
