@@ -9,6 +9,8 @@ export interface ChromeTokens {
   deletionFg: string;
   fg: string;
   mutedFg: string;
+  primary: string;
+  primaryForeground: string;
   ring: string;
   scrollbarThumb?: string;
   scrollbarTrack?: string;
@@ -22,8 +24,19 @@ export interface ChromeTokens {
 
 const MIN_MUTED_RATIO = 4.5;
 const DIFF_BORDER_MIX = 22;
+const DEFAULT_PRIMARY_DARK = '#2f81f7';
+const DEFAULT_PRIMARY_LIGHT = '#0969da';
 
 const cache = new WeakMap<ThemeLike, ChromeTokens | undefined>();
+
+function pickFirstColor(...candidates: Array<string | undefined>): string | undefined {
+  for (const candidate of candidates) {
+    if (candidate != null && candidate !== '') {
+      return candidate;
+    }
+  }
+  return undefined;
+}
 
 function pickReadableMuted(
   bg: string | undefined,
@@ -37,6 +50,26 @@ function pickReadableMuted(
     return mutedCandidate;
   }
   return colorUtils.contrastRatio(bgL, compositedL) >= MIN_MUTED_RATIO ? mutedCandidate : undefined;
+}
+
+function pickPrimaryColors(
+  rawColors: Record<string, string | undefined>,
+  surfaceIsDark: boolean,
+): { primary: string; primaryForeground: string } {
+  const primary =
+    pickFirstColor(
+      rawColors['focusBorder'],
+      rawColors['textLink.foreground'],
+      rawColors['textLink.activeForeground'],
+      rawColors['button.background'],
+      rawColors['activityBarBadge.background'],
+    ) ?? (surfaceIsDark ? DEFAULT_PRIMARY_DARK : DEFAULT_PRIMARY_LIGHT);
+
+  const primaryForeground =
+    colorUtils.pickReadableForeground(primary, ['#ffffff', '#f0f6fc', '#0d1117', '#010409']) ??
+    (surfaceIsDark ? '#ffffff' : '#ffffff');
+
+  return { primary, primaryForeground };
 }
 
 export function deriveChromeTokens(theme: ThemeLike): ChromeTokens | undefined {
@@ -70,6 +103,10 @@ export function deriveChromeTokens(theme: ThemeLike): ChromeTokens | undefined {
       ? borderOpaque
       : `color-mix(in srgb, ${editorFg} ${DIFF_BORDER_MIX}%, ${editorBg})`;
 
+  const { primary, primaryForeground } = pickPrimaryColors(rawColors, surfaceIsDark);
+  const ring =
+    pickFirstColor(rawColors['focusBorder'], rawColors['list.focusOutline'], primary) ?? primary;
+
   const tokens = Object.freeze({
     additionFg: surfaceIsDark ? '#34d399' : '#047857',
     background: sidebarBg ?? `color-mix(in srgb, ${fg} 7%, ${cardBase})`,
@@ -78,7 +115,9 @@ export function deriveChromeTokens(theme: ThemeLike): ChromeTokens | undefined {
     deletionFg: surfaceIsDark ? '#fb7185' : '#be123c',
     fg,
     mutedFg: muted,
-    ring: fg,
+    primary,
+    primaryForeground,
+    ring,
     scrollbarThumb:
       editorBg != null
         ? colorUtils.isDarkSurface(editorBg, editorFg)

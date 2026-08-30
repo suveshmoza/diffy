@@ -2,6 +2,8 @@ import { themeToTreeStyles, type TreeThemeInput, type TreeThemeStyles } from '@p
 
 import type { ActiveThemeSnapshot } from '@/lib/theming/activeThemeSnapshot';
 import { deriveChromeTokens } from '@/lib/theming/deriveChromeTokens';
+import { mapShadcnSemanticTokens } from '@/lib/theming/mapShadcnSemanticTokens';
+import { reconcileTreeThemeWithShadcn } from '@/lib/theming/reconcileTreeThemeWithShadcn';
 
 export interface TreeThemePropsOptions {
   reconcileForegroundFromChrome?: boolean;
@@ -14,11 +16,17 @@ export function treeThemeProps<TTheme extends TreeThemeInput>(
   const theme = active.theme;
   if (theme == null) return { style: {} };
 
-  const treeStyles = themeToTreeStyles(theme);
-  if (options.reconcileForegroundFromChrome === true) {
+  let treeStyles = themeToTreeStyles(theme);
+  const chrome = deriveChromeTokens(theme);
+
+  if (chrome != null) {
+    treeStyles = reconcileTreeThemeWithShadcn(treeStyles, mapShadcnSemanticTokens(chrome));
+  }
+
+  if (options.reconcileForegroundFromChrome === true && chrome != null) {
     const colors = theme.colors ?? {};
-    const primaryFg = deriveChromeTokens(theme)?.fg;
-    if (primaryFg != null && primaryFg !== colors['sideBar.foreground'] && primaryFg !== '') {
+    const primaryFg = chrome.fg;
+    if (primaryFg !== colors['sideBar.foreground'] && primaryFg !== '') {
       treeStyles.color = primaryFg;
       treeStyles['--trees-theme-sidebar-fg'] = primaryFg;
       if (colors['sideBarSectionHeader.foreground'] == null) {
@@ -32,7 +40,7 @@ export function treeThemeProps<TTheme extends TreeThemeInput>(
         colors['focusBorder'] == null &&
         colors['sideBar.foreground'] == null
       ) {
-        treeStyles['--trees-theme-focus-ring'] = primaryFg;
+        treeStyles['--trees-theme-focus-ring'] = chrome.ring;
       }
     }
   }

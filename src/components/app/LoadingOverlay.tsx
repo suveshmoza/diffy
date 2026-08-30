@@ -60,29 +60,29 @@ export function LoadingOverlay({ onClose, progress }: LoadingOverlayProps) {
       title='Loading PR diff…'
       onClose={onClose}
     >
-      <div className='gprv-modal-body gprv-modal-body-centered'>
+      <div className='flex h-full min-h-0 items-center justify-center overflow-auto'>
         <div
-          className='gprv-loading-panel'
+          className='grid max-w-lg justify-items-center gap-5 px-6 py-8 text-center'
           role='status'
           aria-live='polite'
           aria-label='Loading pull request diff'
         >
           {!complete && (
             <div
-              className='gprv-progress-bar'
+              className='h-1.5 w-full overflow-hidden rounded-full bg-border'
               role='progressbar'
               aria-valuenow={displayPct}
               aria-valuemin={0}
               aria-valuemax={100}
             >
               <div
-                className='gprv-progress-bar-fill'
+                className='h-full rounded-full bg-primary transition-[width] duration-300 ease-out'
                 style={{ width: `${displayPct}%` }}
               />
             </div>
           )}
-          <p className='gprv-loading-summary'>{statusMessage}</p>
-          <p className='gprv-loading-hint'>{hint}</p>
+          <p className='m-0 text-[15px] leading-normal text-foreground'>{statusMessage}</p>
+          <p className='m-0 text-sm leading-normal text-muted-foreground'>{hint}</p>
         </div>
       </div>
     </ChromeModal>

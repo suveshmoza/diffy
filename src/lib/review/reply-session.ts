@@ -5,7 +5,7 @@ export const REPLY_COMPOSER_ATTR = 'data-reply-composer';
 export const REPLY_OPEN_ATTR = 'data-reply-open';
 export const REPLY_PREFILL_ATTR = 'data-reply-prefill';
 
-const REPLY_TEXTAREA_SELECTOR = '[data-reply-composer] .gprv-review-composer-input';
+const REPLY_TEXTAREA_SELECTOR = '[data-reply-composer] textarea';
 
 const draftByReplyKey = new Map<string, string>();
 

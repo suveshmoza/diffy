@@ -1,12 +1,24 @@
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { createReviewCommentReply, GitHubReviewWriteError } from '@/lib/github/review-write';
+import { cn } from '@/lib/utils';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
+
+import {
+  reviewAvatarClassName,
+  reviewCommentContentClassName,
+  reviewCommentRowClassName,
+  reviewComposerActionsClassName,
+  reviewTextareaClassName,
+} from './reviewComposerStyles';
 
 type ReviewReplyComposerProps = {
   pullRequestRef: GitHubPullRequestRef;
   inReplyToId: number;
+  nested?: boolean;
   onCancel: () => void;
   onSuccess: (comment: GitHubPullRequestReviewComment) => void;
 };
@@ -14,6 +26,7 @@ type ReviewReplyComposerProps = {
 export function ReviewReplyComposer({
   pullRequestRef,
   inReplyToId,
+  nested = false,
   onCancel,
   onSuccess,
 }: ReviewReplyComposerProps) {
@@ -75,10 +88,10 @@ export function ReviewReplyComposer({
   const initials = viewerUser?.login.slice(0, 1).toUpperCase() ?? '?';
 
   return (
-    <div className='gprv-review-reply-composer'>
-      <div className='gprv-review-comment'>
+    <div className={cn('mt-2 max-w-full min-w-0', nested ? 'ml-0' : 'ml-8')}>
+      <div className={reviewCommentRowClassName}>
         <span
-          className='gprv-review-comment-avatar'
+          className={reviewAvatarClassName}
           aria-hidden='true'
         >
           {viewerUser?.avatar_url ? (
@@ -89,52 +102,54 @@ export function ReviewReplyComposer({
               height={24}
               loading='lazy'
               decoding='async'
+              className='size-full object-cover'
             />
           ) : (
             initials
           )}
         </span>
-        <div className='gprv-review-comment-content'>
+        <div className={reviewCommentContentClassName}>
           {viewerUser ? (
-            <div className='gprv-review-comment-meta'>
-              <strong>{viewerUser.login}</strong>
+            <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
+              <strong className='text-sm font-semibold'>{viewerUser.login}</strong>
             </div>
           ) : null}
-          <label className='gprv-review-composer-field'>
+          <Label className='mt-2 block w-full'>
             <span className='sr-only'>Reply</span>
             <textarea
               ref={textareaRef}
-              className='gprv-review-composer-input'
+              className={reviewTextareaClassName}
               defaultValue=''
               onKeyDown={handleKeyDown}
               placeholder='Leave a reply'
               rows={3}
               disabled={isSubmitting}
             />
-          </label>
+          </Label>
           {!hasToken ? (
-            <p className='gprv-review-composer-hint'>
+            <p className='mt-2 text-xs text-muted-foreground'>
               Add a GitHub token in the diffy popup to reply.
             </p>
           ) : null}
-          {error ? <p className='gprv-review-composer-error'>{error}</p> : null}
-          <div className='gprv-review-composer-actions'>
-            <button
+          {error ? <p className='mt-2 text-xs text-destructive'>{error}</p> : null}
+          <div className={reviewComposerActionsClassName}>
+            <Button
               type='button'
-              className='gprv-review-composer-button gprv-review-composer-button-secondary'
+              variant='outline'
+              size='sm'
               onClick={onCancel}
               disabled={isSubmitting}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type='button'
-              className='gprv-review-composer-button gprv-review-composer-button-primary'
+              size='sm'
               onClick={() => void handleSubmit()}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Posting…' : 'Reply'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

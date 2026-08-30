@@ -983,7 +983,7 @@ export function DiffOverlay({
               />
             ) : null}
 
-            <div className='gprv-modal-main'>
+            <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
               <GitHubAuthProvider>
                 <ReviewProvider value={reviewContextValue}>
                   {notificationError ? (
@@ -993,19 +993,34 @@ export function DiffOverlay({
                     />
                   ) : null}
                   <div
-                    className={`gprv-body${isSidebarCollapsed ? ' gprv-body-sidebar-collapsed' : ''}`}
+                    className={cn(
+                      'relative grid min-h-0 flex-1 overflow-hidden',
+                      isSidebarCollapsed
+                        ? 'grid-cols-1'
+                        : 'grid-cols-[345px_minmax(0,1fr)] max-md:grid-cols-1',
+                    )}
                   >
                     <button
                       type='button'
-                      className='gprv-sidebar-backdrop'
-                      data-open={isSidebarCollapsed ? undefined : ''}
+                      className={cn(
+                        'pointer-events-none absolute inset-0 z-20 hidden border-0 bg-background/60 opacity-0 backdrop-blur-[2px] transition-opacity duration-300 max-md:block',
+                        !isSidebarCollapsed && 'pointer-events-auto opacity-100',
+                      )}
                       aria-hidden={isSidebarCollapsed}
                       aria-label='Close file list'
                       tabIndex={isSidebarCollapsed ? -1 : 0}
                       onClick={closeSidebar}
                     />
                     <aside
-                      className='gprv-sidebar'
+                      className={cn(
+                        'grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)] overflow-hidden bg-sidebar',
+                        !isSidebarCollapsed && 'md:border-r md:border-border',
+                        isSidebarCollapsed ? 'md:hidden' : 'md:grid',
+                        'max-md:fixed max-md:inset-0 max-md:z-30 max-md:grid max-md:rounded-t-xl max-md:border max-md:border-border max-md:shadow-lg max-md:transition-transform max-md:duration-300 max-md:ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:max-md:transition-none',
+                        isSidebarCollapsed
+                          ? 'max-md:pointer-events-none max-md:translate-y-[calc(100%+1.5rem)]'
+                          : 'max-md:pointer-events-auto max-md:translate-y-0',
+                      )}
                       aria-hidden={isSidebarCollapsed}
                     >
                       {data.files.length > 0 && codeViewItems ? (
@@ -1020,7 +1035,7 @@ export function DiffOverlay({
                           onJumpToNextUnviewed={handleJumpToNextUnviewed}
                         />
                       ) : (
-                        <div className='gprv-state'>
+                        <div className='flex h-full items-center justify-center p-6 text-center text-muted-foreground'>
                           {isBuilding ? 'Building file list…' : 'No changed files found.'}
                         </div>
                       )}
@@ -1028,26 +1043,23 @@ export function DiffOverlay({
 
                     <div
                       ref={codeViewHostRef}
-                      className='gprv-code-view-host'
+                      className='gprv-code-view-host relative h-full min-h-0 min-w-0 overflow-hidden'
                     >
                       {codeViewBuildError ? (
-                        <div
-                          className='gprv-state'
-                          style={{ color: 'var(--gprv-error)' }}
-                        >
+                        <div className='flex h-full items-center justify-center p-6 text-center text-destructive'>
                           {codeViewBuildError}
                         </div>
                       ) : codeViewItems && codeViewItems.items.length === 0 ? (
-                        <div className='gprv-state'>
-                          <div className='gprv-empty-state'>
+                        <div className='flex h-full items-center justify-center p-6 text-center'>
+                          <div className='flex max-w-sm flex-col items-center gap-3'>
                             <IconXSquircle
                               size={48}
-                              color='var(--gprv-muted)'
+                              className='text-muted-foreground'
                             />
-                            <p className='gprv-loading-summary'>
+                            <p className='text-sm font-medium text-foreground'>
                               This pull request has no code changes.
                             </p>
-                            <p className='gprv-loading-hint'>
+                            <p className='text-sm text-muted-foreground'>
                               The diff viewer requires at least one changed file.
                             </p>
                           </div>
@@ -1068,21 +1080,23 @@ export function DiffOverlay({
                           onSelectedLinesChange={handleSelectedLinesChange}
                         />
                       ) : (
-                        <div className='gprv-state'>
+                        <div className='flex h-full items-center justify-center p-6 text-center text-muted-foreground'>
                           {isBuilding ? (
                             'Building diff…'
                           ) : (
                             <div
-                              className='gprv-loading-panel'
+                              className='flex flex-col items-center gap-3'
                               role='status'
                               aria-live='polite'
                               aria-label='Preparing diff viewer'
                             >
                               <IconSpinner
                                 size={48}
-                                className='gprv-loading-spinner'
+                                className='animate-spin text-muted-foreground'
                               />
-                              <p className='gprv-loading-summary'>Preparing diff viewer…</p>
+                              <p className='text-sm font-medium text-foreground'>
+                                Preparing diff viewer…
+                              </p>
                             </div>
                           )}
                         </div>

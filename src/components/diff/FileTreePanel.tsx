@@ -30,12 +30,11 @@ import { ReviewProgress } from '../review/ReviewProgress';
 import { SidebarPrInfo } from './SidebarPrInfo';
 import { SidebarPrStats } from './SidebarPrStats';
 
-const treePanelClassName =
-  'flex h-full min-h-0 flex-col border-[var(--trees-theme-sidebar-border,var(--border))]';
+const treePanelClassName = 'flex h-full min-h-0 flex-col border-sidebar-border';
 const treePanelTopClassName =
-  'flex shrink-0 flex-col gap-2 border-b border-[var(--trees-theme-sidebar-border,var(--border))] bg-[var(--trees-theme-sidebar-bg,var(--background))] pb-2';
+  'flex shrink-0 flex-col gap-2 border-b border-sidebar-border bg-sidebar pb-2';
 const treeSearchWrapClassName =
-  'box-border flex w-full shrink-0 flex-col gap-1.5 border-b border-[var(--trees-theme-sidebar-border,var(--border))] bg-[var(--trees-theme-sidebar-bg,var(--background))] px-3 py-2.5';
+  'box-border flex w-full shrink-0 flex-col gap-1.5 border-b border-sidebar-border bg-sidebar px-3 py-2.5';
 
 const TREE_INITIAL_VISIBLE_ROW_COUNT = 80;
 const TREE_OVERSCAN = 12;
@@ -141,7 +140,7 @@ function FileTreeSearchHeader({
         />
         <Input
           ref={inputRef}
-          className='h-8 bg-(--trees-theme-input-bg,var(--background)) pr-8 pl-8 text-xs'
+          className='h-8 bg-secondary pr-8 pl-8 text-xs'
           type='text'
           inputMode='search'
           autoComplete='off'

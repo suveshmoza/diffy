@@ -23,13 +23,7 @@ export const SidebarPrInfo = memo(function SidebarPrInfo({ pullRequest }: Sideba
   const stateLabel = isMerged ? 'Merged' : pullRequest.state === 'open' ? 'Open' : 'Closed';
 
   return (
-    <footer
-      className={cn(
-        'shrink-0 border-t px-3 py-2.5',
-        'border-[var(--trees-theme-sidebar-border,var(--border))]',
-        'bg-[color-mix(in_srgb,var(--trees-theme-sidebar-bg,var(--background))_98%,var(--trees-theme-sidebar-header-fg,var(--muted-foreground)))]',
-      )}
-    >
+    <footer className='shrink-0 border-t border-sidebar-border bg-sidebar px-3 py-2.5'>
       <table className='w-full border-collapse'>
         <tbody>
           <InfoRow

@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { GitHubReviewWriteError } from '@/lib/github/review-write';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
+
+import { reviewComposerActionsClassName, reviewTextareaClassName } from './reviewComposerStyles';
 
 type ReviewCommentEditComposerProps = {
   comment: GitHubPullRequestReviewComment;
@@ -76,12 +80,12 @@ export function ReviewCommentEditComposer({
   );
 
   return (
-    <div className='gprv-review-edit-composer'>
-      <label className='gprv-review-composer-field'>
+    <div className='mt-1 grid gap-2'>
+      <Label className='mt-2 block w-full'>
         <span className='sr-only'>Edit comment</span>
         <textarea
           ref={textareaRef}
-          className='gprv-review-composer-input'
+          className={reviewTextareaClassName}
           value={body}
           onChange={(event) => setBody(event.target.value)}
           onKeyDown={handleKeyDown}
@@ -89,30 +93,31 @@ export function ReviewCommentEditComposer({
           rows={3}
           disabled={isSubmitting}
         />
-      </label>
+      </Label>
       {!hasToken ? (
-        <p className='gprv-review-composer-hint'>
+        <p className='text-xs text-muted-foreground'>
           Add a GitHub token in the diffy popup to edit comments.
         </p>
       ) : null}
-      {error ? <p className='gprv-review-composer-error'>{error}</p> : null}
-      <div className='gprv-review-composer-actions'>
-        <button
+      {error ? <p className='text-xs text-destructive'>{error}</p> : null}
+      <div className={reviewComposerActionsClassName}>
+        <Button
           type='button'
-          className='gprv-review-composer-button gprv-review-composer-button-secondary'
+          variant='outline'
+          size='sm'
           onClick={onCancel}
           disabled={isSubmitting}
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type='button'
-          className='gprv-review-composer-button gprv-review-composer-button-primary'
+          size='sm'
           onClick={() => void handleSubmit()}
           disabled={isSubmitting || !body.trim()}
         >
           {isSubmitting ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -7,9 +7,20 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
+import { cn } from '@/lib/utils';
 import { useReview } from '@/providers/ReviewContext';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
+
+import {
+  reviewComposerActionsClassName,
+  reviewLineRangeClassName,
+  reviewTextareaClassName,
+  reviewThreadCardClassName,
+  reviewThreadShellClassName,
+} from './reviewComposerStyles';
 
 type QueuedCommentCardProps = {
   queuedId: string;
@@ -69,68 +80,76 @@ export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedComme
   );
 
   return (
-    <div className='gprv-review-thread-shell'>
+    <div className={reviewThreadShellClassName}>
       <div
-        className='gprv-review-thread gprv-review-queued'
+        className={cn(reviewThreadCardClassName, 'border-dashed')}
         onMouseEnter={onHighlight}
         onMouseLeave={onClearHighlight}
       >
-        <p className='gprv-review-line-range'>{formatSelectedLineRangeLabel(range)}</p>
-        <div className='gprv-review-queued-header'>
-          <span className='gprv-queued-badge'>Queued</span>
+        <p className={reviewLineRangeClassName}>{formatSelectedLineRangeLabel(range)}</p>
+        <div className='mb-1.5 flex items-center justify-between'>
+          <Badge
+            variant='secondary'
+            className='h-auto px-1.5 py-0.5 text-[11px] font-bold tracking-wide uppercase'
+          >
+            Queued
+          </Badge>
           {!isEditing ? (
-            <div className='gprv-review-comment-actions'>
-              <button
+            <div className='inline-flex items-center gap-1'>
+              <Button
                 type='button'
-                className='gprv-review-comment-action'
+                variant='ghost'
+                size='xs'
                 onClick={startEdit}
                 aria-label='Edit queued comment'
                 title='Edit queued comment'
               >
                 Edit
-              </button>
-              <button
+              </Button>
+              <Button
                 type='button'
-                className='gprv-review-comment-action'
+                variant='ghost'
+                size='xs'
                 onClick={onRemove}
                 aria-label='Delete queued comment'
                 title='Delete queued comment'
               >
                 Delete
-              </button>
+              </Button>
             </div>
           ) : null}
         </div>
         {isEditing ? (
-          <div className='gprv-review-queued-edit'>
+          <div className='flex flex-col gap-2'>
             <textarea
               ref={editRef}
-              className='gprv-review-composer-input'
+              className={reviewTextareaClassName}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={handleKeyDown}
               rows={3}
             />
-            <div className='gprv-review-composer-actions'>
-              <button
+            <div className={reviewComposerActionsClassName}>
+              <Button
                 type='button'
-                className='gprv-review-composer-button gprv-review-composer-button-secondary'
+                variant='outline'
+                size='sm'
                 onClick={() => setIsEditing(false)}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type='button'
-                className='gprv-review-composer-button gprv-review-composer-button-primary'
+                size='sm'
                 onClick={save}
                 disabled={!draft.trim()}
               >
                 Save
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
-          <p className='gprv-review-queued-body'>{body}</p>
+          <p className='text-sm leading-snug whitespace-pre-wrap wrap-break-word'>{body}</p>
         )}
       </div>
     </div>

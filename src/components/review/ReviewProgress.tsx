@@ -22,11 +22,6 @@ export function ReviewProgress({ viewed, total, onJumpToNextUnviewed }: ReviewPr
       size='sm'
       className={cn(
         'h-auto w-full justify-between gap-2.5 px-2.5 py-1.5 font-normal',
-        'border-[var(--trees-theme-input-border,var(--border))]',
-        'bg-[var(--trees-theme-input-bg,var(--background))]',
-        'text-[var(--trees-theme-sidebar-fg,var(--foreground))]',
-        'hover:border-[var(--trees-theme-focus-ring,var(--ring))]',
-        'hover:bg-[var(--trees-theme-input-bg,var(--background))]',
         isComplete &&
           'border-green-500/40 bg-green-500/5 hover:border-green-500/40 hover:bg-green-500/5',
       )}

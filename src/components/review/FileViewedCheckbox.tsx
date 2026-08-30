@@ -33,9 +33,7 @@ export function FileViewedCheckbox({ state, disabled = false, onToggle }: FileVi
         className={cn(
           'inline-flex items-center gap-1.5 text-xs font-semibold select-none',
           disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-          isViewed
-            ? 'text-[var(--trees-theme-sidebar-fg,var(--foreground))]'
-            : 'text-[var(--trees-theme-sidebar-header-fg,var(--muted-foreground))]',
+          isViewed ? 'text-foreground' : 'text-muted-foreground',
         )}
         title={isViewed ? 'Mark as not viewed' : 'Mark as viewed'}
         onClick={(event) => event.stopPropagation()}
@@ -49,10 +47,8 @@ export function FileViewedCheckbox({ state, disabled = false, onToggle }: FileVi
         />
         <span
           className={cn(
-            'inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border-[1.5px]',
-            'border-[var(--gprv-header-control-border,var(--border))]',
-            isViewed &&
-              'border-[var(--trees-theme-git-added-fg,var(--color-green-600))] bg-[var(--trees-theme-git-added-fg,var(--color-green-600))] text-white',
+            'inline-flex size-4 shrink-0 items-center justify-center rounded border-[1.5px] border-border',
+            isViewed && 'border-primary bg-primary text-primary-foreground',
           )}
           aria-hidden='true'
         >
