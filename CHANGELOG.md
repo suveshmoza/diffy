@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.4.0
+
+### Features
+
+- Add Review Dock: docked panel for queued comments, verdict, and publish; replaces the publish dialog (#28)
+- Add markdown composer for review comments and summary (#28)
+- Compact diff header; move review progress and status strip to the sidebar (#28)
+- Replace font size and line-height presets with numeric inputs in display settings (#28)
+- Show sidebar open/closed state on the sidebar toggle (#28)
+- Drive overlay chrome colors from Pierre themes via shadcn semantic tokens (#28)
+
+### Fixes
+
+- Fix reply trigger visibility on comment threads (#28)
+
+### Chores & Refactoring
+
+- Migrate overlay UI to shadcn/Tailwind and Base UI (#28)
+- Replace Tabler icons with `@pierre/icons` (#28)
+- Add overlay portal context so popovers, selects, and dialogs render inside the diff overlay (#28)
+- Rebuild display settings, header toolbar, sidebar, image diff, and notification UI on shadcn primitives (#28)
+- Remove dead code from UI refactors (#28)
+- Update dependencies; patch `@pierre/trees` to v1.0.0-beta.6
+- Set `dist` as output directory
+- Refresh README and extension description
+
 ## v1.3.0
 
 ### Features

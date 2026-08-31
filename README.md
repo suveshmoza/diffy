@@ -60,13 +60,13 @@ Reload open PR tabs after saving a token.
 
 ## Token type
 
-| Capability | Fine-grained PAT | Classic PAT (`ghp_…`) or `gh auth token` (`gho_…`) |
-| --- | --- | --- |
-| View diffs (public/private) | ✅ | ✅ |
-| Read inline comments | ✅ | ✅ |
-| Post inline comments | ✅ | ✅ |
-| Mark files as viewed | ❌ | ✅ |
-| Batch review / publish verdict | ❌ | ✅ |
+| Capability                     | Fine-grained PAT | Classic PAT (`ghp_…`) or `gh auth token` (`gho_…`) |
+| ------------------------------ | ---------------- | -------------------------------------------------- |
+| View diffs (public/private)    | ✅               | ✅                                                 |
+| Read inline comments           | ✅               | ✅                                                 |
+| Post inline comments           | ✅               | ✅                                                 |
+| Mark files as viewed           | ❌               | ✅                                                 |
+| Batch review / publish verdict | ❌               | ✅                                                 |
 
 Fine-grained tokens (`github_pat_…`) work for diffs and comments. GraphQL mutations for viewed files and publishing reviews need a **classic PAT with `repo` scope** or a token from `gh auth login`.
 

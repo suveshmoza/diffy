@@ -98,7 +98,7 @@ export default defineConfig({
       : undefined,
   },
   manifest: {
-    version: '1.3.0',
+    version: '1.4.0',
     name: 'diffy',
     description: 'Fast PR reviews on GitHub, even for large PRs',
     permissions: ['storage', 'contextMenus'],
