@@ -1,6 +1,7 @@
 import type { LineAnnotation } from '@pierre/diffs';
 import { memo, useMemo } from 'react';
 
+import { Badge } from '@/components/ui/badge';
 import type { ReviewThreadMetadata } from '@/lib/review/comments';
 
 import { HeaderReviewCommentThread } from './ReviewCommentThread';
@@ -34,13 +35,14 @@ export const OrphanedReviewCommentsBadge = memo(function OrphanedReviewCommentsB
   const label = commentCount === 1 ? 'outdated comment' : 'outdated comments';
 
   return (
-    <div className='gprv-review-orphaned-panel'>
-      <span
-        className='gprv-review-orphaned-badge'
+    <div className='grid max-w-full items-start justify-items-start gap-2'>
+      <Badge
+        variant='outline'
+        className='h-auto border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary'
         title={`${commentCount.toLocaleString()} ${label} on earlier revisions of this file`}
       >
         {commentCount} outdated
-      </span>
+      </Badge>
       {threadAnnotations.map(({ thread, annotation }) => (
         <HeaderReviewCommentThread
           key={thread.comments[0]?.id ?? thread.comments.map((comment) => comment.id).join('-')}

@@ -1,30 +1,23 @@
-import {
-  IconAlertTriangle,
-  IconArrowNarrowLeft,
-  IconCaretUpDown,
-  IconCheck,
-  IconCopy,
-  IconExternalLink,
-  IconLayoutSidebar,
-  IconMessages,
-  IconRefresh,
-  IconX,
-} from '@tabler/icons-react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { IconConvo, IconSidebarLeft, IconSidebarLeftOpen, IconX } from '@pierre/icons';
+import { memo, useCallback } from 'react';
 
-import { IconCaretDownUp } from '@/components/icons/CaretDownUp';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
 import { isStandaloneOverlay } from '@/lib/overlay/standalone';
-import type { ViewedProgress } from '@/lib/review/viewed-files';
+import { getStopReviewLabel } from '@/lib/review/publish-review';
+import { cn } from '@/lib/utils';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 import { useSidebarContext } from '@/providers/SidebarContext';
 
-import { ReviewProgress } from '../review/ReviewProgress';
+import { AppearanceSettingsMenu } from './header/AppearanceSettingsMenu';
+import { BranchContextPopover } from './header/BranchContextPopover';
+import { CollapseAllToggle } from './header/CollapseAllToggle';
 import { DiffLayoutToggle } from './header/DiffLayoutToggle';
-import { DisplaySettingsMenu } from './header/DisplaySettingsMenu';
 import { HeaderOverflowMenu } from './header/HeaderOverflowMenu';
+import { HeaderStatusStrip } from './header/HeaderStatusStrip';
 
 type DiffOverlayHeaderProps = {
   pullRequest: GitHubPullRequest;
@@ -34,9 +27,7 @@ type DiffOverlayHeaderProps = {
   reviewCommentsLoadError?: string | null;
   rateLimit?: RateLimitState | null;
   viewedFilesError?: string | null;
-  reviewProgress?: ViewedProgress | null;
   canReview?: boolean;
-  onJumpToNextUnviewed?: () => void;
   onDiffLayoutChange: (layout: DiffLayout) => void;
   onDisplayPrefsChange: (partial: Partial<CodeViewDisplayPrefs>) => void;
   onRefresh?: () => void;
@@ -55,9 +46,7 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   reviewCommentsLoadError,
   rateLimit,
   viewedFilesError,
-  reviewProgress,
   canReview = false,
-  onJumpToNextUnviewed,
   onDiffLayoutChange,
   onDisplayPrefsChange,
   onRefresh,
@@ -68,10 +57,10 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   onCollapseAll,
 }: DiffOverlayHeaderProps) {
   const { isSidebarCollapsed, toggleSidebar } = useSidebarContext();
-  const { isBatchMode, queue, toggleBatchMode, openPublishDialog } = useReviewQueueContext();
+  const { isBatchMode, queue, startReview, stopReview, expandReviewDock } = useReviewQueueContext();
   const queuedCount = queue.length;
+  const stopReviewLabel = getStopReviewLabel(queuedCount);
   const { base, head } = pullRequest;
-  const isRateLimitLow = rateLimit != null && rateLimit.remaining >= 0 && rateLimit.remaining <= 10;
   const isRateLimitExhausted = rateLimit != null && rateLimit.remaining <= 0;
   const isStandalone = isStandaloneOverlay();
   const canOpenInNewTab = !isStandalone;
@@ -81,157 +70,83 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
   }, [pullRequestUrl]);
 
   return (
-    <header
-      className={`gprv-header gprv-diff-header${isRateLimitExhausted ? ' gprv-diff-header-rate-limited' : ''}`}
+    <div
+      className={cn(
+        'shrink-0 border-b border-border',
+        isRateLimitExhausted && 'border-destructive/40',
+      )}
     >
-      <button
-        className='gprv-header-icon-button gprv-header-sidebar-toggle'
-        type='button'
-        onClick={toggleSidebar}
-        aria-label={isSidebarCollapsed ? 'Show file list' : 'Hide file list'}
-        aria-pressed={!isSidebarCollapsed}
-        title={isSidebarCollapsed ? 'Show files' : 'Hide files'}
-      >
-        <IconLayoutSidebar
-          size={16}
-          stroke={2}
-        />
-      </button>
+      <header className='flex min-h-11.25 items-center gap-3 bg-background px-2 py-1 text-foreground'>
+        <Button
+          variant='ghost'
+          size='icon-sm'
+          type='button'
+          onClick={toggleSidebar}
+          aria-label='Toggle Sidebar'
+          aria-pressed={!isSidebarCollapsed}
+          title='Toggle Sidebar'
+        >
+          {isSidebarCollapsed ? <IconSidebarLeftOpen /> : <IconSidebarLeft />}
+        </Button>
 
-      <div className='gprv-header-leading'>
-        <div className='gprv-title'>
-          <div className='gprv-title-stack'>
-            <span className='gprv-pr-badge'>#{pullRequest.number}</span>
-            <div className='gprv-title-content'>
-              <strong title={pullRequest.title}>{pullRequest.title}</strong>
-              <div className='gprv-title-meta'>
-                <span className='gprv-branches'>
-                  <span className='gprv-branches-base'>
-                    <CopyableBranch name={base.ref} />
-                    <IconArrowNarrowLeft
-                      className='gprv-branch-arrow'
-                      size={20}
-                      aria-hidden='true'
-                    />
-                  </span>
-                  <CopyableBranch name={head.ref} />
-                </span>
-              </div>
-            </div>
+        <div className='flex min-w-0 flex-1 flex-col justify-center gap-0.5'>
+          <div className='flex min-w-0 items-center gap-2'>
+            <Badge
+              variant='outline'
+              className='shrink-0 border-primary/30 bg-primary/15 text-primary'
+            >
+              #{pullRequest.number}
+            </Badge>
+            <strong
+              className='min-w-0 flex-1 truncate text-sm font-semibold leading-snug'
+              title={pullRequest.title}
+            >
+              {pullRequest.title}
+            </strong>
           </div>
+          <BranchContextPopover
+            baseRef={base.ref}
+            headRef={head.ref}
+          />
         </div>
 
-        {reviewCommentsLoadError ? (
-          <p
-            className='gprv-review-load-error'
-            title={reviewCommentsLoadError}
-          >
-            Review comments unavailable
-          </p>
-        ) : null}
-        {isRateLimitLow ? (
-          <p
-            className={`gprv-rate-limit-warning${isRateLimitExhausted ? ' gprv-rate-limit-exhausted' : ''}`}
-            title={
-              isRateLimitExhausted
-                ? 'API rate limit exhausted. Add a token in the diffy popup.'
-                : `${rateLimit.remaining} requests remaining — add a token to avoid hitting the limit.`
-            }
-          >
-            <IconAlertTriangle
-              size={12}
-              stroke={2}
-              style={{ flexShrink: 0 }}
-            />
-            {isRateLimitExhausted ? 'API limit exhausted' : `${rateLimit.remaining} req remaining`}
-          </p>
-        ) : null}
-        {viewedFilesError ? (
-          <p
-            className='gprv-viewed-files-error'
-            title={viewedFilesError}
-          >
-            <IconAlertTriangle
-              size={12}
-              stroke={2}
-              style={{ flexShrink: 0 }}
-            />
-            Viewed sync failed
-          </p>
-        ) : null}
-
-        {reviewProgress && onJumpToNextUnviewed ? (
-          <ReviewProgress
-            viewed={reviewProgress.viewed}
-            total={reviewProgress.total}
-            onJumpToNextUnviewed={onJumpToNextUnviewed}
-          />
-        ) : null}
-      </div>
-
-      <div className='gprv-header-toolbar'>
-        <div className='gprv-header-primary-actions'>
+        <div className='inline-flex shrink-0 items-center gap-1'>
           {canReview ? (
-            <>
-              <button
-                className={`gprv-review-cta${isBatchMode ? ' gprv-review-cta-active' : ''}`}
+            <div className='inline-flex items-center gap-1'>
+              <Button
                 type='button'
-                onClick={toggleBatchMode}
+                variant={isBatchMode ? 'destructive' : 'outline'}
+                size='sm'
+                onClick={isBatchMode ? stopReview : startReview}
                 aria-pressed={isBatchMode}
                 title={
                   isBatchMode
-                    ? 'Comments are collected into one review. Click to stop collecting.'
+                    ? queuedCount > 0
+                      ? 'Discard queued comments and stop reviewing'
+                      : 'Stop reviewing without publishing'
                     : 'Collect comments into a single review before publishing'
                 }
               >
-                <IconMessages
-                  size={15}
-                  stroke={2}
-                />
-                <span className='gprv-review-cta-label gprv-review-cta-label-full'>
-                  {isBatchMode ? 'Reviewing' : 'Start Review'}
-                </span>
-                <span className='gprv-review-cta-label gprv-review-cta-label-compact'>
-                  {isBatchMode ? 'Reviewing' : 'Review'}
-                </span>
-              </button>
+                <IconConvo />
+                {isBatchMode ? stopReviewLabel : 'Review'}
+              </Button>
               {isBatchMode ? (
-                <button
-                  className='gprv-publish-cta'
+                <Button
                   type='button'
-                  onClick={openPublishDialog}
+                  variant='default'
+                  size='sm'
+                  onClick={expandReviewDock}
                   title={
                     queuedCount > 0
                       ? 'Review and publish queued comments'
                       : 'Submit your review verdict to GitHub'
                   }
                 >
-                  <span className='gprv-publish-cta-label-full'>
-                    {queuedCount > 0 ? `Publish (${queuedCount})` : 'Finish review'}
-                  </span>
-                  <span className='gprv-publish-cta-label-compact'>
-                    {queuedCount > 0 ? `Publish (${queuedCount})` : 'Finish'}
-                  </span>
-                </button>
+                  {queuedCount > 0 ? `Publish (${queuedCount})` : 'Finish'}
+                </Button>
               ) : null}
-            </>
+            </div>
           ) : null}
-        </div>
-
-        <div className='gprv-header-desktop-actions'>
-          <button
-            className='gprv-header-icon-button'
-            type='button'
-            onClick={toggleSidebar}
-            aria-label={isSidebarCollapsed ? 'Show file list' : 'Hide file list'}
-            aria-pressed={!isSidebarCollapsed}
-            title={isSidebarCollapsed ? 'Show files' : 'Hide files'}
-          >
-            <IconLayoutSidebar
-              size={16}
-              stroke={2}
-            />
-          </button>
 
           <DiffLayoutToggle
             value={diffLayout}
@@ -239,158 +154,45 @@ export const DiffOverlayHeader = memo(function DiffOverlayHeader({
           />
 
           {onExpandAll && onCollapseAll ? (
-            <button
-              className='gprv-header-icon-button'
-              type='button'
-              onClick={allCollapsed ? onExpandAll : onCollapseAll}
-              aria-label={allCollapsed ? 'Expand all files' : 'Collapse all files'}
-              title={allCollapsed ? 'Expand all files' : 'Collapse all files'}
-            >
-              {allCollapsed ? (
-                <IconCaretDownUp
-                  size={16}
-                  strokeWidth={2}
-                />
-              ) : (
-                <IconCaretUpDown
-                  size={16}
-                  stroke={2}
-                />
-              )}
-            </button>
+            <CollapseAllToggle
+              allCollapsed={allCollapsed}
+              onExpandAll={onExpandAll}
+              onCollapseAll={onCollapseAll}
+            />
           ) : null}
 
-          {onRefresh ? (
-            <button
-              className='gprv-header-icon-button'
-              type='button'
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              aria-busy={isRefreshing}
-              aria-label='Refresh pull request data'
-              title='Refresh'
-            >
-              <IconRefresh
-                size={16}
-                stroke={2}
-                className={isRefreshing ? 'gprv-loading-spinner' : undefined}
-              />
-            </button>
-          ) : null}
+          <AppearanceSettingsMenu />
 
-          {canOpenInNewTab ? (
-            <button
-              className='gprv-header-icon-button'
-              type='button'
-              onClick={openInNewTab}
-              aria-label='Open in new tab'
-              title='Open in new tab'
-            >
-              <IconExternalLink
-                size={16}
-                stroke={2}
-              />
-            </button>
-          ) : null}
-
-          <DisplaySettingsMenu
-            displayPrefs={displayPrefs}
-            onChange={onDisplayPrefsChange}
-          />
-        </div>
-
-        <div className='gprv-header-compact-actions'>
           <HeaderOverflowMenu
-            diffLayout={diffLayout}
             displayPrefs={displayPrefs}
-            allCollapsed={allCollapsed}
+            onDisplayPrefsChange={onDisplayPrefsChange}
             isRefreshing={isRefreshing}
-            canExpandOrCollapse={Boolean(onExpandAll && onCollapseAll)}
             canRefresh={Boolean(onRefresh)}
             canOpenInNewTab={canOpenInNewTab}
-            onDiffLayoutChange={onDiffLayoutChange}
-            onDisplayPrefsChange={onDisplayPrefsChange}
-            onExpandAll={onExpandAll}
-            onCollapseAll={onCollapseAll}
             onRefresh={onRefresh}
             onOpenInNewTab={openInNewTab}
           />
-        </div>
 
-        {!isStandalone ? (
-          <button
-            className='gprv-close gprv-header-icon-button'
-            type='button'
-            onClick={onClose}
-            aria-label='Close diff viewer'
-            title='Close'
-          >
-            <IconX
-              size={16}
-              stroke={2}
-            />
-          </button>
-        ) : null}
-      </div>
-    </header>
+          {!isStandalone ? (
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon-sm'
+              onClick={onClose}
+              aria-label='Close diff viewer'
+              title='Close'
+            >
+              <IconX />
+            </Button>
+          ) : null}
+        </div>
+      </header>
+
+      <HeaderStatusStrip
+        reviewCommentsLoadError={reviewCommentsLoadError}
+        rateLimit={rateLimit}
+        viewedFilesError={viewedFilesError}
+      />
+    </div>
   );
 });
-
-function CopyableBranch({ name }: { name: string }) {
-  const [copied, setCopied] = useState(false);
-  const resetTimerRef = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (resetTimerRef.current != null) {
-        window.clearTimeout(resetTimerRef.current);
-      }
-    },
-    [],
-  );
-
-  const copy = useCallback(async () => {
-    setCopied(true);
-    if (resetTimerRef.current != null) {
-      window.clearTimeout(resetTimerRef.current);
-    }
-    resetTimerRef.current = window.setTimeout(() => setCopied(false), 750);
-
-    try {
-      await navigator.clipboard.writeText(name);
-    } catch {
-      window.clearTimeout(resetTimerRef.current);
-      resetTimerRef.current = null;
-      setCopied(false);
-      // Clipboard access can be denied by browser or extension permissions.
-    }
-  }, [name]);
-
-  return (
-    <button
-      type='button'
-      className='gprv-copyable-branch'
-      title={`Copy ${name}`}
-      aria-label={copied ? `Copied branch ${name}` : `Copy branch ${name}`}
-      onClick={() => void copy()}
-    >
-      <span className='gprv-branch'>{name}</span>
-      <span
-        className='gprv-branch-copy-status'
-        data-copied={copied ? '' : undefined}
-        aria-hidden='true'
-      >
-        <IconCopy
-          className='gprv-branch-copy-icon'
-          size={14}
-          stroke={2}
-        />
-        <IconCheck
-          className='gprv-branch-check-icon'
-          size={14}
-          stroke={2.5}
-        />
-      </span>
-    </button>
-  );
-}

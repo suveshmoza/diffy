@@ -32,6 +32,7 @@ import {
 } from '@/lib/overlay/review-session';
 import { toBatchedReviewComments, type QueuedComment } from '@/lib/review/comment-queue';
 import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
+import { confirmDiscardQueuedComments } from '@/lib/review/publish-review';
 
 type UseReviewQueueParams = {
   viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata> | null>;
@@ -44,6 +45,20 @@ type UseReviewQueueParams = {
   clearSelectionIfNoDrafts: () => void;
   onClose: () => void;
 };
+
+function clearQueuedAnnotations(
+  viewer: CodeViewHandle<ReviewAnnotationMetadata>,
+  queue: readonly QueuedComment[],
+): void {
+  runCodeViewMutationPreservingScroll(viewer, () => {
+    for (const entry of queue) {
+      const item = viewer.getItem(entry.itemId);
+      if (item) {
+        viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
+      }
+    }
+  });
+}
 
 export function useReviewQueue({
   viewerRef,
@@ -59,7 +74,7 @@ export function useReviewQueue({
   const initialSession = getReviewSession(pullRequestRef);
   const [isBatchMode, setIsBatchMode] = useState(initialSession.isBatchMode);
   const [queue, setQueue] = useState<QueuedComment[]>(() => initialSession.queue);
-  const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
+  const [isReviewDockExpanded, setIsReviewDockExpanded] = useState(false);
 
   useEffect(() => {
     syncReviewQueue(pullRequestRef, queue, isBatchMode);
@@ -176,18 +191,11 @@ export function useReviewQueue({
       }
 
       if (viewer) {
-        runCodeViewMutationPreservingScroll(viewer, () => {
-          for (const entry of queuedSnapshot) {
-            const item = viewer.getItem(entry.itemId);
-            if (item) {
-              viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
-            }
-          }
-        });
+        clearQueuedAnnotations(viewer, queuedSnapshot);
       }
 
       setQueue([]);
-      setIsPublishDialogOpen(false);
+      setIsReviewDockExpanded(false);
       setIsBatchMode(false);
       clearReviewSession(pullRequestRef);
       refreshCodeViewLayout();
@@ -207,34 +215,49 @@ export function useReviewQueue({
   const handleDiscardQueue = useCallback(() => {
     const viewer = viewerRef.current;
     if (viewer) {
-      runCodeViewMutationPreservingScroll(viewer, () => {
-        for (const entry of queue) {
-          const item = viewer.getItem(entry.itemId);
-          if (item) {
-            viewer.updateItem(removeQueuedAnnotation(item, entry.queuedId));
-          }
-        }
-      });
+      clearQueuedAnnotations(viewer, queue);
     }
 
     setQueue([]);
-    setIsPublishDialogOpen(false);
+    setIsReviewDockExpanded(false);
     clearReviewSession(pullRequestRef);
   }, [pullRequestRef, queue, viewerRef]);
 
-  const handleToggleBatchMode = useCallback(() => {
-    setIsBatchMode((current) => !current);
+  const handleStopReview = useCallback(() => {
+    if (queue.length > 0) {
+      if (!confirmDiscardQueuedComments(queue.length, { stopReview: true })) {
+        return;
+      }
+
+      const viewer = viewerRef.current;
+      if (viewer) {
+        clearQueuedAnnotations(viewer, queue);
+      }
+
+      setQueue([]);
+      clearReviewSession(pullRequestRef);
+    }
+
+    setIsReviewDockExpanded(false);
+    setIsBatchMode(false);
+  }, [pullRequestRef, queue, viewerRef]);
+
+  const handleStartReview = useCallback(() => {
+    setIsBatchMode(true);
+  }, []);
+
+  const expandReviewDock = useCallback(() => {
+    setIsReviewDockExpanded(true);
+  }, []);
+
+  const collapseReviewDock = useCallback(() => {
+    setIsReviewDockExpanded(false);
   }, []);
 
   const withQueueConfirm = useCallback(
     (action: () => void) => {
-      if (queue.length > 0) {
-        const confirmed = window.confirm(
-          `Discard ${queue.length} queued review ${queue.length === 1 ? 'comment' : 'comments'}? They have not been published to GitHub.`,
-        );
-        if (!confirmed) {
-          return;
-        }
+      if (!confirmDiscardQueuedComments(queue.length)) {
+        return;
       }
 
       action();
@@ -249,14 +272,16 @@ export function useReviewQueue({
   return {
     isBatchMode,
     queue,
-    isPublishDialogOpen,
-    setIsPublishDialogOpen,
+    isReviewDockExpanded,
+    expandReviewDock,
+    collapseReviewDock,
     handleQueueComment,
     handleRemoveQueued,
     handleEditQueued,
     handlePublishReview,
     handleDiscardQueue,
-    handleToggleBatchMode,
+    handleStartReview,
+    handleStopReview,
     handleCloseOverlay,
     withQueueConfirm,
   };

@@ -1,13 +1,11 @@
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
 type ReviewProgressProps = {
   viewed: number;
   total: number;
   onJumpToNextUnviewed: () => void;
 };
-
-const CIRCLE_SIZE = 12;
-const CIRCLE_STROKE = 2.5;
-const CIRCLE_RADIUS = (CIRCLE_SIZE - CIRCLE_STROKE) / 2;
-const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS;
 
 export function ReviewProgress({ viewed, total, onJumpToNextUnviewed }: ReviewProgressProps) {
   if (total === 0) {
@@ -16,54 +14,37 @@ export function ReviewProgress({ viewed, total, onJumpToNextUnviewed }: ReviewPr
 
   const isComplete = viewed >= total;
   const percent = Math.round((viewed / total) * 100);
-  const circleOffset = CIRCLE_CIRCUMFERENCE * (1 - percent / 100);
 
   return (
-    <button
+    <Button
       type='button'
-      className={`gprv-review-progress${isComplete ? ' gprv-review-progress-complete' : ''}`}
+      variant='outline'
+      size='sm'
+      className={cn(
+        'h-auto w-full justify-between gap-2.5 px-2.5 py-1.5 font-normal',
+        isComplete &&
+          'border-green-500/40 bg-green-500/5 hover:border-green-500/40 hover:bg-green-500/5',
+      )}
       onClick={onJumpToNextUnviewed}
       disabled={isComplete}
       title={isComplete ? 'All files viewed' : 'Jump to next unviewed file'}
       aria-label={`${viewed} of ${total} files viewed`}
     >
-      <span className='gprv-review-progress-track'>
+      <span
+        className='h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-muted/80'
+        aria-hidden='true'
+      >
         <span
-          className='gprv-review-progress-fill'
+          className={cn(
+            'block h-full rounded-full transition-[width] duration-200',
+            isComplete ? 'bg-green-500' : 'bg-primary',
+          )}
           style={{ width: `${percent}%` }}
         />
       </span>
-      <svg
-        className='gprv-review-progress-circle'
-        width={CIRCLE_SIZE}
-        height={CIRCLE_SIZE}
-        viewBox={`0 0 ${CIRCLE_SIZE} ${CIRCLE_SIZE}`}
-        aria-hidden='true'
-      >
-        <circle
-          className='gprv-review-progress-circle-track'
-          cx={CIRCLE_SIZE / 2}
-          cy={CIRCLE_SIZE / 2}
-          r={CIRCLE_RADIUS}
-          fill='none'
-          strokeWidth={CIRCLE_STROKE}
-        />
-        <circle
-          className='gprv-review-progress-circle-fill'
-          cx={CIRCLE_SIZE / 2}
-          cy={CIRCLE_SIZE / 2}
-          r={CIRCLE_RADIUS}
-          fill='none'
-          strokeWidth={CIRCLE_STROKE}
-          strokeLinecap='round'
-          strokeDasharray={CIRCLE_CIRCUMFERENCE}
-          strokeDashoffset={circleOffset}
-          transform={`rotate(-90 ${CIRCLE_SIZE / 2} ${CIRCLE_SIZE / 2})`}
-        />
-      </svg>
-      <span className='gprv-review-progress-label'>
+      <span className='shrink-0 text-xs font-semibold whitespace-nowrap tabular-nums'>
         {viewed} / {total} viewed
       </span>
-    </button>
+    </Button>
   );
 }

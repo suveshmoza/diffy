@@ -125,6 +125,7 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
         <LoadingOverlay
           onClose={onClose}
           progress={loadProgress}
+          opening
         />
       );
     }

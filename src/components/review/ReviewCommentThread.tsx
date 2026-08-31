@@ -1,9 +1,9 @@
 import type { DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
-import { IconMessageCircle } from '@tabler/icons-react';
+import { IconComment } from '@pierre/icons';
 import { memo, useCallback, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
-import { renderGitHubCommentBody } from '@/lib/github/comments/markdown';
 import {
   formatReviewCommentHiddenLabel,
   isReviewCommentHidden,
@@ -14,15 +14,14 @@ import {
   reviewCommentToSelectedLineRange,
 } from '@/lib/review/format-line-range';
 import { formatQuoteReplyPrefill } from '@/lib/review/format-quote-reply';
+import { getReviewReplyKey } from '@/lib/review/reply-session';
+import { cn } from '@/lib/utils';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 import { useReview } from '@/providers/ReviewContext';
 
+import { ReviewCommentBody } from './ReviewCommentBody';
 import { ReviewCommentEditComposer } from './ReviewCommentEditComposer';
 import { ReviewReplyComposer } from './ReviewReplyComposer';
-
-export function getReviewReplyKey(itemId: string, inReplyToId: number): string {
-  return `${itemId}:${inReplyToId}`;
-}
 
 type ReviewCommentThreadBaseProps = {
   annotation:
@@ -73,11 +72,11 @@ const ReviewCommentThreadBase = memo(function ReviewCommentThreadBase({
 
   return (
     <div
-      className={`gprv-review-thread-shell${variant === 'header' ? ' gprv-review-thread-shell--header' : ''}`}
+      className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className='gprv-review-thread'>
+      <div className='box-border w-full min-w-0 max-w-[90%] rounded-[10px] border border-border bg-card p-4 text-foreground shadow-sm lg:max-w-full'>
         <CommentReplySlot
           itemId={itemId}
           comment={mainComment}
@@ -87,7 +86,7 @@ const ReviewCommentThreadBase = memo(function ReviewCommentThreadBase({
           isOrphaned={isOrphaned}
         />
         {replies.length > 0 ? (
-          <div className='gprv-review-replies'>
+          <div className='ml-8 mt-4 grid max-w-full min-w-0 gap-4'>
             {replies.map((comment) => (
               <CommentReplySlot
                 key={comment.id}
@@ -159,7 +158,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = async () => {
     if (isDeleting) {
       return;
     }
@@ -174,7 +173,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
     } finally {
       setIsDeleting(false);
     }
-  }, [actions, comment, isDeleting, isOrphaned, itemId]);
+  };
 
   const handleSaveEdit = useCallback(
     async (body: string) => {
@@ -186,14 +185,16 @@ const CommentReplySlot = memo(function CommentReplySlot({
 
   return (
     <div
-      className={`gprv-review-comment-block${depth > 0 ? ' gprv-review-comment-block--nested' : ''}`}
+      className='grid max-w-full min-w-0 gap-0'
       data-reply-key={replyKey}
       {...(depth > 0 ? { 'data-reply-prefill': formatQuoteReplyPrefill(comment) } : {})}
     >
-      {lineRangeLabel ? <p className='gprv-review-line-range'>{lineRangeLabel}</p> : null}
-      <article className='gprv-review-comment'>
+      {lineRangeLabel ? (
+        <p className='mb-2.5 text-xs font-semibold text-foreground/65'>{lineRangeLabel}</p>
+      ) : null}
+      <article className='flex w-full min-w-0 max-w-full items-start gap-2'>
         <span
-          className='gprv-review-comment-avatar'
+          className='inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[11px] font-bold text-primary'
           aria-hidden='true'
         >
           {comment.user.avatar_url ? (
@@ -204,46 +205,50 @@ const CommentReplySlot = memo(function CommentReplySlot({
               height={24}
               loading='lazy'
               decoding='async'
+              className='size-full object-cover'
             />
           ) : (
             comment.user.login.slice(0, 1).toUpperCase()
           )}
         </span>
-        <div className='gprv-review-comment-content'>
-          <div className='gprv-review-comment-meta'>
-            <strong>{comment.user.login}</strong>
+        <div className='min-w-0 max-w-full flex-1'>
+          <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
+            <strong className='text-sm font-semibold'>{comment.user.login}</strong>
             <time
+              className='text-xs text-muted-foreground'
               dateTime={comment.created_at}
               title={formatFullTimestamp(comment.created_at)}
             >
               {formatRelativeTimestamp(comment.created_at)}
             </time>
-            <div className='gprv-review-comment-actions'>
+            <div className='inline-flex shrink-0 items-center gap-1'>
               {canManage && !isEditing ? (
-                <button
+                <Button
                   type='button'
-                  className='gprv-review-comment-action'
+                  variant='ghost'
+                  size='xs'
                   onClick={() => setIsEditing(true)}
                   aria-label='Edit comment'
                   title='Edit comment'
                 >
                   Edit
-                </button>
+                </Button>
               ) : null}
               {canManage ? (
-                <button
+                <Button
                   type='button'
-                  className='gprv-review-comment-action'
+                  variant='ghost'
+                  size='xs'
                   onClick={() => void handleDelete()}
                   disabled={isDeleting || isEditing}
                   aria-label='Delete comment'
                   title='Delete comment'
                 >
                   {isDeleting ? 'Deleting…' : 'Delete'}
-                </button>
+                </Button>
               ) : null}
               <a
-                className='gprv-review-comment-link'
+                className='inline-flex items-center rounded-md px-1 text-xs text-muted-foreground hover:bg-muted hover:text-primary'
                 href={comment.html_url}
                 target='_blank'
                 rel='noopener noreferrer'
@@ -255,17 +260,19 @@ const CommentReplySlot = memo(function CommentReplySlot({
             </div>
           </div>
           {isHidden && !isEditing ? (
-            <div className='gprv-review-comment-hidden'>
-              <p className='gprv-review-comment-hidden-note'>
+            <div className='mt-1 grid gap-1.5'>
+              <p className='text-xs text-muted-foreground italic'>
                 {formatReviewCommentHiddenLabel(comment)}
               </p>
-              <button
+              <Button
                 type='button'
-                className='gprv-review-comment-action'
+                variant='ghost'
+                size='xs'
+                className='h-auto w-fit px-1'
                 onClick={() => setIsExpanded(true)}
               >
                 Show comment
-              </button>
+              </Button>
             </div>
           ) : isEditing ? (
             <ReviewCommentEditComposer
@@ -274,24 +281,27 @@ const CommentReplySlot = memo(function CommentReplySlot({
               onSave={handleSaveEdit}
             />
           ) : (
-            <div className='gprv-review-comment-text'>
-              {renderGitHubCommentBody(comment.body, { pullRequestRef })}
-            </div>
+            <ReviewCommentBody
+              body={comment.body}
+              pullRequestRef={pullRequestRef}
+            />
           )}
           {canReply && !isHidden && !isEditing ? (
-            <button
+            <Button
               type='button'
-              className='gprv-review-reply-trigger'
+              variant='ghost'
+              size='sm'
+              data-reply-trigger
+              className={cn(
+                'mt-2 h-auto gap-1.5 px-1 py-0.5 text-xs font-semibold in-data-reply-open:hidden',
+              )}
               onClick={() => actions.openReply(replyKey)}
               aria-label={replyLabel}
               title={replyLabel}
             >
-              <IconMessageCircle
-                size={20}
-                stroke={2}
-              />
-              <span className='gprv-review-reply-trigger-label'>{replyLabel}</span>
-            </button>
+              <IconComment size={20} />
+              <span>{replyLabel}</span>
+            </Button>
           ) : null}
         </div>
       </article>
@@ -303,6 +313,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
           <ReviewReplyComposer
             pullRequestRef={pullRequestRef}
             inReplyToId={rootCommentId}
+            nested={depth > 0}
             onCancel={() => actions.closeReply(replyKey)}
             onSuccess={(postedComment) =>
               actions.submitReply(itemId, postedComment, replyKey, isOrphaned)

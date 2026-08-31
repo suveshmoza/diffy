@@ -40,7 +40,7 @@ export function kickCodeViewLayout<T>(
 export function useCodeViewLayoutRefresh<T>(
   viewerRef: RefObject<CodeViewHandle<T> | null>,
   hostRef: RefObject<HTMLDivElement | null>,
-  deps: readonly unknown[],
+  layoutKey: unknown,
 ) {
   const containerRef = useCallback((_node: HTMLDivElement | null) => {
     // Pierre CodeView manages scroll container lifecycle and resize observation.
@@ -52,7 +52,9 @@ export function useCodeViewLayoutRefresh<T>(
 
   useEffect(() => {
     refresh();
-  }, [refresh, deps]);
+    // layoutKey is an intentional invalidation token; refresh reads refs that need not be effect deps.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps, react/exhaustive-effect-dependencies
+  }, [layoutKey, refresh]);
 
   return { containerRef, refresh };
 }
@@ -64,9 +66,8 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
   const [isReady, setIsReady] = useState(false);
 
   useLayoutEffect(() => {
-    setIsReady(false);
-    const host = hostRef.current;
-    if (!host) {
+    const currentHost = hostRef.current;
+    if (!currentHost) {
       return;
     }
 
@@ -80,7 +81,7 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
         return true;
       }
 
-      if (host.getBoundingClientRect().height > 0) {
+      if (currentHost.getBoundingClientRect().height > 0) {
         setIsReady(true);
         observer?.disconnect();
         observer = null;
@@ -116,7 +117,7 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
     observer = new ResizeObserver(() => {
       markReadyIfSized();
     });
-    observer.observe(host);
+    observer.observe(currentHost);
 
     window.addEventListener(OVERLAY_LAYOUT_KICK_EVENT, onLayoutKick);
     scheduleRafChecks(HOST_READY_RAF_FRAMES);
@@ -134,6 +135,7 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
         clearTimeout(fallbackTimer);
       }
       window.removeEventListener(OVERLAY_LAYOUT_KICK_EVENT, onLayoutKick);
+      setIsReady(false);
     };
   }, [hostRef]);
 

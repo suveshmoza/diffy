@@ -7,9 +7,15 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
+import { cn } from '@/lib/utils';
 import { useReview } from '@/providers/ReviewContext';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
+
+import { ReviewCommentBody } from './ReviewCommentBody';
+import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type QueuedCommentCardProps = {
   queuedId: string;
@@ -20,7 +26,7 @@ type QueuedCommentCardProps = {
 
 export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedCommentCardProps) {
   const { removeQueued, editQueued } = useReviewQueueContext();
-  const { actions } = useReview();
+  const { actions, meta } = useReview();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(body);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -69,68 +75,84 @@ export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedComme
   );
 
   return (
-    <div className='gprv-review-thread-shell'>
+    <div className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'>
       <div
-        className='gprv-review-thread gprv-review-queued'
+        className={cn(
+          'box-border w-full min-w-0 max-w-[90%] rounded-[10px] border border-border bg-card p-4 text-foreground shadow-sm lg:max-w-full',
+          'border-dashed',
+        )}
         onMouseEnter={onHighlight}
         onMouseLeave={onClearHighlight}
       >
-        <p className='gprv-review-line-range'>{formatSelectedLineRangeLabel(range)}</p>
-        <div className='gprv-review-queued-header'>
-          <span className='gprv-queued-badge'>Queued</span>
+        <p className='mb-2.5 text-xs font-semibold text-foreground/65'>
+          {formatSelectedLineRangeLabel(range)}
+        </p>
+        <div className='mb-1.5 flex items-center justify-between'>
+          <Badge
+            variant='secondary'
+            className='h-auto px-1.5 py-0.5 text-[11px] font-bold tracking-wide uppercase'
+          >
+            Queued
+          </Badge>
           {!isEditing ? (
-            <div className='gprv-review-comment-actions'>
-              <button
+            <div className='inline-flex items-center gap-1'>
+              <Button
                 type='button'
-                className='gprv-review-comment-action'
+                variant='ghost'
+                size='xs'
                 onClick={startEdit}
                 aria-label='Edit queued comment'
                 title='Edit queued comment'
               >
                 Edit
-              </button>
-              <button
+              </Button>
+              <Button
                 type='button'
-                className='gprv-review-comment-action'
+                variant='ghost'
+                size='xs'
                 onClick={onRemove}
                 aria-label='Delete queued comment'
                 title='Delete queued comment'
               >
                 Delete
-              </button>
+              </Button>
             </div>
           ) : null}
         </div>
         {isEditing ? (
-          <div className='gprv-review-queued-edit'>
-            <textarea
+          <div className='flex flex-col gap-2'>
+            <ReviewMarkdownComposer
               ref={editRef}
-              className='gprv-review-composer-input'
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={setDraft}
               onKeyDown={handleKeyDown}
               rows={3}
             />
-            <div className='gprv-review-composer-actions'>
-              <button
+            <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
+              <Button
                 type='button'
-                className='gprv-review-composer-button gprv-review-composer-button-secondary'
+                variant='outline'
+                size='sm'
                 onClick={() => setIsEditing(false)}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type='button'
-                className='gprv-review-composer-button gprv-review-composer-button-primary'
+                size='sm'
                 onClick={save}
                 disabled={!draft.trim()}
               >
                 Save
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
-          <p className='gprv-review-queued-body'>{body}</p>
+          <ReviewCommentBody
+            body={body}
+            pullRequestRef={meta.pullRequestRef}
+            className='mt-0'
+          />
         )}
       </div>
     </div>

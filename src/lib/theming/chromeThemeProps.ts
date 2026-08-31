@@ -4,8 +4,6 @@ import { deriveChromeTokens } from '@/lib/theming/deriveChromeTokens';
 import type { ChromeMapping } from '@/lib/theming/diffyChromeMapping';
 import type { ActiveThemeSnapshot } from '@/lib/theming/ThemeSource';
 
-export type { ChromeMapping };
-
 export function chromeThemeProps(
   active: ActiveThemeSnapshot,
   mapping: ChromeMapping,

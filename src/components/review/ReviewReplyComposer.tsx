@@ -1,12 +1,17 @@
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
 
+import { Button } from '@/components/ui/button';
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { createReviewCommentReply, GitHubReviewWriteError } from '@/lib/github/review-write';
+import { cn } from '@/lib/utils';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
+
+import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewReplyComposerProps = {
   pullRequestRef: GitHubPullRequestRef;
   inReplyToId: number;
+  nested?: boolean;
   onCancel: () => void;
   onSuccess: (comment: GitHubPullRequestReviewComment) => void;
 };
@@ -14,16 +19,18 @@ type ReviewReplyComposerProps = {
 export function ReviewReplyComposer({
   pullRequestRef,
   inReplyToId,
+  nested = false,
   onCancel,
   onSuccess,
 }: ReviewReplyComposerProps) {
   const { viewerUser, hasToken } = useGitHubAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = useCallback(async () => {
-    const trimmed = textareaRef.current?.value.trim() ?? '';
+    const trimmed = body.trim();
     if (!trimmed) {
       setError('Write a reply before submitting.');
       return;
@@ -52,7 +59,7 @@ export function ReviewReplyComposer({
     } finally {
       setIsSubmitting(false);
     }
-  }, [hasToken, inReplyToId, onSuccess, pullRequestRef]);
+  }, [body, hasToken, inReplyToId, onSuccess, pullRequestRef]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -75,10 +82,10 @@ export function ReviewReplyComposer({
   const initials = viewerUser?.login.slice(0, 1).toUpperCase() ?? '?';
 
   return (
-    <div className='gprv-review-reply-composer'>
-      <div className='gprv-review-comment'>
+    <div className={cn('mt-2 max-w-full min-w-0', nested ? 'ml-0' : 'ml-8')}>
+      <div className='flex w-full min-w-0 max-w-full items-start gap-2'>
         <span
-          className='gprv-review-comment-avatar'
+          className='inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[11px] font-bold text-primary'
           aria-hidden='true'
         >
           {viewerUser?.avatar_url ? (
@@ -89,52 +96,54 @@ export function ReviewReplyComposer({
               height={24}
               loading='lazy'
               decoding='async'
+              className='size-full object-cover'
             />
           ) : (
             initials
           )}
         </span>
-        <div className='gprv-review-comment-content'>
+        <div className='min-w-0 max-w-full flex-1'>
           {viewerUser ? (
-            <div className='gprv-review-comment-meta'>
-              <strong>{viewerUser.login}</strong>
+            <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
+              <strong className='text-sm font-semibold'>{viewerUser.login}</strong>
             </div>
           ) : null}
-          <label className='gprv-review-composer-field'>
-            <span className='sr-only'>Reply</span>
-            <textarea
+          <div className='mt-2 block w-full'>
+            <ReviewMarkdownComposer
               ref={textareaRef}
-              className='gprv-review-composer-input'
-              defaultValue=''
+              value={body}
+              onChange={setBody}
               onKeyDown={handleKeyDown}
               placeholder='Leave a reply'
               rows={3}
               disabled={isSubmitting}
+              aria-label='Reply'
             />
-          </label>
+          </div>
           {!hasToken ? (
-            <p className='gprv-review-composer-hint'>
+            <p className='mt-2 text-xs text-muted-foreground'>
               Add a GitHub token in the diffy popup to reply.
             </p>
           ) : null}
-          {error ? <p className='gprv-review-composer-error'>{error}</p> : null}
-          <div className='gprv-review-composer-actions'>
-            <button
+          {error ? <p className='mt-2 text-xs text-destructive'>{error}</p> : null}
+          <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
+            <Button
               type='button'
-              className='gprv-review-composer-button gprv-review-composer-button-secondary'
+              variant='outline'
+              size='sm'
               onClick={onCancel}
               disabled={isSubmitting}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type='button'
-              className='gprv-review-composer-button gprv-review-composer-button-primary'
+              size='sm'
               onClick={() => void handleSubmit()}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !body.trim()}
             >
               {isSubmitting ? 'Posting…' : 'Reply'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -1,11 +1,14 @@
 import type { SelectedLineRange } from '@pierre/diffs';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
+import { Button } from '@/components/ui/button';
 import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { createImmediateReviewComment, GitHubReviewWriteError } from '@/lib/github/review-write';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 import { useReview } from '@/providers/ReviewContext';
+
+import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewCommentComposerProps = {
   path: string;
@@ -109,12 +112,16 @@ export function ReviewCommentComposer({
   const initials = viewerUser?.login.slice(0, 1).toUpperCase() ?? '?';
 
   return (
-    <div className='gprv-review-thread-shell'>
-      <div className='gprv-review-thread gprv-review-composer'>
-        <p className='gprv-review-line-range'>{formatSelectedLineRangeLabel(range)}</p>
-        <div className='gprv-review-comment'>
+    <div className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'>
+      <div className='box-border w-full min-w-0 max-w-[90%] rounded-[10px] border border-border bg-card p-4 text-foreground shadow-sm lg:max-w-full'>
+        <p className='mb-2.5 text-xs font-semibold text-foreground/65'>
+          {formatSelectedLineRangeLabel(range)}
+        </p>
+        <div className='flex w-full min-w-0 max-w-full items-start gap-2'>
           <span
-            className='gprv-review-comment-avatar'
+            className={
+              'inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[11px] font-bold text-primary'
+            }
             aria-hidden='true'
           >
             {viewerUser?.avatar_url ? (
@@ -125,53 +132,54 @@ export function ReviewCommentComposer({
                 height={24}
                 loading='lazy'
                 decoding='async'
+                className='size-full object-cover'
               />
             ) : (
               initials
             )}
           </span>
-          <div className='gprv-review-comment-content'>
+          <div className='min-w-0 max-w-full flex-1'>
             {viewerUser ? (
-              <div className='gprv-review-comment-meta'>
-                <strong>{viewerUser.login}</strong>
+              <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
+                <strong className='text-sm font-semibold'>{viewerUser.login}</strong>
               </div>
             ) : null}
-            <label className='gprv-review-composer-field'>
-              <span className='sr-only'>Comment</span>
-              <textarea
+            <div className='mt-2 block w-full'>
+              <ReviewMarkdownComposer
                 ref={textareaRef}
-                className='gprv-review-composer-input'
                 value={body}
-                onChange={(event) => handleBodyChange(event.target.value)}
+                onChange={handleBodyChange}
                 onKeyDown={handleKeyDown}
                 placeholder='Leave a comment'
                 rows={3}
                 disabled={isSubmitting}
+                aria-label='Comment'
               />
-            </label>
+            </div>
             {!hasToken ? (
-              <p className='gprv-review-composer-hint'>
+              <p className='mt-2 text-xs text-muted-foreground'>
                 Add a GitHub token in the diffy popup to post comments.
               </p>
             ) : null}
-            {error ? <p className='gprv-review-composer-error'>{error}</p> : null}
-            <div className='gprv-review-composer-actions'>
-              <button
+            {error ? <p className='mt-2 text-xs text-destructive'>{error}</p> : null}
+            <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
+              <Button
                 type='button'
-                className='gprv-review-composer-button gprv-review-composer-button-secondary'
+                variant='outline'
+                size='sm'
                 onClick={onCancel}
                 disabled={isSubmitting}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type='button'
-                className='gprv-review-composer-button gprv-review-composer-button-primary'
+                size='sm'
                 onClick={() => void handleSubmit()}
                 disabled={isSubmitting || !body.trim()}
               >
                 {isBatchMode ? 'Add to review' : isSubmitting ? 'Posting…' : 'Comment'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

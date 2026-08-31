@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
 
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { cn } from '@/lib/utils';
+
 export type SegmentOption<T extends string | number> = {
   value: T;
   label: string;
@@ -26,35 +29,52 @@ export function SegmentedControl<T extends string | number>({
   wrap = false,
   showLabels = true,
 }: SegmentedControlProps<T>) {
+  const stringValue = String(value);
+
   return (
-    <div
-      className='gprv-segmented'
-      data-wrap={wrap ? '' : undefined}
-      role='group'
+    <ToggleGroup
+      variant='outline'
+      spacing={0}
+      value={[stringValue]}
+      onValueChange={(next) => {
+        const selected = next[0];
+        if (selected == null || selected === '') {
+          return;
+        }
+        onChange(selected as T);
+      }}
       aria-label={ariaLabel}
+      className={cn(wrap && 'h-auto flex-wrap')}
     >
       {options.map((option) => (
-        <button
+        <ToggleGroupItem
           key={option.value}
-          type='button'
-          className='gprv-segmented-button'
-          data-active={option.value === value ? '' : undefined}
-          aria-pressed={option.value === value}
+          value={String(option.value)}
           aria-label={showLabels ? undefined : option.label}
           title={option.label}
-          onClick={() => onChange(option.value)}
+          size='default'
+          className={cn(
+            'not-aria-pressed:bg-transparent not-aria-pressed:hover:bg-muted/70 not-aria-pressed:hover:text-foreground',
+            'aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm',
+            'aria-pressed:hover:bg-background aria-pressed:hover:text-foreground',
+            !showLabels && 'px-2',
+          )}
         >
-          {option.icon ? (
-            <span
-              className='gprv-segmented-icon'
-              aria-hidden='true'
-            >
-              {option.icon}
+          {option.icon || showLabels ? (
+            <span className='inline-flex items-center gap-1.5'>
+              {option.icon ? (
+                <span
+                  className='inline-flex shrink-0'
+                  aria-hidden='true'
+                >
+                  {option.icon}
+                </span>
+              ) : null}
+              {showLabels ? <span>{option.label}</span> : null}
             </span>
           ) : null}
-          {showLabels ? <span className='gprv-segmented-text'>{option.label}</span> : null}
-        </button>
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }

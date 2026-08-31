@@ -1,16 +1,15 @@
 import type { CSSProperties } from 'react';
 
-const ANNOTATION_THEME_STYLE_KEYS = [
-  '--gprv-annotation-bg',
-  '--gprv-annotation-border',
-  '--gprv-annotation-fg',
-  '--gprv-annotation-hover-border',
-  '--gprv-annotation-shadow',
-  '--gprv-popover-muted-fg',
-  '--gprv-diff-separator',
-  '--gprv-scrollbar-thumb-bg',
-  '--gprv-scrollbar-track-bg',
-] as const;
+const SHADCN_TO_ANNOTATION_KEYS = {
+  '--popover': '--gprv-annotation-bg',
+  '--border': '--gprv-annotation-border',
+  '--foreground': '--gprv-annotation-fg',
+  '--ring': '--gprv-annotation-hover-border',
+  '--muted-foreground': '--gprv-popover-muted-fg',
+  '--gprv-diff-separator': '--gprv-diff-separator',
+  '--gprv-scrollbar-thumb-bg': '--gprv-scrollbar-thumb-bg',
+  '--gprv-scrollbar-track-bg': '--gprv-scrollbar-track-bg',
+} as const;
 
 /** Subset of chrome vars scoped onto the CodeView host for inline annotations. */
 export function buildAnnotationThemeStyle(
@@ -20,14 +19,24 @@ export function buildAnnotationThemeStyle(
     return undefined;
   }
 
-  const source = themeChromeStyle as CSSProperties &
-    Partial<Record<(typeof ANNOTATION_THEME_STYLE_KEYS)[number], string>>;
+  const source = themeChromeStyle as CSSProperties & Record<string, string | undefined>;
   const style: Record<string, string> = {};
-  for (const key of ANNOTATION_THEME_STYLE_KEYS) {
-    const value = source[key];
+
+  for (const [sourceKey, targetKey] of Object.entries(SHADCN_TO_ANNOTATION_KEYS)) {
+    const value = source[sourceKey];
     if (typeof value === 'string') {
-      style[key] = value;
+      style[targetKey] = value;
     }
+  }
+
+  if (source['--gprv-annotation-shadow'] != null) {
+    style['--gprv-annotation-shadow'] = source['--gprv-annotation-shadow'];
+  } else if (source['--gprv-shadow'] != null) {
+    style['--gprv-annotation-shadow'] = source['--gprv-shadow'];
+  }
+
+  if (source['--gprv-diff-separator'] != null) {
+    style['--gprv-diff-separator'] = source['--gprv-diff-separator'];
   }
 
   return Object.keys(style).length > 0 ? (style as CSSProperties) : undefined;
