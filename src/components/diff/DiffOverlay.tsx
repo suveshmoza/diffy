@@ -1108,7 +1108,8 @@ export function DiffOverlay({
                                 aria-label='Preparing diff viewer'
                               >
                                 <IconSpinner
-                                  size={48}
+                                  width={48}
+                                  height={48}
                                   className='animate-spin text-muted-foreground'
                                 />
                                 <p className='text-sm font-medium text-foreground'>

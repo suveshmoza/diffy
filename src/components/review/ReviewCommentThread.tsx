@@ -21,14 +21,6 @@ import { useReview } from '@/providers/ReviewContext';
 
 import { ReviewCommentBody } from './ReviewCommentBody';
 import { ReviewCommentEditComposer } from './ReviewCommentEditComposer';
-import {
-  reviewAvatarClassName,
-  reviewCommentContentClassName,
-  reviewCommentRowClassName,
-  reviewLineRangeClassName,
-  reviewThreadCardClassName,
-  reviewThreadShellClassName,
-} from './reviewComposerStyles';
 import { ReviewReplyComposer } from './ReviewReplyComposer';
 
 type ReviewCommentThreadBaseProps = {
@@ -80,11 +72,11 @@ const ReviewCommentThreadBase = memo(function ReviewCommentThreadBase({
 
   return (
     <div
-      className={reviewThreadShellClassName}
+      className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className={reviewThreadCardClassName}>
+      <div className='box-border w-full min-w-0 max-w-[90%] rounded-[10px] border border-border bg-card p-4 text-foreground shadow-sm lg:max-w-full'>
         <CommentReplySlot
           itemId={itemId}
           comment={mainComment}
@@ -197,10 +189,12 @@ const CommentReplySlot = memo(function CommentReplySlot({
       data-reply-key={replyKey}
       {...(depth > 0 ? { 'data-reply-prefill': formatQuoteReplyPrefill(comment) } : {})}
     >
-      {lineRangeLabel ? <p className={reviewLineRangeClassName}>{lineRangeLabel}</p> : null}
-      <article className={reviewCommentRowClassName}>
+      {lineRangeLabel ? (
+        <p className='mb-2.5 text-xs font-semibold text-foreground/65'>{lineRangeLabel}</p>
+      ) : null}
+      <article className='flex w-full min-w-0 max-w-full items-start gap-2'>
         <span
-          className={reviewAvatarClassName}
+          className='inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[11px] font-bold text-primary'
           aria-hidden='true'
         >
           {comment.user.avatar_url ? (
@@ -217,7 +211,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
             comment.user.login.slice(0, 1).toUpperCase()
           )}
         </span>
-        <div className={reviewCommentContentClassName}>
+        <div className='min-w-0 max-w-full flex-1'>
           <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
             <strong className='text-sm font-semibold'>{comment.user.login}</strong>
             <time

@@ -32,7 +32,7 @@ export const SidebarPrInfo = memo(function SidebarPrInfo({ pullRequest }: Sideba
             isFirst
           >
             <span
-              className='ml-auto block max-w-[13rem] truncate font-mono text-sm'
+              className='ml-auto block max-w-52 truncate font-mono text-sm'
               title={pullRequest.base.repo.full_name}
             >
               {pullRequest.base.repo.full_name}

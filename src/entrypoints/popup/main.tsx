@@ -55,7 +55,8 @@ function PopupApp() {
         >
           <IconSpinner
             className='popup-spinner'
-            size={28}
+            width={28}
+            height={28}
           />
           <p className='status-text'>Loading&hellip;</p>
         </section>
@@ -105,7 +106,8 @@ function PopupApp() {
                 {state.status === 'validating' ? (
                   <IconSpinner
                     className='popup-spinner'
-                    size={20}
+                    width={20}
+                    height={20}
                   />
                 ) : (
                   'Save'

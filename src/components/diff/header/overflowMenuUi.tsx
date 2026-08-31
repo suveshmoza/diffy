@@ -5,19 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
-/** Shared sizing for header overflow + display settings surfaces. */
-export const OVERFLOW_MENU_ICON = { size: 12 } as const;
-export const OVERFLOW_MENU_SECTION_ICON = { size: 14 } as const;
-export const OVERFLOW_MENU_CHEVRON = { size: 16 } as const;
-
-export const overflowMenuSectionHeadingClassName =
-  'flex items-center gap-1.5 px-2 pt-1.5 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase';
-
-export const overflowMenuItemClassName = 'h-8 w-full justify-start gap-2 px-2 text-sm font-normal';
-
-export const overflowMenuPanelClassName =
-  'max-h-[min(70vh,480px)] overflow-y-auto overscroll-contain';
-
 type OverflowMenuSectionHeadingProps = {
   id?: string;
   label: string;
@@ -28,7 +15,7 @@ export function OverflowMenuSectionHeading({ id, label, icon }: OverflowMenuSect
   return (
     <h3
       id={id}
-      className={overflowMenuSectionHeadingClassName}
+      className='flex items-center gap-1.5 px-2 pt-1.5 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase'
     >
       {icon ? (
         <span
@@ -97,7 +84,10 @@ export function OverflowMenuItem({
       disabled={disabled}
       aria-selected={selected || undefined}
       onClick={onClick}
-      className={cn(overflowMenuItemClassName, selected && 'bg-accent text-accent-foreground')}
+      className={cn(
+        'h-8 w-full justify-start gap-2 px-2 text-sm font-normal',
+        selected && 'bg-accent text-accent-foreground',
+      )}
     >
       {icon ? (
         <span className='inline-flex size-4 shrink-0 items-center justify-center opacity-80'>
@@ -132,7 +122,7 @@ export function OverflowMenuBackHeader({ label, onClick }: OverflowMenuBackHeade
         onClick={onClick}
         className='h-9 w-full justify-start gap-2 rounded-none px-2 text-sm font-medium'
       >
-        <IconChevronLeft {...OVERFLOW_MENU_ICON} />
+        <IconChevronLeft size={12} />
         <span>{label}</span>
       </Button>
     </div>
@@ -173,7 +163,7 @@ export function OverflowMenuPickerItem({
       value={value}
       suffix={
         <IconChevronRight
-          {...OVERFLOW_MENU_CHEVRON}
+          size={16}
           className='rotate-0'
         />
       }
@@ -195,7 +185,7 @@ export function OverflowMenuPanel({ id, ariaLabel, children, className }: Overfl
       id={id}
       role='dialog'
       aria-label={ariaLabel}
-      className={cn(overflowMenuPanelClassName, className)}
+      className={cn('max-h-[min(70vh,480px)] overflow-y-auto overscroll-contain', className)}
     >
       {children}
     </div>

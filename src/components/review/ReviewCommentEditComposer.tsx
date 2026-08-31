@@ -5,7 +5,6 @@ import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { GitHubReviewWriteError } from '@/lib/github/review-write';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 
-import { reviewComposerActionsClassName } from './reviewComposerStyles';
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewCommentEditComposerProps = {
@@ -99,7 +98,7 @@ export function ReviewCommentEditComposer({
         </p>
       ) : null}
       {error ? <p className='text-xs text-destructive'>{error}</p> : null}
-      <div className={reviewComposerActionsClassName}>
+      <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
         <Button
           type='button'
           variant='outline'

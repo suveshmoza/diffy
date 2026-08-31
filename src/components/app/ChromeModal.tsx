@@ -27,12 +27,12 @@ export function ChromeModal({ title, children, onClose }: ChromeModalProps) {
   return (
     <>
       <div
-        className='fixed inset-0 z-[2147483647] bg-black/48'
+        className='fixed inset-0 z-2147483647 bg-black/48'
         onClick={onClose}
       />
       <section
         className={cn(
-          'fixed inset-0 z-[2147483647] grid grid-rows-[auto_1fr] overflow-hidden bg-background text-foreground',
+          'fixed inset-0 z-2147483647 grid grid-rows-[auto_1fr] overflow-hidden bg-background text-foreground',
           colorScheme === 'dark' && 'dark',
         )}
         style={modalStyle}

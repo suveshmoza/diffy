@@ -46,11 +46,8 @@ import { cn } from '@/lib/utils';
 import { useThemeSelection } from '@/providers/theming/useThemeSelection';
 
 import {
-  OVERFLOW_MENU_ICON,
-  OVERFLOW_MENU_SECTION_ICON,
   OverflowMenuBackHeader,
   OverflowMenuItem,
-  overflowMenuItemClassName,
   OverflowMenuPanel,
   OverflowMenuPickerItem,
   OverflowMenuSettingsRow,
@@ -91,17 +88,17 @@ const MODE_OPTIONS = [
   {
     value: 'system' as const,
     label: 'Auto',
-    icon: <IconColorAuto {...OVERFLOW_MENU_ICON} />,
+    icon: <IconColorAuto size={12} />,
   },
   {
     value: 'light' as const,
     label: 'Light',
-    icon: <IconColorLight {...OVERFLOW_MENU_ICON} />,
+    icon: <IconColorLight size={12} />,
   },
   {
     value: 'dark' as const,
     label: 'Dark',
-    icon: <IconColorDark {...OVERFLOW_MENU_ICON} />,
+    icon: <IconColorDark size={12} />,
   },
 ];
 
@@ -276,7 +273,7 @@ export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
           <OverflowMenuSettingsSection
             id={`${id}-display-label`}
             label='Display'
-            icon={<IconListUnordered {...OVERFLOW_MENU_SECTION_ICON} />}
+            icon={<IconListUnordered size={14} />}
           >
             <OverflowMenuSettingsRow label='Diff indicators'>
               <SegmentedControl
@@ -308,7 +305,7 @@ export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
           <OverflowMenuSettingsSection
             id={`${id}-fonts-label`}
             label='Fonts'
-            icon={<IconType {...OVERFLOW_MENU_SECTION_ICON} />}
+            icon={<IconType size={14} />}
           >
             <FontPresetSelectRow
               id={`${id}-code-font`}
@@ -427,7 +424,7 @@ export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
           <OverflowMenuSettingsSection
             id={`${id}-images-label`}
             label='Images'
-            icon={<IconImage {...OVERFLOW_MENU_SECTION_ICON} />}
+            icon={<IconImage size={14} />}
             isLast
           >
             <OverflowMenuSettingsRow label='Compare mode'>
@@ -451,7 +448,7 @@ export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
         <OverflowMenuSettingsSection
           id={`${id}-appearance-label`}
           label='Appearance'
-          icon={<IconThemes {...OVERFLOW_MENU_SECTION_ICON} />}
+          icon={<IconThemes size={14} />}
           isLast
         >
           <OverflowMenuSettingsRow label='Color mode'>
@@ -465,13 +462,13 @@ export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
           </OverflowMenuSettingsRow>
 
           <OverflowMenuPickerItem
-            icon={<IconColorLight {...OVERFLOW_MENU_ICON} />}
+            icon={<IconColorLight size={12} />}
             label='Light theme'
             value={lightThemeName}
             onClick={() => openNestedView('light')}
           />
           <OverflowMenuPickerItem
-            icon={<IconColorDark {...OVERFLOW_MENU_ICON} />}
+            icon={<IconColorDark size={12} />}
             label='Dark theme'
             value={darkThemeName}
             onClick={() => openNestedView('dark')}
@@ -481,7 +478,10 @@ export function DisplaySettingsPanel(props: DisplaySettingsPanelProps) {
               type='button'
               variant='ghost'
               size='sm'
-              className={cn(overflowMenuItemClassName, 'text-muted-foreground')}
+              className={cn(
+                'h-8 w-full justify-start gap-2 px-2 text-sm font-normal',
+                'text-muted-foreground',
+              )}
               onClick={() => {
                 setLightThemeName(diffyThemeCatalog.defaultLightThemeName);
                 setDarkThemeName(diffyThemeCatalog.defaultDarkThemeName);

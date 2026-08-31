@@ -15,12 +15,6 @@ import { useReview } from '@/providers/ReviewContext';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 
 import { ReviewCommentBody } from './ReviewCommentBody';
-import {
-  reviewComposerActionsClassName,
-  reviewLineRangeClassName,
-  reviewThreadCardClassName,
-  reviewThreadShellClassName,
-} from './reviewComposerStyles';
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type QueuedCommentCardProps = {
@@ -81,13 +75,18 @@ export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedComme
   );
 
   return (
-    <div className={reviewThreadShellClassName}>
+    <div className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'>
       <div
-        className={cn(reviewThreadCardClassName, 'border-dashed')}
+        className={cn(
+          'box-border w-full min-w-0 max-w-[90%] rounded-[10px] border border-border bg-card p-4 text-foreground shadow-sm lg:max-w-full',
+          'border-dashed',
+        )}
         onMouseEnter={onHighlight}
         onMouseLeave={onClearHighlight}
       >
-        <p className={reviewLineRangeClassName}>{formatSelectedLineRangeLabel(range)}</p>
+        <p className='mb-2.5 text-xs font-semibold text-foreground/65'>
+          {formatSelectedLineRangeLabel(range)}
+        </p>
         <div className='mb-1.5 flex items-center justify-between'>
           <Badge
             variant='secondary'
@@ -129,7 +128,7 @@ export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedComme
               onKeyDown={handleKeyDown}
               rows={3}
             />
-            <div className={reviewComposerActionsClassName}>
+            <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
               <Button
                 type='button'
                 variant='outline'

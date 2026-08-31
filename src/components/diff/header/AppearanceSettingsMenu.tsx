@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 import { DisplaySettingsPanel } from './DisplaySettingsPanel';
-import { OVERFLOW_MENU_ICON } from './overflowMenuUi';
 
 /** Appearance (color mode + themes) popover for the overlay header toolbar. */
 export function AppearanceSettingsMenu() {
@@ -35,7 +34,7 @@ export function AppearanceSettingsMenu() {
           />
         }
       >
-        <IconThemes {...OVERFLOW_MENU_ICON} />
+        <IconThemes size={12} />
       </PopoverTrigger>
       <PopoverContent
         id={panelId}

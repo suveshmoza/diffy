@@ -8,15 +8,6 @@ import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 import { useReview } from '@/providers/ReviewContext';
 
-import {
-  reviewAvatarClassName,
-  reviewCommentContentClassName,
-  reviewCommentRowClassName,
-  reviewComposerActionsClassName,
-  reviewLineRangeClassName,
-  reviewThreadCardClassName,
-  reviewThreadShellClassName,
-} from './reviewComposerStyles';
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewCommentComposerProps = {
@@ -121,12 +112,16 @@ export function ReviewCommentComposer({
   const initials = viewerUser?.login.slice(0, 1).toUpperCase() ?? '?';
 
   return (
-    <div className={reviewThreadShellClassName}>
-      <div className={reviewThreadCardClassName}>
-        <p className={reviewLineRangeClassName}>{formatSelectedLineRangeLabel(range)}</p>
-        <div className={reviewCommentRowClassName}>
+    <div className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'>
+      <div className='box-border w-full min-w-0 max-w-[90%] rounded-[10px] border border-border bg-card p-4 text-foreground shadow-sm lg:max-w-full'>
+        <p className='mb-2.5 text-xs font-semibold text-foreground/65'>
+          {formatSelectedLineRangeLabel(range)}
+        </p>
+        <div className='flex w-full min-w-0 max-w-full items-start gap-2'>
           <span
-            className={reviewAvatarClassName}
+            className={
+              'inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[11px] font-bold text-primary'
+            }
             aria-hidden='true'
           >
             {viewerUser?.avatar_url ? (
@@ -143,7 +138,7 @@ export function ReviewCommentComposer({
               initials
             )}
           </span>
-          <div className={reviewCommentContentClassName}>
+          <div className='min-w-0 max-w-full flex-1'>
             {viewerUser ? (
               <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
                 <strong className='text-sm font-semibold'>{viewerUser.login}</strong>
@@ -167,7 +162,7 @@ export function ReviewCommentComposer({
               </p>
             ) : null}
             {error ? <p className='mt-2 text-xs text-destructive'>{error}</p> : null}
-            <div className={reviewComposerActionsClassName}>
+            <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
               <Button
                 type='button'
                 variant='outline'

@@ -65,7 +65,8 @@ export function ImageDiffViewer({
             aria-label='Loading media'
           >
             <IconSpinner
-              size={28}
+              width={28}
+              height={28}
               className='animate-spin'
             />
             <p className='m-0 text-xs text-muted-foreground'>Loading media…</p>

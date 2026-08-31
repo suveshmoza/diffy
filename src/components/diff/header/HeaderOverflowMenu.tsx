@@ -8,13 +8,7 @@ import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import { cn } from '@/lib/utils';
 
 import { DisplaySettingsPanel } from './DisplaySettingsPanel';
-import {
-  OVERFLOW_MENU_ICON,
-  OVERFLOW_MENU_SECTION_ICON,
-  OverflowMenuItem,
-  overflowMenuPanelClassName,
-  OverflowMenuSection,
-} from './overflowMenuUi';
+import { OverflowMenuItem, OverflowMenuSection } from './overflowMenuUi';
 
 type HeaderOverflowMenuProps = {
   displayPrefs: CodeViewDisplayPrefs;
@@ -81,19 +75,19 @@ export function HeaderOverflowMenu({
         side='bottom'
         className='w-80 gap-0 overflow-hidden p-0'
       >
-        <div className={overflowMenuPanelClassName}>
+        <div className='max-h-[min(70vh,480px)] overflow-y-auto overscroll-contain'>
           <div className='flex flex-col gap-1 p-1'>
             {hasSessionActions ? (
               <>
                 <OverflowMenuSection
                   label='Session'
-                  icon={<IconGlobe {...OVERFLOW_MENU_SECTION_ICON} />}
+                  icon={<IconGlobe size={14} />}
                 >
                   {canRefresh ? (
                     <OverflowMenuItem
                       icon={
                         <IconRefresh
-                          {...OVERFLOW_MENU_ICON}
+                          size={12}
                           className={cn(isRefreshing && 'animate-spin')}
                         />
                       }
@@ -104,7 +98,7 @@ export function HeaderOverflowMenu({
                   ) : null}
                   {canOpenInNewTab ? (
                     <OverflowMenuItem
-                      icon={<IconArrowUpRight {...OVERFLOW_MENU_ICON} />}
+                      icon={<IconArrowUpRight size={12} />}
                       label='Open in new tab'
                       onClick={() => runAction(onOpenInNewTab)}
                     />
