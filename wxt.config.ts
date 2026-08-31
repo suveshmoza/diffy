@@ -100,7 +100,7 @@ export default defineConfig({
   manifest: {
     version: '1.3.0',
     name: 'diffy',
-    description: 'A better way to review GitHub pull requests',
+    description: 'Fast PR reviews on GitHub, even for large PRs',
     permissions: ['storage', 'contextMenus'],
     host_permissions: [
       'https://api.github.com/*',
