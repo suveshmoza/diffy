@@ -299,7 +299,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
               size='sm'
               data-reply-trigger
               className={cn(
-                'mt-2 h-auto gap-1.5 px-1 py-0.5 text-xs font-semibold in-data-[reply-open]:hidden',
+                'mt-2 h-auto gap-1.5 px-1 py-0.5 text-xs font-semibold in-data-reply-open:hidden',
               )}
               onClick={() => actions.openReply(replyKey)}
               aria-label={replyLabel}
