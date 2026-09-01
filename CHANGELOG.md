@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.4.1
+
+### Fixes
+
+- Stop Tailwind Preflight from leaking into GitHub pages by splitting content-script CSS from the overlay stylesheet
+- Fix blank overlay on Firefox by authenticating iframe messages by origin instead of `event.source`
+- Fix View Diff button not appearing on client-side navigation without a page refresh
+- Soften scroll lock so GitHub layout is less disrupted while the overlay is open
+
 ## v1.4.0
 
 ### Features
