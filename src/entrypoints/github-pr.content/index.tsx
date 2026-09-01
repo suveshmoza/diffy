@@ -1,9 +1,5 @@
-import {
-  hideOverlayRoot,
-  installViewDiffButton,
-  isPullRequestPage,
-  uninstallViewDiffButton,
-} from '@/lib/github/page';
+import { getPullRequestRefPrefix, parseGitHubPullRequestUrl } from '@/lib/github/api';
+import { hideOverlayRoot, installViewDiffButton, uninstallViewDiffButton } from '@/lib/github/page';
 import {
   destroyOverlayFrame,
   hideOverlayFrame,
@@ -14,6 +10,13 @@ import {
 } from '@/lib/overlay/frame';
 
 import './content.css';
+
+const LOCATION_POLL_MS = 300;
+
+function pullRequestKey(url: string): string | null {
+  const ref = parseGitHubPullRequestUrl(url);
+  return ref ? getPullRequestRefPrefix(ref) : null;
+}
 
 export default defineContentScript({
   matches: ['*://github.com/*'],
@@ -34,14 +37,9 @@ export default defineContentScript({
       hideOverlayRoot();
     };
 
-    const openOverlay = (pullRequestUrl?: string) => {
-      const url = pullRequestUrl ?? location.href;
-      openPullRequestUrl = url;
-      openOverlayFrame(url);
-    };
-
     const onOpen = (pullRequestUrl: string) => {
-      openOverlay(pullRequestUrl);
+      openPullRequestUrl = pullRequestUrl;
+      openOverlayFrame(pullRequestUrl);
     };
 
     const onPrefetch = (url: string) => {
@@ -49,30 +47,31 @@ export default defineContentScript({
       prefetchOverlayFrame(url);
     };
 
-    const syncPage = () => {
-      if (!isPullRequestPage(location.href)) {
-        destroyOverlay();
-        uninstallViewDiffButton();
-        return;
-      }
-
-      if (openPullRequestUrl != null && openPullRequestUrl !== location.href) {
-        destroyOverlay();
-      }
-
-      installViewDiffButton(onOpen, onPrefetch);
-      onPrefetch(location.href);
-    };
-
-    syncPage();
+    installViewDiffButton(onOpen, onPrefetch);
 
     ctx.onInvalidated(() => {
       uninstallViewDiffButton();
       destroyOverlayFrame();
     });
 
-    ctx.addEventListener(window, 'wxt:locationchange', () => {
-      syncPage();
-    });
+    let lastHref = location.href;
+
+    // `wxt:locationchange` is driven by the Navigation API, which dispatches before the
+    // navigation commits, so `location.href` still points at the previous page inside the
+    // handler. Poll the committed URL instead.
+    ctx.setInterval(() => {
+      if (location.href === lastHref) {
+        return;
+      }
+
+      lastHref = location.href;
+
+      if (
+        openPullRequestUrl != null &&
+        pullRequestKey(openPullRequestUrl) !== pullRequestKey(lastHref)
+      ) {
+        destroyOverlay();
+      }
+    }, LOCATION_POLL_MS);
   },
 });

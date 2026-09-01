@@ -1,4 +1,8 @@
-import { parseCurrentPullRequestUrl, parseGitHubPullRequestUrl } from './api';
+import {
+  getPullRequestRefPrefix,
+  parseCurrentPullRequestUrl,
+  parseGitHubPullRequestUrl,
+} from './api';
 
 const BUTTON_ID = 'github-pr-viewer-button';
 const BUTTON_HOST_ID = 'github-pr-viewer-button-host';
@@ -33,97 +37,130 @@ type ViewDiffButtonCallbacks = {
   onPrefetch: (pullRequestUrl: string) => void;
 };
 
-let buttonCallbacks: ViewDiffButtonCallbacks | null = null;
-let syncScheduled = false;
-let headerObserver: MutationObserver | null = null;
-let observedHeaderRoot: HTMLElement | null = null;
+/** How long to keep looking for a real header anchor before settling for a floating button. */
+const ANCHOR_RETRY_WINDOW_MS = 15_000;
+const RETRY_INTERVAL_MS = 250;
+const SYNC_DEBOUNCE_MS = 100;
 
+let buttonCallbacks: ViewDiffButtonCallbacks | null = null;
+let documentObserver: MutationObserver | null = null;
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+let retryTimer: ReturnType<typeof setInterval> | null = null;
+let retryDeadline = 0;
+let floatingFallbackAllowed = false;
+let prefetchedPullRequestKey: string | null = null;
+
+/**
+ * Starts watching for pull request pages. Safe to call on any github.com page: the
+ * watcher stays alive across client-side navigation and mounts or removes the button
+ * as the URL changes.
+ */
 export function installViewDiffButton(
   onOpen: (pullRequestUrl: string) => void,
   onPrefetch: (pullRequestUrl: string) => void,
 ): void {
-  if (!isPullRequestPage(location.href)) {
-    return;
-  }
-
   buttonCallbacks = { onOpen, onPrefetch };
+  ensureDocumentObserver();
+  startAnchorRetry();
   syncViewDiffButton(onOpen, onPrefetch);
-  ensureHeaderObserver();
 }
 
 export function uninstallViewDiffButton(): void {
-  disconnectHeaderObserver();
+  stopAnchorRetry();
+  disconnectDocumentObserver();
+
+  if (syncTimer != null) {
+    clearTimeout(syncTimer);
+    syncTimer = null;
+  }
+
   removeViewDiffButton();
   buttonCallbacks = null;
-  syncScheduled = false;
+  prefetchedPullRequestKey = null;
 }
 
-function ensureHeaderObserver(): void {
-  const headerRoot = findPrHeaderRoot();
-  if (!headerRoot || headerRoot === observedHeaderRoot) {
+/**
+ * GitHub replaces the PR header wholesale on client-side navigation, so an observer
+ * bound to the header stops firing the moment that header is swapped out. Watching the
+ * document keeps working across navigations and re-renders.
+ */
+function ensureDocumentObserver(): void {
+  if (documentObserver) {
     return;
   }
 
-  disconnectHeaderObserver();
-  observedHeaderRoot = headerRoot;
-  headerObserver = new MutationObserver(() => {
+  documentObserver = new MutationObserver(() => {
     scheduleSyncViewDiffButton();
   });
-  headerObserver.observe(headerRoot, { childList: true, subtree: true });
+  documentObserver.observe(document.documentElement, { childList: true, subtree: true });
 }
 
-function disconnectHeaderObserver(): void {
-  headerObserver?.disconnect();
-  headerObserver = null;
-  observedHeaderRoot = null;
+function disconnectDocumentObserver(): void {
+  documentObserver?.disconnect();
+  documentObserver = null;
 }
 
-function findPrHeaderRoot(): HTMLElement | null {
-  for (const selector of PR_HEADER_SELECTORS) {
-    const match = document.querySelector<HTMLElement>(selector);
-    if (match) {
-      return match;
-    }
+/** Catches header renders that produce no mutation we can see, and background tabs. */
+function startAnchorRetry(): void {
+  floatingFallbackAllowed = false;
+  retryDeadline = Date.now() + ANCHOR_RETRY_WINDOW_MS;
+
+  if (retryTimer != null) {
+    return;
   }
 
-  return null;
+  retryTimer = setInterval(() => {
+    if (!buttonCallbacks) {
+      stopAnchorRetry();
+      return;
+    }
+
+    if (Date.now() > retryDeadline) {
+      floatingFallbackAllowed = true;
+      stopAnchorRetry();
+    }
+
+    syncViewDiffButton(buttonCallbacks.onOpen, buttonCallbacks.onPrefetch);
+  }, RETRY_INTERVAL_MS);
+}
+
+function stopAnchorRetry(): void {
+  if (retryTimer != null) {
+    clearInterval(retryTimer);
+    retryTimer = null;
+  }
 }
 
 function scheduleSyncViewDiffButton(): void {
-  if (syncScheduled || !buttonCallbacks) {
+  if (syncTimer != null || !buttonCallbacks) {
     return;
   }
 
-  syncScheduled = true;
-  requestAnimationFrame(() => {
-    syncScheduled = false;
-    if (!buttonCallbacks) {
-      return;
-    }
+  // A timeout rather than requestAnimationFrame, so the button also appears in
+  // background tabs, where animation frames never run.
+  syncTimer = setTimeout(() => {
+    syncTimer = null;
 
-    if (!isPullRequestPage(location.href)) {
-      uninstallViewDiffButton();
-      return;
+    if (buttonCallbacks) {
+      syncViewDiffButton(buttonCallbacks.onOpen, buttonCallbacks.onPrefetch);
     }
-
-    ensureHeaderObserver();
-    syncViewDiffButton(buttonCallbacks.onOpen, buttonCallbacks.onPrefetch);
-  });
+  }, SYNC_DEBOUNCE_MS);
 }
 
-export function syncViewDiffButton(
+function syncViewDiffButton(
   onOpen: (pullRequestUrl: string) => void,
   onPrefetch: (pullRequestUrl: string) => void,
 ): void {
   if (!isPullRequestPage(location.href)) {
     removeViewDiffButton();
+    prefetchedPullRequestKey = null;
     return;
   }
 
   injectButton(onOpen, onPrefetch);
 }
 
-export function removeViewDiffButton(): void {
+function removeViewDiffButton(): void {
   document.getElementById(BUTTON_HOST_ID)?.remove();
   document.getElementById(BUTTON_ID)?.remove();
 }
@@ -162,21 +199,34 @@ function injectButton(
     return;
   }
 
-  onPrefetch(ref.url);
+  const pullRequestKey = getPullRequestRefPrefix(ref);
+  if (pullRequestKey !== prefetchedPullRequestKey) {
+    prefetchedPullRequestKey = pullRequestKey;
+    onPrefetch(ref.url);
+    // A different PR means a new header is on its way in; give it time to render.
+    startAnchorRetry();
+  }
 
   const existing = getMountedButton();
-  if (existing) {
+  const isCurrentPullRequest = existing?.dataset.gprvPr === pullRequestKey;
+  if (existing && isCurrentPullRequest && existing.dataset.gprvPlacement === 'anchored') {
     return;
   }
 
-  document.getElementById(BUTTON_ID)?.remove();
-  document.getElementById(BUTTON_HOST_ID)?.remove();
-
   const headerRoots = getPrHeaderRoots();
   const anchorControl = findAnchorControl(headerRoots);
-  const button = createButton(anchorControl, ref.url, onOpen, onPrefetch);
+
+  // Nothing to improve on yet: keep the floating button rather than dropping it.
+  if (existing && isCurrentPullRequest && !anchorControl) {
+    return;
+  }
+
+  removeViewDiffButton();
+
+  const button = createButton(anchorControl, pullRequestKey, onOpen, onPrefetch);
 
   if (anchorControl && insertButtonNearControl(button, anchorControl)) {
+    button.dataset.gprvPlacement = 'anchored';
     return;
   }
 
@@ -184,6 +234,7 @@ function injectButton(
     const actions = queryInRoots<HTMLElement>(headerRoots, selector);
     if (actions) {
       actions.prepend(button);
+      button.dataset.gprvPlacement = 'anchored';
       return;
     }
   }
@@ -194,10 +245,18 @@ function injectButton(
   );
   if (titleHeader) {
     titleHeader.append(button);
+    button.dataset.gprvPlacement = 'anchored';
+    return;
+  }
+
+  // The header usually just has not rendered yet, so hold off on the floating
+  // fallback until we have given it time to appear.
+  if (!floatingFallbackAllowed) {
     return;
   }
 
   mountFloatingButtonHost(button);
+  button.dataset.gprvPlacement = 'floating';
 }
 
 function getMountedButton(): HTMLButtonElement | null {
@@ -279,13 +338,14 @@ function mountFloatingButtonHost(button: HTMLButtonElement): void {
 
 function createButton(
   anchorControl: HTMLAnchorElement | HTMLButtonElement | null,
-  pullRequestUrl: string,
+  pullRequestKey: string,
   onOpen: (pullRequestUrl: string) => void,
   onPrefetch: (pullRequestUrl: string) => void,
 ): HTMLButtonElement {
   const button = document.createElement('button');
   button.id = BUTTON_ID;
   button.type = 'button';
+  button.dataset.gprvPr = pullRequestKey;
   button.className = `${anchorControl?.className || 'btn gprv-inline-button'} gprv-view-diff-button`;
   button.setAttribute('aria-label', 'View Diff');
   button.innerHTML = `${VIEW_DIFF_ICON_SVG}<span class="gprv-view-diff-label">View Diff</span>`;
@@ -297,18 +357,21 @@ function createButton(
     }
   }
 
+  // Resolved per event so the button never opens a stale PR after a client-side navigation.
+  const currentUrl = () => parseCurrentPullRequestUrl()?.url ?? location.href;
+
   button.addEventListener('mouseenter', () => {
-    onPrefetch(pullRequestUrl);
+    onPrefetch(currentUrl());
   });
 
   button.addEventListener('focusin', () => {
-    onPrefetch(pullRequestUrl);
+    onPrefetch(currentUrl());
   });
 
   button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
-    onOpen(pullRequestUrl);
+    onOpen(currentUrl());
   });
 
   return button;
