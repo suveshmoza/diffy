@@ -15,6 +15,7 @@ import {
 import '../github-pr.content/style.css';
 
 const CONTAINER_ID = 'github-pr-viewer-root';
+const HOST_ORIGIN = 'https://github.com';
 
 function getContainer(): HTMLElement {
   const existing = document.getElementById(CONTAINER_ID);
@@ -54,7 +55,13 @@ if (isStandalone) {
   }
 } else {
   window.addEventListener('message', (event: MessageEvent) => {
-    if (event.source !== window.parent || !isOverlayHostMessage(event.data)) {
+    if (!isOverlayHostMessage(event.data)) {
+      return;
+    }
+
+    // Firefox delivers content-script messages through wrappers, so `event.source`
+    // is not reliably identical to `window.parent`; authenticate by origin instead.
+    if (event.source !== window.parent && event.origin !== HOST_ORIGIN) {
       return;
     }
 

@@ -13,7 +13,7 @@ import {
   setOverlayCloseHandler,
 } from '@/lib/overlay/frame';
 
-import './style.css';
+import './content.css';
 
 export default defineContentScript({
   matches: ['*://github.com/*'],

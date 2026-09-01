@@ -3,7 +3,6 @@ const SCROLL_LOCK_CLASS = 'gprv-scroll-locked';
 type SavedScrollLockState = {
   scrollX: number;
   scrollY: number;
-  bodyTop: string;
   bodyPaddingRight: string;
 };
 
@@ -24,12 +23,10 @@ export function lockPageScroll(): void {
   savedState = {
     scrollX,
     scrollY,
-    bodyTop: document.body.style.top,
     bodyPaddingRight: document.body.style.paddingRight,
   };
 
   document.documentElement.classList.add(SCROLL_LOCK_CLASS);
-  document.body.style.top = `-${scrollY}px`;
   if (scrollbarWidth > 0) {
     document.body.style.paddingRight = `${scrollbarWidth}px`;
   }
@@ -53,7 +50,6 @@ export function unlockPageScroll(): void {
   }
 
   document.documentElement.classList.remove(SCROLL_LOCK_CLASS);
-  document.body.style.top = state.bodyTop;
   document.body.style.paddingRight = state.bodyPaddingRight;
   window.scrollTo(state.scrollX, state.scrollY);
 }

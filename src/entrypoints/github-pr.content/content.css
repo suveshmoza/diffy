@@ -1,0 +1,45 @@
+/* Injected on github.com only — no Tailwind/shadcn (avoids Preflight leaking into GitHub UI). */
+
+.gprv-inline-button {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  margin-left: 8px;
+}
+#github-pr-viewer-button.gprv-view-diff-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  line-height: 1;
+}
+.gprv-view-diff-icon {
+  display: block;
+  flex-shrink: 0;
+  height: 1.15em;
+  width: 0.86em;
+}
+.gprv-view-diff-label {
+  line-height: 1;
+}
+.gprv-view-diff-host {
+  position: fixed;
+  right: 24px;
+  top: 72px;
+  z-index: 99999;
+}
+.gprv-view-diff-host .gprv-inline-button,
+.gprv-view-diff-host .btn {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+}
+#github-pr-viewer-root {
+  pointer-events: none;
+}
+#github-pr-viewer-root.gprv-root-hidden {
+  pointer-events: none;
+  visibility: hidden;
+}
+html.gprv-scroll-locked,
+html.gprv-scroll-locked body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}

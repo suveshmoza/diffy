@@ -9,6 +9,14 @@ import {
 const OVERLAY_PAGE_PATH = '/overlay.html';
 const FRAME_ID = 'github-pr-viewer-frame';
 
+function getOverlayUrl(): string {
+  return (browser.runtime.getURL as (path: string) => string)(OVERLAY_PAGE_PATH);
+}
+
+function isOverlayOrigin(origin: string): boolean {
+  return origin !== '' && origin !== 'null' && new URL(getOverlayUrl()).origin === origin;
+}
+
 type OverlayFrameState = {
   iframe: HTMLIFrameElement;
   ready: boolean;
@@ -20,11 +28,13 @@ let onCloseRequested: (() => void) | null = null;
 let messageListenerAttached = false;
 
 function handleFrameMessage(event: MessageEvent): void {
-  if (!state || event.source !== state.iframe.contentWindow) {
+  if (!state || !isOverlayFrameMessage(event.data)) {
     return;
   }
 
-  if (!isOverlayFrameMessage(event.data)) {
+  // Firefox content scripts see cross-compartment wrappers, so `event.source` is not
+  // reliably identical to `iframe.contentWindow`; authenticate by origin instead.
+  if (!isOverlayOrigin(event.origin)) {
     return;
   }
 
@@ -93,9 +103,10 @@ function ensureFrame(): OverlayFrameState {
   const root = getOrCreateOverlayRoot();
   const iframe = document.createElement('iframe');
   applyFrameStyles(iframe);
-  iframe.src = (browser.runtime.getURL as (path: string) => string)(OVERLAY_PAGE_PATH);
   hideIframe(iframe);
+  // Append before setting src — Firefox can leave the iframe blank otherwise.
   root.append(iframe);
+  iframe.src = getOverlayUrl();
 
   state = { iframe, ready: false, pending: [] };
   return state;
