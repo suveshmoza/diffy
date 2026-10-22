@@ -1,8 +1,7 @@
-import { IconCheckCircle, IconCiWarning, IconInfo, IconPerson } from '@pierre/icons';
+import { useState, type ReactNode, type SVGProps } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import logoUrl from '@/assets/logo.png';
-import { IconSpinner } from '@/components/icons/Spinner';
 import { usePopup } from '@/hooks/use-popup';
 import {
   FINE_GRAINED_WARNING_DETAIL,
@@ -11,18 +10,92 @@ import {
 
 import './style.css';
 
-function ViewedFilesTokenHint() {
+const REPO_URL = 'https://github.com/suveshmoza/diffy';
+const TOKEN_SETTINGS_URL = 'https://github.com/settings/tokens';
+
+function Icon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox='0 0 24 24'
+      aria-hidden
+      {...props}
+    />
+  );
+}
+
+function IconEye() {
+  return (
+    <Icon>
+      <path d='M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z' />
+      <circle
+        cx='12'
+        cy='12'
+        r='3'
+      />
+    </Icon>
+  );
+}
+
+function IconEyeOff() {
+  return (
+    <Icon>
+      <path d='M3 3l18 18M10.6 5.1A9.6 9.6 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.2 4M6.5 6.6A16.6 16.6 0 002 12s3.6 7 10 7a9.8 9.8 0 004.3-1M9.9 9.9a3 3 0 004.2 4.2' />
+    </Icon>
+  );
+}
+
+function IconWarn() {
+  return (
+    <Icon>
+      <circle
+        cx='12'
+        cy='12'
+        r='9'
+      />
+      <path d='M12 8v4M12 16h.01' />
+    </Icon>
+  );
+}
+
+function IconSpin() {
+  return (
+    <Icon className='spn'>
+      <path d='M12 3a9 9 0 019 9' />
+    </Icon>
+  );
+}
+
+function IconStar() {
+  return (
+    <Icon>
+      <path d='M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z' />
+    </Icon>
+  );
+}
+
+function StarFooter() {
+  return (
+    <footer className='f'>
+      <span>If you like diffy,</span>
+      <a
+        href={REPO_URL}
+        target='_blank'
+        rel='noreferrer'
+      >
+        <IconStar />
+        star it on GitHub
+      </a>
+    </footer>
+  );
+}
+
+function ReviewFlowNote() {
   return (
     <p
-      className='token-warning'
-      role='note'
+      className='note'
       title={FINE_GRAINED_WARNING_DETAIL}
     >
-      <IconCiWarning
-        size={14}
-        aria-hidden
-      />
-      <span>{FINE_GRAINED_WARNING_SUMMARY}</span>
+      {FINE_GRAINED_WARNING_SUMMARY}
     </p>
   );
 }
@@ -30,10 +103,198 @@ function ViewedFilesTokenHint() {
 function PopupApp() {
   const { state, tokenInput, showReviewFlowWarning, handleSave, handleClear, handleTokenChange } =
     usePopup();
+  const [tokenVisible, setTokenVisible] = useState(false);
+  const [confirmRequested, setConfirmRequested] = useState(false);
+  const confirmingRemove = confirmRequested && state.status === 'saved';
+
+  const showTokenWarning = tokenInput.trim().length > 0 && showReviewFlowWarning;
+  let card: ReactNode;
+
+  if (state.status === 'loading') {
+    card = (
+      <section
+        className='card'
+        key='loading'
+        aria-live='polite'
+      >
+        <div className='row'>
+          <h2>GitHub token</h2>
+        </div>
+        <p
+          className='note loading-note'
+          role='status'
+        >
+          <IconSpin />
+          Checking token…
+        </p>
+      </section>
+    );
+  } else if (state.status === 'saved' && confirmingRemove) {
+    card = (
+      <section
+        className='card'
+        key='confirm'
+        aria-live='polite'
+      >
+        <div className='row'>
+          <h2>Remove token?</h2>
+        </div>
+        <p className='note'>
+          Private repos, comments, and higher rate limits need a token. Removing it doesn’t change
+          your GitHub account.
+        </p>
+        <div className='two'>
+          <button
+            type='button'
+            className='btn'
+            onClick={() => setConfirmRequested(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type='button'
+            className='btn danger'
+            onClick={() => {
+              setConfirmRequested(false);
+              void handleClear();
+            }}
+          >
+            Remove
+          </button>
+        </div>
+      </section>
+    );
+  } else if (state.status === 'saved') {
+    const viewer = state.viewer;
+    const login = viewer?.login;
+    const initial = login?.charAt(0).toUpperCase() ?? '?';
+
+    card = (
+      <section
+        className='card'
+        key='saved'
+        aria-live='polite'
+      >
+        <div className='row'>
+          <h2>GitHub token</h2>
+          <span className='st ok'>
+            <i />
+            Verified
+          </span>
+        </div>
+        <div className='acct'>
+          {viewer?.avatar_url ? (
+            <img
+              className='av'
+              src={viewer.avatar_url}
+              alt=''
+              width={32}
+              height={32}
+            />
+          ) : (
+            <div
+              className='av'
+              aria-hidden
+            >
+              {initial}
+            </div>
+          )}
+          <div className='who'>
+            <b>{login ? `@${login}` : 'Token saved'}</b>
+            <small>{login ? 'Connected account' : 'Connected'}</small>
+          </div>
+          <button
+            type='button'
+            className='btn sm'
+            onClick={() => setConfirmRequested(true)}
+          >
+            Remove token
+          </button>
+        </div>
+        {showTokenWarning ? <ReviewFlowNote /> : null}
+      </section>
+    );
+  } else {
+    const validating = state.status === 'validating';
+    const invalid = state.status === 'error';
+
+    card = (
+      <section
+        className='card'
+        key='form'
+        aria-live='polite'
+      >
+        <div className='row'>
+          <h2>GitHub token</h2>
+          <span className='st'>
+            <i />
+            Not connected
+          </span>
+        </div>
+        <form onSubmit={handleSave}>
+          <div className={invalid ? 'fld bad' : 'fld'}>
+            <input
+              id='github-token'
+              type={tokenVisible ? 'text' : 'password'}
+              value={tokenInput}
+              placeholder='Paste a personal access token'
+              onChange={(event) => handleTokenChange(event.currentTarget.value)}
+              autoComplete='off'
+              spellCheck={false}
+              aria-label='GitHub token'
+              aria-invalid={invalid}
+              disabled={validating}
+            />
+            <button
+              type='button'
+              className='eye'
+              aria-label={tokenVisible ? 'Hide token' : 'Show token'}
+              onClick={() => setTokenVisible((visible) => !visible)}
+              disabled={validating}
+            >
+              {tokenVisible ? <IconEyeOff /> : <IconEye />}
+            </button>
+          </div>
+          {invalid ? (
+            <p
+              className='err'
+              role='alert'
+            >
+              <IconWarn />
+              {state.message}
+            </p>
+          ) : null}
+          <button
+            type='submit'
+            className='btn pri'
+            disabled={validating || tokenInput.trim().length === 0}
+          >
+            {validating ? (
+              <>
+                <IconSpin />
+                Verifying…
+              </>
+            ) : (
+              'Save token'
+            )}
+          </button>
+        </form>
+        <a
+          className='help'
+          href={TOKEN_SETTINGS_URL}
+          target='_blank'
+          rel='noreferrer'
+        >
+          Create a token on GitHub ↗
+        </a>
+        {showTokenWarning ? <ReviewFlowNote /> : null}
+      </section>
+    );
+  }
 
   return (
-    <main>
-      <header className='header'>
+    <main className='pop'>
+      <header className='h'>
         <img
           className='logo'
           src={logoUrl}
@@ -41,129 +302,13 @@ function PopupApp() {
           width={36}
           height={36}
         />
-        <div className='header-copy'>
+        <div>
           <h1>diffy</h1>
-          <p className='tagline'>Fast PR reviews on GitHub, even for large PRs</p>
+          <p>Fast PR reviews on GitHub, even for large PRs</p>
         </div>
       </header>
-
-      {state.status === 'loading' && (
-        <section
-          className='card card-centered'
-          role='status'
-          aria-live='polite'
-        >
-          <IconSpinner
-            className='popup-spinner'
-            width={28}
-            height={28}
-          />
-          <p className='status-text'>Loading&hellip;</p>
-        </section>
-      )}
-
-      {(state.status === 'empty' || state.status === 'error' || state.status === 'validating') && (
-        <section className={`card ${state.status === 'error' ? 'card-error' : ''}`}>
-          <div className='card-header'>
-            <h2>GitHub token</h2>
-            <span className='badge'>Optional</span>
-          </div>
-          <p className='card-copy'>Private repos, comments, and higher rate limits.</p>
-
-          {state.status === 'error' && (
-            <div
-              className='error-banner'
-              role='alert'
-            >
-              <IconInfo size={16} />
-              <span>{state.message}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSave}>
-            <label
-              className='input-label'
-              htmlFor='github-token'
-            >
-              Personal access token
-            </label>
-            <input
-              id='github-token'
-              type='password'
-              value={tokenInput}
-              placeholder='ghp_… or github_pat_…'
-              onChange={(event) => handleTokenChange(event.currentTarget.value)}
-              autoComplete='off'
-              spellCheck={false}
-              aria-invalid={state.status === 'error'}
-              disabled={state.status === 'validating'}
-            />
-            <div className='actions actions-single'>
-              <button
-                type='submit'
-                disabled={state.status === 'validating'}
-              >
-                {state.status === 'validating' ? (
-                  <IconSpinner
-                    className='popup-spinner'
-                    width={20}
-                    height={20}
-                  />
-                ) : (
-                  'Save'
-                )}
-              </button>
-            </div>
-          </form>
-
-          {showReviewFlowWarning ? <ViewedFilesTokenHint /> : null}
-        </section>
-      )}
-
-      {state.status === 'saved' && (
-        <section className='card card-saved'>
-          <div className='card-header'>
-            <h2>GitHub token</h2>
-            <span className='badge badge-saved'>
-              <IconCheckCircle size={12} />
-              Verified
-            </span>
-          </div>
-
-          {state.viewer ? (
-            <div className='viewer-row'>
-              {state.viewer.avatar_url ? (
-                <img
-                  className='viewer-avatar'
-                  src={state.viewer.avatar_url}
-                  alt=''
-                  width={32}
-                  height={32}
-                />
-              ) : (
-                <div className='viewer-avatar viewer-avatar-fallback'>
-                  <IconPerson size={18} />
-                </div>
-              )}
-              <span className='viewer-login'>@{state.viewer.login}</span>
-            </div>
-          ) : (
-            <p className='status-text status-text-saved'>Token saved.</p>
-          )}
-
-          {showReviewFlowWarning ? <ViewedFilesTokenHint /> : null}
-
-          <div className='actions actions-single'>
-            <button
-              type='button'
-              className='button-secondary'
-              onClick={handleClear}
-            >
-              Remove token
-            </button>
-          </div>
-        </section>
-      )}
+      {card}
+      <StarFooter />
     </main>
   );
 }
