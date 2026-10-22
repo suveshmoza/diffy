@@ -24,7 +24,7 @@ export function useCodeViewThemeBootstrap({
     displayPrefs;
 
   const codeViewOptions = useMemo((): Omit<
-    CodeViewOptions<ReviewAnnotationMetadata>,
+    CodeViewOptions<ReviewAnnotationMetadata, undefined>,
     'theme' | 'themeType'
   > => {
     return {

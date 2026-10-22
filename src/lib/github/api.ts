@@ -144,14 +144,17 @@ export function parseGitHubPullRequestUrl(
   }
 
   const match = url.match(GITHUB_PULL_URL_PATTERN);
-  if (!match) {
+  const owner = match?.[1];
+  const repo = match?.[2];
+  const pullNumber = match?.[3];
+  if (owner == null || repo == null || pullNumber == null) {
     return null;
   }
 
   return {
-    owner: decodeURIComponent(match[1]),
-    repo: decodeURIComponent(match[2]),
-    pullNumber: Number(match[3]),
+    owner: decodeURIComponent(owner),
+    repo: decodeURIComponent(repo),
+    pullNumber: Number(pullNumber),
     url,
   };
 }

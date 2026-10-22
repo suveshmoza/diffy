@@ -4,19 +4,22 @@ import { type Ref, useMemo } from 'react';
 import { useDiffThemeProps } from '@/providers/theming/useDiffThemeProps';
 import { useWorkerDiffTheme } from '@/providers/theming/useWorkerDiffTheme';
 
-type ThemedCodeViewComponent = <LAnnotation = undefined>(
-  props: CodeViewProps<LAnnotation> & {
-    ref?: Ref<CodeViewHandle<LAnnotation>>;
+type ThemedCodeViewComponent = <LAnnotation = undefined, Caret = undefined>(
+  props: CodeViewProps<LAnnotation, Caret> & {
+    ref?: Ref<CodeViewHandle<LAnnotation, Caret>>;
   },
 ) => React.JSX.Element;
 
-export const ThemedCodeView: ThemedCodeViewComponent = <LAnnotation = undefined,>({
+export const ThemedCodeView: ThemedCodeViewComponent = <
+  LAnnotation = undefined,
+  Caret = undefined,
+>({
   disableWorkerPool = false,
   options,
   ref,
   ...props
-}: CodeViewProps<LAnnotation> & {
-  ref?: Ref<CodeViewHandle<LAnnotation>>;
+}: CodeViewProps<LAnnotation, Caret> & {
+  ref?: Ref<CodeViewHandle<LAnnotation, Caret>>;
 }): React.JSX.Element => {
   const diffTheme = useDiffThemeProps();
   useWorkerDiffTheme(diffTheme.theme, disableWorkerPool);
@@ -29,7 +32,7 @@ export const ThemedCodeView: ThemedCodeViewComponent = <LAnnotation = undefined,
     [diffTheme, options],
   );
   return (
-    <CodeView<LAnnotation>
+    <CodeView<LAnnotation, Caret>
       {...props}
       ref={ref}
       disableWorkerPool={disableWorkerPool}

@@ -35,7 +35,7 @@ import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
 import { confirmDiscardQueuedComments } from '@/lib/review/publish-review';
 
 type UseReviewQueueParams = {
-  viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata> | null>;
+  viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata, undefined> | null>;
   codeViewItems: CodeViewItemsResult | null;
   pullRequestRef: GitHubPullRequestRef;
   headSha: string;
@@ -47,7 +47,7 @@ type UseReviewQueueParams = {
 };
 
 function clearQueuedAnnotations(
-  viewer: CodeViewHandle<ReviewAnnotationMetadata>,
+  viewer: CodeViewHandle<ReviewAnnotationMetadata, undefined>,
   queue: readonly QueuedComment[],
 ): void {
   runCodeViewMutationPreservingScroll(viewer, () => {

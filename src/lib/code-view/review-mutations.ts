@@ -253,6 +253,10 @@ function updateAnnotationComments(
 ): CodeViewItem<ReviewAnnotationMetadata> {
   const annotations = [...getAnnotations(item)];
   const annotation = annotations[annotationIndex];
+  if (annotation == null) {
+    return item;
+  }
+
   const metadata = annotation.metadata;
 
   if (!metadata || metadata.kind !== 'thread') {
@@ -277,7 +281,7 @@ export function updateCommentInAnnotation(
   const annotations = getAnnotations(item);
 
   for (let index = 0; index < annotations.length; index += 1) {
-    const metadata = annotations[index].metadata;
+    const metadata = annotations[index]?.metadata;
     if (metadata?.kind !== 'thread') {
       continue;
     }
@@ -303,7 +307,7 @@ export function removeCommentFromAnnotation(
   const annotations = getAnnotations(item);
 
   for (let index = 0; index < annotations.length; index += 1) {
-    const metadata = annotations[index].metadata;
+    const metadata = annotations[index]?.metadata;
     if (metadata?.kind !== 'thread') {
       continue;
     }
@@ -333,7 +337,7 @@ export function appendReplyToThreadAnnotation(
   const annotations = getAnnotations(item);
 
   for (let index = 0; index < annotations.length; index += 1) {
-    const metadata = annotations[index].metadata;
+    const metadata = annotations[index]?.metadata;
     if (metadata?.kind !== 'thread' || !annotationContainsReplyParent(metadata, reply)) {
       continue;
     }

@@ -2,11 +2,13 @@ import type {
   CodeViewItem,
   CodeViewLineSelection,
   CodeViewOptions,
-  DiffLineAnnotation,
-  LineAnnotation,
   SelectedLineRange,
 } from '@pierre/diffs';
-import { useStableCallback, type CodeViewHandle } from '@pierre/diffs/react';
+import {
+  useStableCallback,
+  type CodeViewAnnotationArgs,
+  type CodeViewHandle,
+} from '@pierre/diffs/react';
 import { IconXSquircle } from '@pierre/icons';
 import {
   useCallback,
@@ -111,7 +113,7 @@ export function DiffOverlay({
   refreshGeneration,
   isRefreshing,
 }: DiffOverlayProps) {
-  const viewerRef = useRef<CodeViewHandle<ReviewAnnotationMetadata>>(null);
+  const viewerRef = useRef<CodeViewHandle<ReviewAnnotationMetadata, undefined>>(null);
   const codeViewHostRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLElement | null>(null);
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
@@ -462,20 +464,22 @@ export function DiffOverlay({
     },
   );
 
-  const codeViewOptionsWithInteractions =
-    useMemo((): CodeViewOptions<ReviewAnnotationMetadata> | null => {
-      if (!codeViewOptions) {
-        return null;
-      }
+  const codeViewOptionsWithInteractions = useMemo((): CodeViewOptions<
+    ReviewAnnotationMetadata,
+    undefined
+  > | null => {
+    if (!codeViewOptions) {
+      return null;
+    }
 
-      return {
-        ...codeViewOptions,
-        enableLineSelection: true,
-        enableGutterUtility: true,
-        lineHoverHighlight: 'both' as const,
-        onGutterUtilityClick: handleGutterUtilityClick,
-      };
-    }, [codeViewOptions, handleGutterUtilityClick]);
+    return {
+      ...codeViewOptions,
+      enableLineSelection: true,
+      enableGutterUtility: true,
+      lineHoverHighlight: 'both' as const,
+      onGutterUtilityClick: handleGutterUtilityClick,
+    };
+  }, [codeViewOptions, handleGutterUtilityClick]);
 
   useEffect(() => {
     orphanedThreadsByItemIdRef.current = codeViewItems?.orphanedReviewThreadsByItemId as
@@ -795,19 +799,16 @@ export function DiffOverlay({
   );
 
   const renderReviewAnnotation = useCallback(
-    (
-      annotation:
-        | LineAnnotation<ReviewAnnotationMetadata>
-        | DiffLineAnnotation<ReviewAnnotationMetadata>,
-      item: NonNullable<typeof codeViewItems>['items'][number],
-    ) => {
+    (...[annotation, fileOrDiff, item]: CodeViewAnnotationArgs<ReviewAnnotationMetadata>) => {
       const metadata = annotation.metadata;
       if (!metadata) {
         return null;
       }
 
+      // Displayed file. `item` may already hold a replacement that is still being highlighted.
+      const path = fileOrDiff.name;
+
       if (metadata.kind === 'media-image' || metadata.kind === 'media-binary') {
-        const path = getItemPath(item);
         const file = codeViewItems?.fileByPath.get(path);
         if (!file) {
           return null;
@@ -848,7 +849,7 @@ export function DiffOverlay({
         return (
           <ReviewCommentComposer
             key={metadata.draftId}
-            path={getItemPath(item)}
+            path={path}
             range={metadata.range}
             isBatchMode={isBatchMode}
             initialBody={getReviewDraftBody(data.ref, metadata.draftId)}
@@ -858,7 +859,7 @@ export function DiffOverlay({
               handleImmediateCommentSuccess(item.id, comment, metadata.draftId, metadata.range)
             }
             onQueue={(body) =>
-              handleQueueComment(item.id, getItemPath(item), metadata.draftId, metadata.range, body)
+              handleQueueComment(item.id, path, metadata.draftId, metadata.range, body)
             }
           />
         );

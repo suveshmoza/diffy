@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useState, type RefObject } fro
 
 import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
 
-type CodeViewLayoutHandle<T> = CodeViewHandle<T> & {
+type CodeViewLayoutHandle<T> = CodeViewHandle<T, undefined> & {
   getContainerElement?: () => HTMLElement | null;
   getInstance?: () => { render: (immediate?: boolean) => void } | undefined;
 };
@@ -38,7 +38,7 @@ export function kickCodeViewLayout<T>(
 }
 
 export function useCodeViewLayoutRefresh<T>(
-  viewerRef: RefObject<CodeViewHandle<T> | null>,
+  viewerRef: RefObject<CodeViewHandle<T, undefined> | null>,
   hostRef: RefObject<HTMLDivElement | null>,
   layoutKey: unknown,
 ) {

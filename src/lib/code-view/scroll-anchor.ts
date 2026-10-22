@@ -37,7 +37,7 @@ function scheduleScrollRestore(
 }
 
 export function updateCodeViewItemPreservingScroll<TMetadata>(
-  viewer: CodeViewHandle<TMetadata>,
+  viewer: CodeViewHandle<TMetadata, undefined>,
   update: () => boolean,
 ): boolean {
   const instance = viewer.getInstance() as CodeViewScrollAnchorInstance | undefined;
@@ -54,7 +54,7 @@ export function updateCodeViewItemPreservingScroll<TMetadata>(
 }
 
 export function runCodeViewMutationPreservingScroll<TMetadata>(
-  viewer: CodeViewHandle<TMetadata>,
+  viewer: CodeViewHandle<TMetadata, undefined>,
   mutate: () => void,
   after?: () => void,
 ): void {
@@ -73,7 +73,7 @@ export function runCodeViewMutationPreservingScroll<TMetadata>(
 
 /** Defer controlled React state that syncs back into CodeView until scroll is restored. */
 export function deferCodeViewControlledSync<TMetadata>(
-  viewer: CodeViewHandle<TMetadata> | null | undefined,
+  viewer: CodeViewHandle<TMetadata, undefined> | null | undefined,
   sync: () => void,
 ): void {
   if (!viewer) {

@@ -42,7 +42,7 @@ export function findNextUnviewedPath(
   for (let offset = 1; offset <= orderedPaths.length; offset += 1) {
     const candidate =
       orderedPaths[(startIndex + offset + orderedPaths.length) % orderedPaths.length];
-    if (!isViewedComplete(viewedByPath.get(candidate))) {
+    if (candidate != null && !isViewedComplete(viewedByPath.get(candidate))) {
       return candidate;
     }
   }

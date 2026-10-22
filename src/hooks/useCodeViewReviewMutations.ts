@@ -37,7 +37,7 @@ import {
 } from '@/lib/review/reply-session';
 
 type UseCodeViewReviewMutationsParams = {
-  viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata> | null>;
+  viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata, undefined> | null>;
   modalRef: RefObject<HTMLElement | null>;
   codeViewItems: CodeViewItemsResult | null;
   pullRequestRef: GitHubPullRequestRef;

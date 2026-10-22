@@ -68,7 +68,7 @@ export type ReviewCommentItemMaps = {
 };
 
 export function mapReviewCommentsToItems(
-  items: CodeViewItem[],
+  items: readonly CodeViewItem<ReviewAnnotationMetadata>[],
   comments: GitHubPullRequestReviewComment[],
 ): ReviewCommentItemMaps {
   const inlineByItemId = new Map<
@@ -87,6 +87,10 @@ export function mapReviewCommentsToItems(
 
   for (const thread of buildReviewCommentThreads(comments)) {
     const anchor = thread.comments[0];
+    if (anchor == null) {
+      continue;
+    }
+
     const itemId = itemIdByPath.get(anchor.path);
     if (!itemId) {
       continue;
@@ -136,7 +140,7 @@ export function buildReviewCommentCountByPath(
 }
 
 export function attachReviewCommentsToItems(
-  items: CodeViewItem[],
+  items: readonly CodeViewItem<ReviewAnnotationMetadata>[],
   maps: ReviewCommentItemMaps,
 ): CodeViewItem<ReviewAnnotationMetadata>[] {
   const { inlineByItemId } = maps;
@@ -144,7 +148,7 @@ export function attachReviewCommentsToItems(
   return items.map((item) => {
     const annotations = inlineByItemId.get(item.id);
     if (!annotations || annotations.length === 0) {
-      return item as CodeViewItem<ReviewAnnotationMetadata>;
+      return item;
     }
 
     if (item.type === 'file') {
@@ -154,7 +158,7 @@ export function attachReviewCommentsToItems(
       );
 
       if (fileAnnotations.length === 0) {
-        return item as CodeViewItem<ReviewAnnotationMetadata>;
+        return item;
       }
 
       const existing =
@@ -171,7 +175,7 @@ export function attachReviewCommentsToItems(
     );
 
     if (diffAnnotations.length === 0) {
-      return item as CodeViewItem<ReviewAnnotationMetadata>;
+      return item;
     }
 
     const existing =
@@ -196,23 +200,30 @@ function buildReviewCommentThreads(
     threads.set(root.id, bucket);
   }
 
-  return [...threads.values()].map((threadComments) => {
+  const threadMetadata: ReviewThreadMetadata[] = [];
+
+  for (const threadComments of threads.values()) {
     const sorted = [...threadComments].toSorted(
       (left, right) => Date.parse(left.created_at) - Date.parse(right.created_at),
     );
     const anchor = sorted[0];
-    const line = getCommentAnchorLine(anchor);
+    if (anchor == null) {
+      continue;
+    }
 
-    return {
-      kind: 'thread' as const,
+    const line = getCommentAnchorLine(anchor);
+    threadMetadata.push({
+      kind: 'thread',
       comments: sorted,
       orphaned: line == null,
-    };
-  });
+    });
+  }
+
+  return threadMetadata;
 }
 
 function createAnnotationForItem(
-  item: CodeViewItem | undefined,
+  item: CodeViewItem<ReviewAnnotationMetadata> | undefined,
   lineNumber: number,
   side: AnnotationSide,
   thread: ReviewThreadMetadata,

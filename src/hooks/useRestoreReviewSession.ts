@@ -10,7 +10,7 @@ import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
 
 type UseRestoreReviewSessionParams = {
   ref: GitHubPullRequestRef;
-  viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata> | null>;
+  viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata, undefined> | null>;
   codeViewItems: CodeViewItemsResult | null;
   isCodeViewMounted: boolean;
   refreshCodeViewLayout: () => void;

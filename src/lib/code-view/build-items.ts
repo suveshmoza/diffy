@@ -125,10 +125,10 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
     });
   }
 
-  const reviewCommentMaps = mapReviewCommentsToItems(items as CodeViewItem[], data.reviewComments);
+  const reviewCommentMaps = mapReviewCommentsToItems(items, data.reviewComments);
 
   const result: CodeViewItemsResult = {
-    items: attachReviewCommentsToItems(items as CodeViewItem[], reviewCommentMaps),
+    items: attachReviewCommentsToItems(items, reviewCommentMaps),
     diffPathSet,
     fileByPath,
     reviewCommentCountByPath: reviewCommentMaps.countByPath,
@@ -221,6 +221,8 @@ function createMediaFileDiffMetadata(
     isPartial: true,
     deletionLines: [],
     additionLines: [],
+    deletionCharacterCount: 0,
+    additionCharacterCount: 0,
   };
 }
 
