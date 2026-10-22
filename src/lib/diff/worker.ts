@@ -10,8 +10,10 @@
  * A copied public asset is a real same-origin extension file in both dev and
  * prod, so the worker behaves identically in both — with no CSP relaxation.
  *
- * The default `shiki-js` highlighter uses a pure-JS regex engine, so the worker
- * never reaches its (conditional) oniguruma WASM import and stays standalone.
+ * Highlights compiles its WASM into this same script and instantiates it
+ * in-process. The extension CSP allows that with `wasm-unsafe-eval`. When WASM
+ * SIMD is unavailable, the page selects `shiki-js`, which never reaches the
+ * conditional oniguruma import.
  */
 const DIFF_WORKER_PATH = '/diff-highlighter-worker.js';
 

@@ -1,6 +1,7 @@
 import { preloadHighlighter } from '@pierre/diffs';
 import { useEffect } from 'react';
 
+import { DIFF_HIGHLIGHTER } from '@/lib/diff/highlighter';
 import { DIFF_LANG_IDS } from '@/lib/diff/lang-ids';
 
 export function PreloadHighlighter() {
@@ -15,7 +16,7 @@ export function PreloadHighlighter() {
         'pierre-light-vibrant',
       ],
       langs: [...DIFF_LANG_IDS],
-      preferredHighlighter: 'shiki-wasm',
+      preferredHighlighter: DIFF_HIGHLIGHTER,
     });
   }, []);
 

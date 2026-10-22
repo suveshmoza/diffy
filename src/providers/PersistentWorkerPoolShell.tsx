@@ -2,6 +2,7 @@ import { setCustomExtension } from '@pierre/diffs';
 import { WorkerPoolContextProvider } from '@pierre/diffs/react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
+import { DIFF_HIGHLIGHTER } from '@/lib/diff/highlighter';
 import { DIFF_LANG_IDS } from '@/lib/diff/lang-ids';
 import { workerFactory } from '@/lib/diff/worker';
 import { useThemeControllerReady } from '@/providers/theming/ThemeControllerProvider';
@@ -61,6 +62,7 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
     () => ({
       theme: diffTheme.theme,
       langs: [...DIFF_LANG_IDS],
+      preferredHighlighter: DIFF_HIGHLIGHTER,
     }),
     [diffTheme.theme],
   );

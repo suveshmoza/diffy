@@ -1,6 +1,7 @@
 import { CodeView, type CodeViewHandle, type CodeViewProps } from '@pierre/diffs/react';
 import { type Ref, useMemo } from 'react';
 
+import { DIFF_HIGHLIGHTER } from '@/lib/diff/highlighter';
 import { useDiffThemeProps } from '@/providers/theming/useDiffThemeProps';
 import { useWorkerDiffTheme } from '@/providers/theming/useWorkerDiffTheme';
 
@@ -28,6 +29,7 @@ export const ThemedCodeView: ThemedCodeViewComponent = <
       ...options,
       theme: diffTheme.theme,
       themeType: options?.themeType ?? diffTheme.themeType,
+      preferredHighlighter: DIFF_HIGHLIGHTER,
     }),
     [diffTheme, options],
   );

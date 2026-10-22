@@ -2,6 +2,7 @@ import { hasResolvedThemes, resolveThemes, type ThemesType } from '@pierre/diffs
 import { useWorkerPool } from '@pierre/diffs/react';
 import { useEffect, useRef, useState } from 'react';
 
+import { DIFF_HIGHLIGHTER } from '@/lib/diff/highlighter';
 import { useDiffThemeProps } from '@/providers/theming/useDiffThemeProps';
 
 export function diffThemeNames(theme: ThemesType): string[] {
@@ -13,8 +14,8 @@ export function diffThemeNames(theme: ThemesType): string[] {
 
 export async function ensureDiffThemesResolved(theme: ThemesType): Promise<void> {
   const names = diffThemeNames(theme);
-  if (!hasResolvedThemes(names)) {
-    await resolveThemes(names);
+  if (!hasResolvedThemes(names, DIFF_HIGHLIGHTER)) {
+    await resolveThemes(names, DIFF_HIGHLIGHTER);
   }
 }
 
