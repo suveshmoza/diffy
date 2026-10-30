@@ -2,6 +2,15 @@ import { IconComment, IconFiles } from '@pierre/icons';
 import { memo } from 'react';
 
 import type { GitHubPullRequest } from '@/lib/github/api';
+import { cn } from '@/lib/utils';
+
+const exact = new Intl.NumberFormat('en');
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
+// Keep small numbers exact, abbreviate huge ones so large PRs don't overflow the sidebar.
+const formatCount = (value: number) =>
+  value >= 10_000 ? compact.format(value) : exact.format(value);
+const pluralize = (value: number, one: string, many: string) => (value === 1 ? one : many);
 
 type SidebarPrStatsProps = {
   pullRequest: GitHubPullRequest;
@@ -12,25 +21,54 @@ export const SidebarPrStats = memo(function SidebarPrStats({
   pullRequest,
   reviewCommentCount,
 }: SidebarPrStatsProps) {
+  const { changed_files: files, additions, deletions } = pullRequest;
+
+  const summary = [
+    `${files} ${pluralize(files, 'file', 'files')} changed`,
+    `${additions} ${pluralize(additions, 'addition', 'additions')}`,
+    `${deletions} ${pluralize(deletions, 'deletion', 'deletions')}`,
+    `${reviewCommentCount} review ${pluralize(reviewCommentCount, 'comment', 'comments')}`,
+  ].join(', ');
+
   return (
-    <div className='flex flex-wrap items-center justify-between gap-3 px-3 pt-2'>
+    <div className='flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 pt-2'>
+      <p className='sr-only'>{summary}</p>
+
       <div
-        className='inline-flex items-center gap-2 text-sm font-semibold tabular-nums'
-        aria-label={`${pullRequest.changed_files} files changed, ${pullRequest.additions} additions, ${pullRequest.deletions} deletions`}
+        aria-hidden
+        className='inline-flex items-center gap-2 text-xs font-semibold tabular-nums'
       >
         <IconFiles
           size={14}
           className='text-muted-foreground'
         />
         <span className='text-muted-foreground'>
-          {pullRequest.changed_files} file{pullRequest.changed_files === 1 ? '' : 's'}
+          {formatCount(files)} {pluralize(files, 'file', 'files')}
         </span>
-        <span className='text-green-500'>+{pullRequest.additions}</span>
-        <span className='text-red-500'>−{pullRequest.deletions}</span>
+        <span
+          className='text-green-500'
+          title={`${exact.format(additions)} additions`}
+        >
+          +{formatCount(additions)}
+        </span>
+        <span
+          className='text-red-500'
+          title={`${exact.format(deletions)} deletions`}
+        >
+          −{formatCount(deletions)}
+        </span>
       </div>
-      <div className='inline-flex items-center gap-1 text-xs text-muted-foreground'>
+
+      <div
+        aria-hidden
+        className={cn(
+          'inline-flex items-center gap-1 text-xs tabular-nums text-muted-foreground',
+          reviewCommentCount === 0 && 'opacity-60',
+        )}
+        title={`${exact.format(reviewCommentCount)} review ${pluralize(reviewCommentCount, 'comment', 'comments')}`}
+      >
         <IconComment size={14} />
-        <span>{reviewCommentCount}</span>
+        <span>{formatCount(reviewCommentCount)}</span>
       </div>
     </div>
   );
