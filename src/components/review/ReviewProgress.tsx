@@ -1,4 +1,7 @@
+import { IconCheck } from '@pierre/icons';
+
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 type ReviewProgressProps = {
@@ -8,12 +11,13 @@ type ReviewProgressProps = {
 };
 
 export function ReviewProgress({ viewed, total, onJumpToNextUnviewed }: ReviewProgressProps) {
-  if (total === 0) {
+  if (total <= 0) {
     return null;
   }
 
   const isComplete = viewed >= total;
-  const percent = Math.round((viewed / total) * 100);
+  const percent = Math.min(Math.max((viewed / total) * 100, 0), 100);
+  const progressValue = viewed > 0 ? Math.max(percent, 2) : 0;
 
   return (
     <Button
@@ -21,30 +25,48 @@ export function ReviewProgress({ viewed, total, onJumpToNextUnviewed }: ReviewPr
       variant='outline'
       size='sm'
       className={cn(
-        'h-auto w-full justify-between gap-2.5 px-2.5 py-1.5 font-normal',
+        'group h-auto w-full flex-col items-stretch gap-2 px-3 py-2.5 font-normal',
+        'disabled:opacity-100',
         isComplete &&
-          'border-green-500/40 bg-green-500/5 hover:border-green-500/40 hover:bg-green-500/5',
+          'border-green-500/50 bg-green-500/15 text-green-700 hover:border-green-500/50 hover:bg-green-500/15 disabled:border-green-500/50 disabled:bg-green-500/15 dark:border-green-500/50 dark:bg-green-500/15 dark:text-green-400 dark:hover:border-green-500/50 dark:hover:bg-green-500/15 dark:disabled:border-green-500/50 dark:disabled:bg-green-500/15',
       )}
       onClick={onJumpToNextUnviewed}
       disabled={isComplete}
       title={isComplete ? 'All files viewed' : 'Jump to next unviewed file'}
-      aria-label={`${viewed} of ${total} files viewed`}
+      aria-label={
+        isComplete
+          ? `All ${total} files viewed`
+          : `${viewed} of ${total} files viewed. Jump to next unviewed file`
+      }
     >
-      <span
-        className='h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-muted/80'
-        aria-hidden='true'
-      >
+      <span className='flex w-full items-center justify-between gap-2 text-xs'>
         <span
           className={cn(
-            'block h-full rounded-full transition-[width] duration-200',
-            isComplete ? 'bg-green-500' : 'bg-primary',
+            'inline-flex items-center gap-1.5 font-medium tabular-nums',
+            isComplete && 'text-green-700 dark:text-green-400',
           )}
-          style={{ width: `${percent}%` }}
-        />
+        >
+          {isComplete ? `All ${total} viewed` : `${viewed} of ${total} viewed`}
+        </span>
+        {isComplete ? (
+          <IconCheck
+            className='text-green-700 dark:text-green-400'
+            size={16}
+          />
+        ) : null}
       </span>
-      <span className='shrink-0 text-xs font-semibold whitespace-nowrap tabular-nums'>
-        {viewed} / {total} viewed
-      </span>
+
+      <Progress
+        value={progressValue}
+        aria-hidden='true'
+        className={cn(
+          'h-1.5 w-full',
+          '**:data-[slot=progress-indicator]:motion-reduce:transition-none',
+          isComplete
+            ? '**:data-[slot=progress-track]:bg-green-500/25 **:data-[slot=progress-indicator]:bg-green-700 dark:**:data-[slot=progress-indicator]:bg-green-400'
+            : '**:data-[slot=progress-track]:bg-muted/80',
+        )}
+      />
     </Button>
   );
 }
