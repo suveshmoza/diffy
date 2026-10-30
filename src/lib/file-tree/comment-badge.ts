@@ -1,6 +1,3 @@
-/** Matches singular and plural review-comment decoration titles. */
-export const FILE_TREE_REVIEW_COMMENT_TITLE_MARKER = ' review comment';
-
 export function formatReviewCommentDecorationTitle(
   changeTitle: string,
   reviewCommentCount: number,

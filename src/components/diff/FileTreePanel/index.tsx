@@ -1,43 +1,20 @@
-import { IconSearch, IconX } from '@pierre/icons';
-import type { FileTreeRowDecorationRenderer } from '@pierre/trees';
 import { FileTree, useFileTree, useFileTreeSearch } from '@pierre/trees/react';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type RefObject,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SidebarPrInfo } from '@/components/diff/SidebarPrInfo';
+import { SidebarPrStats } from '@/components/diff/SidebarPrStats';
+import { ReviewProgress, ReviewProgressSkeleton } from '@/components/review/ReviewProgress';
 import { useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
-import {
-  buildCommentBadgeCountCss,
-  FILE_TREE_REVIEW_COMMENT_TITLE_MARKER,
-} from '@/lib/file-tree/comment-badge';
-import {
-  FILE_TREE_COMMENT_ICON_MASK_URL,
-  FILE_TREE_COMMENT_ICON_SIZE,
-} from '@/lib/file-tree/comment-icon';
+import { buildCommentBadgeCountCss } from '@/lib/file-tree/comment-badge';
+import { FILE_TREE_PANEL_BASE_CSS } from '@/lib/file-tree/comment-icon';
 import { createFileTreeInput } from '@/lib/file-tree/input';
 import type { GitHubPullRequest, GitHubPullRequestFile } from '@/lib/github/api';
 import type { ViewedProgress } from '@/lib/review/viewed-files';
 
-import { ReviewProgress, ReviewProgressSkeleton } from '../review/ReviewProgress';
-import { SidebarPrInfo } from './SidebarPrInfo';
-import { SidebarPrStats } from './SidebarPrStats';
+import { FileTreeSearchHeader } from './components/filetree-search-header';
 
-const treePanelClassName = 'flex h-full min-h-0 flex-col border-sidebar-border';
-const treePanelTopClassName =
-  'flex shrink-0 flex-col gap-2 border-b border-sidebar-border bg-sidebar pb-2';
-const treeSearchWrapClassName =
-  'box-border flex w-full shrink-0 flex-col gap-1.5 border-b border-sidebar-border bg-sidebar px-3 py-2.5';
-
-const TREE_INITIAL_VISIBLE_ROW_COUNT = 80;
-const TREE_OVERSCAN = 12;
+const TREE_INITIAL_VISIBLE_ROW_COUNT = 50;
+const TREE_OVERSCAN = 8;
 
 type FileTreePanelProps = {
   files: GitHubPullRequestFile[];
@@ -49,133 +26,6 @@ type FileTreePanelProps = {
   reviewProgress?: ViewedProgress | null;
   onJumpToNextUnviewed?: () => void;
 };
-
-const FILE_TREE_COMMENT_BADGE_CSS = `
-  [data-item-section="decoration"] {
-    align-items: center;
-  }
-
-  [data-item-section="decoration"] > span[title*="${FILE_TREE_REVIEW_COMMENT_TITLE_MARKER}"] {
-    align-items: center;
-    display: inline-flex;
-    gap: 3px;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  [data-item-section="decoration"] > span[title*="${FILE_TREE_REVIEW_COMMENT_TITLE_MARKER}"]::before {
-    background-color: var(--trees-fg-muted, #8b949e);
-    content: '';
-    display: block;
-    flex-shrink: 0;
-    height: ${FILE_TREE_COMMENT_ICON_SIZE};
-    -webkit-mask-image: ${FILE_TREE_COMMENT_ICON_MASK_URL};
-    mask-image: ${FILE_TREE_COMMENT_ICON_MASK_URL};
-    mask-position: center;
-    mask-repeat: no-repeat;
-    mask-size: contain;
-    order: 2;
-    width: ${FILE_TREE_COMMENT_ICON_SIZE};
-  }
-
-  [data-item-section="decoration"] > span[title*="${FILE_TREE_REVIEW_COMMENT_TITLE_MARKER}"]::after {
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    order: 3;
-  }
-`;
-
-// Pierre renders its own search input in shadow DOM; we use a custom header instead.
-const FILE_TREE_PANEL_BASE_CSS = `
-  [data-file-tree-search-container] {
-    display: none !important;
-  }
-
-  :host {
-    --trees-padding-inline-override: 12px;
-  }
-
-  ${FILE_TREE_COMMENT_BADGE_CSS}
-`;
-
-type FileTreeSearchHeaderProps = {
-  inputRef: RefObject<HTMLInputElement | null>;
-  matchingPaths: readonly string[];
-  searchQuery: string;
-  onSearchQueryChange: (query: string) => void;
-};
-
-function FileTreeSearchHeader({
-  inputRef,
-  matchingPaths,
-  searchQuery,
-  onSearchQueryChange,
-}: FileTreeSearchHeaderProps) {
-  const hasQuery = searchQuery.trim().length > 0;
-  const matchCount = matchingPaths.length;
-
-  const stopGitHubKeybindings = (event: KeyboardEvent<HTMLInputElement>) => {
-    event.stopPropagation();
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    stopGitHubKeybindings(event);
-
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      onSearchQueryChange('');
-    }
-  };
-
-  return (
-    <div
-      className={treeSearchWrapClassName}
-      onKeyDownCapture={stopGitHubKeybindings}
-      onKeyUpCapture={stopGitHubKeybindings}
-    >
-      <div className='relative'>
-        <IconSearch
-          size={14}
-          className='pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground'
-        />
-        <Input
-          ref={inputRef}
-          className='h-8 bg-secondary pr-8 pl-8 text-xs'
-          type='text'
-          inputMode='search'
-          autoComplete='off'
-          spellCheck={false}
-          value={searchQuery}
-          onChange={(event) => onSearchQueryChange(event.target.value)}
-          onKeyDown={handleKeyDown}
-          onKeyUp={stopGitHubKeybindings}
-          placeholder='Filter files'
-          aria-label='Filter changed files'
-        />
-        {hasQuery ? (
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon-xs'
-            className='absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground'
-            aria-label='Clear filter'
-            onClick={() => onSearchQueryChange('')}
-          >
-            <IconX />
-          </Button>
-        ) : null}
-      </div>
-      {hasQuery ? (
-        <p
-          className='m-0 text-[11px] text-muted-foreground'
-          aria-live='polite'
-        >
-          {matchCount} {matchCount === 1 ? 'match' : 'matches'}
-        </p>
-      ) : null}
-    </div>
-  );
-}
 
 export function FileTreePanel({
   files,
@@ -226,19 +76,11 @@ export function FileTreePanel({
     }
   }, []);
 
-  const renderRowDecoration = useCallback<FileTreeRowDecorationRenderer>(
-    ({ item }) => {
-      return treeInput.annotationsByPath.get(item.path) ?? null;
-    },
-    [treeInput.annotationsByPath],
-  );
-
   const { model } = useFileTree({
     preparedInput: treeInput.preparedInput,
     initialExpansion: 'open',
     icons: 'complete',
     gitStatus: treeInput.gitStatus,
-    renderRowDecoration,
     search: true,
     fileTreeSearchMode: 'hide-non-matches',
     searchBlurBehavior: 'retain',
@@ -333,10 +175,10 @@ export function FileTreePanel({
 
   return (
     <div
-      className={treePanelClassName}
+      className='flex h-full min-h-0 flex-col border-sidebar-border'
       style={treeThemeStyles}
     >
-      <div className={treePanelTopClassName}>
+      <div className='flex shrink-0 flex-col gap-2 border-sidebar-border bg-sidebar'>
         <SidebarPrStats
           pullRequest={pullRequest}
           reviewCommentCount={reviewCommentCount}
