@@ -246,6 +246,7 @@ export function FileTreePanel({
     initialVisibleRowCount: TREE_INITIAL_VISIBLE_ROW_COUNT,
     overscan: TREE_OVERSCAN,
     onSelectionChange: handleSelectionChange,
+    density: 'compact',
   });
 
   const modelRef = useRef(model);
