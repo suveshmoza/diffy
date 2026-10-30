@@ -18,6 +18,7 @@ import {
   useState,
   useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   type SetStateAction,
 } from 'react';
 
@@ -53,9 +54,15 @@ import {
 import { ensureGoogleFontsLoaded, resolveFontCssVariables } from '@/lib/diff/font-prefs';
 import { bumpImageDiffPriority } from '@/lib/diff/image-diff-cache';
 import {
+  clampSidebarWidth,
   DEFAULT_DIFF_LAYOUT,
+  DEFAULT_SIDEBAR_WIDTH,
+  MAX_SIDEBAR_WIDTH,
+  MIN_SIDEBAR_WIDTH,
   readDiffLayoutPreference,
+  readSidebarWidthPreference,
   writeDiffLayoutPreference,
+  writeSidebarWidthPreference,
   type DiffLayout,
 } from '@/lib/diff/layout-prefs';
 import { classifyChangedFile } from '@/lib/diff/media-files';
@@ -134,9 +141,16 @@ export function DiffOverlay({
     useState<CodeViewLineSelection | null>(null);
   const [lightboxImagePath, setLightboxImagePath] = useState<string | null>(null);
   const [diffLayout, setDiffLayout] = useState<DiffLayout>(DEFAULT_DIFF_LAYOUT);
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [sidebarDragWidth, setSidebarDragWidth] = useState<number | null>(null);
   const [displayPrefs, setDisplayPrefs] = useState<CodeViewDisplayPrefs>(
     DEFAULT_CODE_VIEW_DISPLAY_PREFS,
   );
+  const layoutGridRef = useRef<HTMLDivElement>(null);
+  const sidebarWidthRef = useRef(sidebarWidth);
+  const isSidebarResizingRef = useRef(false);
+  const activeSidebarWidth = sidebarDragWidth ?? sidebarWidth;
+  const isResizingSidebar = sidebarDragWidth != null;
 
   const updateReviewComments = useCallback(
     (updater: SetStateAction<typeof data.reviewComments>) => {
@@ -152,6 +166,10 @@ export function DiffOverlay({
   useEffect(() => {
     hoveredThreadSelectionRef.current = hoveredThreadSelection;
   }, [hoveredThreadSelection]);
+
+  useEffect(() => {
+    sidebarWidthRef.current = sidebarWidth;
+  }, [sidebarWidth]);
 
   const orderedPaths = useMemo(() => data.files.map((file) => file.filename), [data.files]);
   const imageFiles = useMemo(
@@ -189,6 +207,16 @@ export function DiffOverlay({
         // Ignore preference read failures and keep the default layout.
       });
 
+    readSidebarWidthPreference()
+      .then((storedWidth) => {
+        if (!isCancelled) {
+          setSidebarWidth(storedWidth);
+        }
+      })
+      .catch(() => {
+        // Ignore preference read failures and keep the default sidebar width.
+      });
+
     readCodeViewDisplayPrefs()
       .then((storedPrefs) => {
         if (!isCancelled) {
@@ -209,6 +237,15 @@ export function DiffOverlay({
   }, []);
 
   const { isSidebarCollapsed, closeSidebar } = useSidebarContext();
+  const isMobileSidebarViewport = useSyncExternalStore(
+    (onStoreChange) => {
+      const media = window.matchMedia(MOBILE_SIDEBAR_QUERY);
+      media.addEventListener('change', onStoreChange);
+      return () => media.removeEventListener('change', onStoreChange);
+    },
+    () => window.matchMedia(MOBILE_SIDEBAR_QUERY).matches,
+    () => false,
+  );
 
   const rateLimit = useSyncExternalStore(subscribeToRateLimitChanges, getRateLimitState);
 
@@ -282,6 +319,7 @@ export function DiffOverlay({
     () => [
       codeViewItems,
       isSidebarCollapsed,
+      sidebarWidth,
       isCodeViewMounted,
       displayPrefs.codeFontSize,
       displayPrefs.codeLineHeight,
@@ -289,6 +327,7 @@ export function DiffOverlay({
     [
       codeViewItems,
       isSidebarCollapsed,
+      sidebarWidth,
       isCodeViewMounted,
       displayPrefs.codeFontSize,
       displayPrefs.codeLineHeight,
@@ -700,6 +739,81 @@ export function DiffOverlay({
     });
   }, []);
 
+  const persistSidebarWidth = useCallback((width: number) => {
+    void writeSidebarWidthPreference(width);
+  }, []);
+
+  const clampSidebarWidthForLayout = useCallback((width: number) => {
+    const layout = layoutGridRef.current;
+    const maxForLayout =
+      layout != null
+        ? Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, layout.clientWidth - 320))
+        : MAX_SIDEBAR_WIDTH;
+    return Math.min(maxForLayout, clampSidebarWidth(width));
+  }, []);
+
+  const handleSidebarResizePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    isSidebarResizingRef.current = true;
+    setSidebarDragWidth(sidebarWidthRef.current);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, []);
+
+  const handleSidebarResizePointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+        return;
+      }
+
+      const layout = layoutGridRef.current;
+      if (!layout) {
+        return;
+      }
+
+      const nextWidth = clampSidebarWidthForLayout(
+        event.clientX - layout.getBoundingClientRect().left,
+      );
+      sidebarWidthRef.current = nextWidth;
+      setSidebarDragWidth(nextWidth);
+    },
+    [clampSidebarWidthForLayout],
+  );
+
+  const handleSidebarResizePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+
+      if (!isSidebarResizingRef.current) {
+        return;
+      }
+
+      isSidebarResizingRef.current = false;
+      const nextWidth = sidebarWidthRef.current;
+      setSidebarWidth(nextWidth);
+      setSidebarDragWidth(null);
+      persistSidebarWidth(nextWidth);
+    },
+    [persistSidebarWidth],
+  );
+
+  const handleSidebarResizeKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+        return;
+      }
+
+      event.preventDefault();
+      const delta = event.key === 'ArrowRight' ? 16 : -16;
+      const nextWidth = clampSidebarWidthForLayout(sidebarWidthRef.current + delta);
+      sidebarWidthRef.current = nextWidth;
+      setSidebarWidth(nextWidth);
+      persistSidebarWidth(nextWidth);
+    },
+    [clampSidebarWidthForLayout, persistSidebarWidth],
+  );
+
   const handleTreeSelect = useCallback(
     (path: string) => {
       if (!codeViewItems) {
@@ -885,7 +999,7 @@ export function DiffOverlay({
       );
     },
     [
-      codeViewItems?.fileByPath,
+      codeViewItems,
       data.pullRequest,
       data.ref,
       displayPrefs.imageCheckerboard,
@@ -1010,12 +1124,8 @@ export function DiffOverlay({
                     />
                   ) : null}
                   <div
-                    className={cn(
-                      'relative grid min-h-0 flex-1 overflow-hidden',
-                      isSidebarCollapsed
-                        ? 'grid-cols-1'
-                        : 'grid-cols-[345px_minmax(0,1fr)] max-md:grid-cols-1',
-                    )}
+                    ref={layoutGridRef}
+                    className='relative flex min-h-0 flex-1 overflow-hidden'
                   >
                     <button
                       type='button'
@@ -1030,14 +1140,23 @@ export function DiffOverlay({
                     />
                     <aside
                       className={cn(
-                        'grid min-h-0 min-w-0 grid-rows-[minmax(0,1fr)] overflow-hidden bg-sidebar',
-                        !isSidebarCollapsed && 'md:border-r md:border-border',
+                        'relative z-10 grid min-h-0 shrink-0 grid-rows-[minmax(0,1fr)] overflow-hidden bg-sidebar',
+                        !isSidebarCollapsed && 'md:border-r md:transition-colors md:duration-100',
+                        !isSidebarCollapsed &&
+                          (isResizingSidebar
+                            ? 'md:border-ring'
+                            : 'md:border-border md:has-[[data-sidebar-resize]:hover]:border-ring md:has-[[data-sidebar-resize]:focus-visible]:border-ring'),
                         isSidebarCollapsed ? 'md:hidden' : 'md:grid',
-                        'max-md:fixed max-md:inset-0 max-md:z-30 max-md:grid max-md:rounded-t-xl max-md:border max-md:border-border max-md:shadow-lg max-md:transition-transform max-md:duration-300 max-md:ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:max-md:transition-none',
+                        'max-md:fixed max-md:inset-0 max-md:z-30 max-md:w-auto max-md:grid max-md:rounded-t-xl max-md:border max-md:border-border max-md:shadow-lg max-md:transition-transform max-md:duration-300 max-md:ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:max-md:transition-none',
                         isSidebarCollapsed
                           ? 'max-md:pointer-events-none max-md:translate-y-[calc(100%+1.5rem)]'
                           : 'max-md:pointer-events-auto max-md:translate-y-0',
                       )}
+                      style={
+                        isSidebarCollapsed || isMobileSidebarViewport
+                          ? undefined
+                          : { width: activeSidebarWidth }
+                      }
                       aria-hidden={isSidebarCollapsed}
                     >
                       {data.files.length > 0 && codeViewItems ? (
@@ -1056,9 +1175,33 @@ export function DiffOverlay({
                           {isBuilding ? 'Building file list…' : 'No changed files found.'}
                         </div>
                       )}
+                      {!isSidebarCollapsed ? (
+                        <div
+                          role='separator'
+                          data-sidebar-resize=''
+                          aria-orientation='vertical'
+                          aria-label='Resize sidebar'
+                          aria-valuemin={MIN_SIDEBAR_WIDTH}
+                          aria-valuemax={MAX_SIDEBAR_WIDTH}
+                          aria-valuenow={activeSidebarWidth}
+                          tabIndex={0}
+                          className={cn(
+                            'absolute inset-y-0 -right-1 z-20 hidden w-2 cursor-ew-resize touch-none border-0 bg-transparent p-0 md:block',
+                            'before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-transparent before:transition-[background-color,width,opacity] before:duration-100',
+                            'hover:before:w-0.5 hover:before:bg-ring',
+                            'focus-visible:before:w-0.5 focus-visible:before:bg-ring focus-visible:outline-none',
+                            isResizingSidebar && 'before:w-0.5 before:bg-ring',
+                          )}
+                          onPointerDown={handleSidebarResizePointerDown}
+                          onPointerMove={handleSidebarResizePointerMove}
+                          onPointerUp={handleSidebarResizePointerUp}
+                          onPointerCancel={handleSidebarResizePointerUp}
+                          onKeyDown={handleSidebarResizeKeyDown}
+                        />
+                      ) : null}
                     </aside>
 
-                    <div className='flex min-h-0 min-w-0 flex-col overflow-hidden'>
+                    <div className='flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden'>
                       <div
                         ref={codeViewHostRef}
                         className='gprv-code-view-host relative min-h-0 min-w-0 flex-1 overflow-hidden'
