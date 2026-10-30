@@ -26,7 +26,7 @@ import { createFileTreeInput } from '@/lib/file-tree/input';
 import type { GitHubPullRequest, GitHubPullRequestFile } from '@/lib/github/api';
 import type { ViewedProgress } from '@/lib/review/viewed-files';
 
-import { ReviewProgress } from '../review/ReviewProgress';
+import { ReviewProgress, ReviewProgressSkeleton } from '../review/ReviewProgress';
 import { SidebarPrInfo } from './SidebarPrInfo';
 import { SidebarPrStats } from './SidebarPrStats';
 
@@ -341,15 +341,17 @@ export function FileTreePanel({
           pullRequest={pullRequest}
           reviewCommentCount={reviewCommentCount}
         />
-        {reviewProgress && onJumpToNextUnviewed ? (
-          <div className='px-3 pb-0.5'>
+        <div className='px-3 pb-0.5'>
+          {reviewProgress && onJumpToNextUnviewed ? (
             <ReviewProgress
               viewed={reviewProgress.viewed}
               total={reviewProgress.total}
               onJumpToNextUnviewed={onJumpToNextUnviewed}
             />
-          </div>
-        ) : null}
+          ) : (
+            <ReviewProgressSkeleton />
+          )}
+        </div>
       </div>
       <FileTreeSearchHeader
         inputRef={searchInputRef}
