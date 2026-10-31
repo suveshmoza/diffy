@@ -10,6 +10,7 @@ import { FILE_TREE_PANEL_BASE_CSS } from '@/lib/file-tree/comment-icon';
 import { createFileTreeInput } from '@/lib/file-tree/input';
 import type { GitHubPullRequest, GitHubPullRequestFile } from '@/lib/github/api';
 import type { ViewedProgress } from '@/lib/review/viewed-files';
+import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 
 import { FileTreeSearchHeader } from './components/filetree-search-header';
 
@@ -23,6 +24,8 @@ type FileTreePanelProps = {
   onSelectPath: (path: string) => void;
   pullRequest: GitHubPullRequest;
   reviewCommentCount: number;
+  /** True while token / viewed-files status is still resolving. */
+  isReviewProgressLoading?: boolean;
   reviewProgress?: ViewedProgress | null;
   onJumpToNextUnviewed?: () => void;
 };
@@ -34,9 +37,11 @@ export function FileTreePanel({
   onSelectPath,
   pullRequest,
   reviewCommentCount,
+  isReviewProgressLoading = false,
   reviewProgress,
   onJumpToNextUnviewed,
 }: FileTreePanelProps) {
+  const { hasToken, isLoading: isAuthLoading } = useGitHubAuth();
   const treeThemeStyles = useTreeThemeStyles();
   const treeInput = useMemo(
     () => createFileTreeInput(files, reviewCommentCountByPath),
@@ -173,6 +178,16 @@ export function FileTreePanel({
     return model.subscribe(syncExternalSelection);
   }, [model, syncExternalSelection]);
 
+  // No token: hide once auth resolves. With token: skeleton until viewed-files lands.
+  const showReviewProgressSkeleton = hasToken
+    ? isReviewProgressLoading || reviewProgress == null
+    : isAuthLoading;
+  const showReviewProgress =
+    hasToken &&
+    !showReviewProgressSkeleton &&
+    reviewProgress != null &&
+    onJumpToNextUnviewed != null;
+
   return (
     <div
       className='flex h-full min-h-0 flex-col border-sidebar-border'
@@ -183,17 +198,19 @@ export function FileTreePanel({
           pullRequest={pullRequest}
           reviewCommentCount={reviewCommentCount}
         />
-        <div className='px-3 pb-0.5'>
-          {reviewProgress && onJumpToNextUnviewed ? (
+        {showReviewProgressSkeleton ? (
+          <div className='px-3 pb-0.5'>
+            <ReviewProgressSkeleton />
+          </div>
+        ) : showReviewProgress ? (
+          <div className='px-3 pb-0.5'>
             <ReviewProgress
               viewed={reviewProgress.viewed}
               total={reviewProgress.total}
               onJumpToNextUnviewed={onJumpToNextUnviewed}
             />
-          ) : (
-            <ReviewProgressSkeleton />
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
       <FileTreeSearchHeader
         inputRef={searchInputRef}

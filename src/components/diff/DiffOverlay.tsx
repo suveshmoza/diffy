@@ -1167,7 +1167,12 @@ export function DiffOverlay({
                           onSelectPath={handleTreeSelect}
                           pullRequest={data.pullRequest}
                           reviewCommentCount={data.reviewComments.length}
-                          reviewProgress={viewedFiles.hasToken ? viewedFiles.progress : null}
+                          isReviewProgressLoading={!viewedFiles.isReady}
+                          reviewProgress={
+                            viewedFiles.isReady && viewedFiles.hasToken
+                              ? viewedFiles.progress
+                              : null
+                          }
                           onJumpToNextUnviewed={handleJumpToNextUnviewed}
                         />
                       ) : (
