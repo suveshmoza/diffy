@@ -22,7 +22,6 @@ export const diffyChromeMapping: ChromeMapping = (chrome, theme) => {
     return bg != null ? ({ backgroundColor: bg } as CSSProperties) : undefined;
   }
 
-  const base = bg ?? chrome.background;
   const shadcn = mapShadcnSemanticTokens(chrome);
   const style: CSSProperties & Record<string, string> = {};
 
@@ -32,16 +31,7 @@ export const diffyChromeMapping: ChromeMapping = (chrome, theme) => {
   style.color = chrome.fg;
 
   applyShadcnSemanticTokens(style, shadcn);
-  applyLegacyGprvTokens(style, {
-    ...shadcn,
-    fg: chrome.fg,
-    base,
-    additionFg: chrome.additionFg,
-    separator: chrome.separator,
-    surfaceShadow: chrome.surfaceShadow,
-    scrollbarThumb: chrome.scrollbarThumb,
-    scrollbarTrack: chrome.scrollbarTrack,
-  });
+  applyLegacyGprvTokens(style, chrome.separator);
 
   return style as CSSProperties;
 };

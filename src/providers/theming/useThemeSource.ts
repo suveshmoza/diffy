@@ -1,4 +1,4 @@
-import type { ThemeController, ThemeResolver } from '@pierre/theming';
+import type { ThemeController } from '@pierre/theming';
 import { createContext, useContext, useRef, useSyncExternalStore } from 'react';
 
 import type { ActiveThemeSnapshot, ThemeSource } from '@/lib/theming/ThemeSource';
@@ -6,8 +6,6 @@ import type { ActiveThemeSnapshot, ThemeSource } from '@/lib/theming/ThemeSource
 export const ThemeSourceContext = createContext<ThemeSource | undefined>(undefined);
 
 export const ThemeControllerContext = createContext<ThemeController | undefined>(undefined);
-
-export const ThemeResolverContext = createContext<ThemeResolver | undefined>(undefined);
 
 const EMPTY_SNAPSHOT: ActiveThemeSnapshot = {
   theme: undefined,
@@ -38,8 +36,4 @@ export function useThemeSource(override?: ThemeSource): {
     () => EMPTY_SNAPSHOT,
   );
   return { activeTheme, source };
-}
-
-export function useThemeResolver(): ThemeResolver | undefined {
-  return useContext(ThemeResolverContext);
 }

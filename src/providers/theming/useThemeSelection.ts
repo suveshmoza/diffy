@@ -20,7 +20,6 @@ export interface ThemeSelectionResult {
   pickTheme(scheme: ColorScheme, themeName: string): void;
 }
 
-const NOOP = () => {};
 const EMPTY_THEMES: readonly string[] = [];
 
 const FALLBACK_CONTROLLER = {
@@ -32,9 +31,9 @@ const FALLBACK_CONTROLLER = {
     mode: 'system' as const,
     resolvedColorScheme: 'light' as const,
   }),
-  setColorMode: NOOP,
-  setThemeNameForScheme: NOOP,
-  destroy: NOOP,
+  setColorMode: () => {},
+  setThemeNameForScheme: () => {},
+  destroy: () => {},
 };
 
 export function useThemeSelection(): ThemeSelectionResult {
@@ -50,10 +49,10 @@ export function useThemeSelection(): ThemeSelectionResult {
         darkThemeNames: EMPTY_THEMES,
         lightThemeNames: EMPTY_THEMES,
         resolvedColorScheme: 'light',
-        setColorMode: NOOP,
-        setDarkThemeName: NOOP,
-        setLightThemeName: NOOP,
-        pickTheme: NOOP,
+        setColorMode: () => {},
+        setDarkThemeName: () => {},
+        setLightThemeName: () => {},
+        pickTheme: () => {},
       };
     }
     const pickTheme = (scheme: ColorScheme, themeName: string) => {

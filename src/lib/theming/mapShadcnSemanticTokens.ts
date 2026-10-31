@@ -98,67 +98,7 @@ export function applyShadcnSemanticTokens(
   setToken(style, 'sidebar-ring', tokens.sidebarRing);
 }
 
-export type LegacyGprvTokensInput = ShadcnSemanticTokens & {
-  additionFg: string;
-  base: string;
-  fg: string;
-  separator: string;
-  surfaceShadow: string;
-  scrollbarThumb?: string;
-  scrollbarTrack?: string;
-};
-
-/** Derive legacy --gprv-* aliases from shadcn semantic tokens for unmigrated CSS. */
-export function applyLegacyGprvTokens(
-  style: Record<string, string>,
-  input: LegacyGprvTokensInput,
-): void {
-  const { fg, base, additionFg, separator, surfaceShadow, scrollbarThumb, scrollbarTrack } = input;
-
-  style['--gprv-bg'] = input.background;
-  style['--gprv-panel-bg'] = input.background;
-  style['--gprv-control-bg'] = input.secondary;
-  style['--gprv-control-active-bg'] = input.accent;
-  style['--gprv-border'] = input.border;
-  style['--gprv-text'] = input.foreground;
-  style['--gprv-muted'] = input.mutedForeground;
-  style['--gprv-state'] = input.mutedForeground;
-  style['--gprv-accent'] = input.primary;
-  style['--gprv-accent-subtle'] = `color-mix(in srgb, ${input.primary} 16%, transparent)`;
-  style['--gprv-success'] = additionFg;
-  style['--gprv-danger'] = input.destructive;
-  style['--gprv-error'] = input.destructive;
-  style['--gprv-shadow'] = surfaceShadow;
-  style['--gprv-header-control-bg'] = input.card;
-  style['--gprv-header-control-border'] = input.input;
-  style['--gprv-header-control-hover-bg'] = input.secondary;
-  style['--gprv-header-control-active-bg'] = input.accent;
-  style['--gprv-popover-bg'] = input.popover;
-  style['--gprv-popover-surface'] = input.popover;
-  style['--gprv-popover-fg'] = input.popoverForeground;
-  style['--gprv-popover-muted-fg'] = input.mutedForeground;
-  style['--gprv-popover-hover-bg'] = input.secondary;
-  style['--gprv-popover-selected-bg'] = input.accent;
-  style['--gprv-popover-border'] = input.border;
-  style['--gprv-popover-shadow'] = surfaceShadow;
-  style['--gprv-segmented-bg'] = input.secondary;
-  style['--gprv-segmented-active-bg'] = input.accent;
-  style['--gprv-card-bg'] = input.card;
-  style['--gprv-card-hover-bg'] = input.secondary;
-  style['--gprv-card-border'] = input.border;
-  style['--gprv-annotation-bg'] = input.popover;
-  style['--gprv-annotation-fg'] = input.foreground;
-  style['--gprv-annotation-border'] = input.border;
-  style['--gprv-annotation-hover-border'] = `color-mix(in srgb, ${fg} 28%, ${base})`;
-  style['--gprv-annotation-shadow'] = surfaceShadow;
+/** Emit the sole remaining legacy --gprv-* token used by CSS. */
+export function applyLegacyGprvTokens(style: Record<string, string>, separator: string): void {
   style['--gprv-diff-separator'] = separator;
-  style['--color-border-opaque'] = input.border;
-  style['--border-opaque'] = input.border;
-
-  if (scrollbarThumb != null) {
-    style['--gprv-scrollbar-thumb-bg'] = scrollbarThumb;
-  }
-  if (scrollbarTrack != null) {
-    style['--gprv-scrollbar-track-bg'] = scrollbarTrack;
-  }
 }
