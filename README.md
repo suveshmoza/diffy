@@ -5,9 +5,9 @@
 
   <h1>diffy</h1>
 
-<strong>Fast PR reviews on GitHub, even for large PRs</strong>
+<strong>Browser extension for reviewing large PRs on GitHub</strong>
 
-<p>See the whole PR in one scrollable view. Jump to any file, comment inline, and publish your review when you're ready.</p>
+<p>Open a PR in one scrollable view. Jump to any file, comment inline, and publish your review when you're ready.</p>
 </div>
 
 Powered by Pierre [Trees](https://trees.software) and [Diffs](https://diffs.com).
@@ -33,32 +33,28 @@ Powered by Pierre [Trees](https://trees.software) and [Diffs](https://diffs.com)
 
 ## Features
 
-- **Full-screen diffs** : Scroll the entire PR in without any slowdown.
-- **Searchable file tree** : Jump to any file instantly, even in huge PRs.
-- **Inline comments & batch reviews** : Comment on lines, queue threads, and publish from the review dock
-- **Viewed-file tracking** : Mark what you've read and jump to the next unviewed file
-- **Split or unified layout** : Choose between a split view or a unified view.
+- **Full-screen diffs** — scroll the whole PR in one view
+- **Searchable file tree** — jump to any file; resize the sidebar and keep the width
+- **Inline comments & batch reviews** — queue comments and publish from the review dock
+- **Viewed-file tracking** — mark files as read and see review progress
+- **Split or unified layout** — plus themes, custom fonts, image diffs, and open-in-tab
 
-Many more: Themes, Customizable fonts, Image diffs, customizable , open in separate tab, and more.
+## Quick start
 
-## Why diffy?
-
-GitHub’s Files changed works well for small PRs but struggles with large ones. diffy solves this by providing a dedicated, responsive diff viewer that handles large PRs with hundreds of files and heavy review threads.
+1. Open a PR on GitHub → **View Diff** (or right-click a PR link → **Open in diffy**).
+2. Scroll the diff and use the file tree to jump around.
+3. Comment on lines, then publish from the review dock when ready.
 
 ## GitHub token
 
-Save an optional personal access token in the extension popup.
+A token is optional for public repos. Save a personal access token in the extension popup, then reload open PR tabs.
 
-**Required for:**
+Use a token for:
 
 - Private repos
 - Higher API rate limits
-- Post review comments
+- Posting review comments
 - Viewed-file tracking and batch reviews
-
-Reload open PR tabs after saving a token.
-
-## Token type
 
 | Capability                     | Fine-grained PAT | Classic PAT (`ghp_…`) or `gh auth token` (`gho_…`) |
 | ------------------------------ | ---------------- | -------------------------------------------------- |
@@ -68,14 +64,8 @@ Reload open PR tabs after saving a token.
 | Mark files as viewed           | ❌               | ✅                                                 |
 | Batch review / publish verdict | ❌               | ✅                                                 |
 
-Fine-grained tokens (`github_pat_…`) work for diffs and comments. GraphQL mutations for viewed files and publishing reviews need a **classic PAT with `repo` scope** or a token from `gh auth login`.
-
-## Quick start
-
-1. Open a PR on GitHub → **View Diff** (or right-click a PR link → **Open in diffy**).
-2. Scroll the full diff, use the file tree to jump around.
-3. Leave comments on lines, start a batch review to queue and publish when done.
+Fine-grained tokens (`github_pat_…`) work for diffs and comments. Viewed files and publishing reviews need a **classic PAT with `repo` scope**, or a token from `gh auth login`.
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).

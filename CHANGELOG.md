@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.5.0
+
+### Features
+
+- Resizable Diff Overlay sidebar with persisted width preference
+- Prefer `@pierre/highlights` for diff syntax highlighting, with Shiki fallback
+- Redesign the extension popup
+- Harden viewed-files review progress and show a loading skeleton while auth/viewed-files load
+- Restyle review progress with Progress and a clearer complete state
+- Abbreviate huge PR counts in sidebar stats and clarify labels
+- Set file tree density to compact
+
+### Fixes
+
+- Hide review progress in the sidebar when there is no GitHub token; show skeleton only while auth/viewed-files are loading
+
+### Chores & Refactoring
+
+- Split `FileTreePanel` into a module folder with an extracted search header
+- Split `SidebarPrInfo` into composed property-list modules
+- Drop `lucide-react` and unused dialog/dropdown-menu; use `@pierre/icons` in Select
+- Replace `clsx` / `tailwind-merge` with `cn`
+- Migrate to `@pierre/diffs` v1.6.x and bump other dependencies
+- Apply Tailwind canonical class cleanups; drop redundant oxfmt options; misc cleanup
+
 ## v1.4.1
 
 ### Fixes

@@ -304,7 +304,7 @@ function PopupApp() {
         />
         <div>
           <h1>diffy</h1>
-          <p>Fast PR reviews on GitHub, even for large PRs</p>
+          <p>Browser extension for reviewing large PRs on GitHub</p>
         </div>
       </header>
       {card}

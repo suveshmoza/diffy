@@ -98,9 +98,9 @@ export default defineConfig({
       : undefined,
   },
   manifest: {
-    version: '1.4.1',
+    version: '1.5.0',
     name: 'diffy',
-    description: 'Fast PR reviews on GitHub, even for large PRs',
+    description: 'Browser extension for reviewing large PRs on GitHub',
     permissions: ['storage', 'contextMenus'],
     host_permissions: [
       'https://api.github.com/*',
