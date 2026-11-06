@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
 
-import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
-import { createReviewCommentReply, GitHubReviewWriteError } from '@/lib/github/review-write';
-import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
+import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/domains/github/api';
+import { useGitHubAuth } from '@/domains/github/auth/GitHubAuthProvider';
+import { createReviewCommentReply, GitHubReviewWriteError } from '@/domains/github/review-write';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 

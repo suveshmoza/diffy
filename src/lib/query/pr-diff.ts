@@ -1,14 +1,14 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { SetStateAction } from 'react';
 
-import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
 import {
   fetchPullRequestDiffData,
   parseGitHubPullRequestUrl,
   type GitHubPullRequestRef,
   type GitHubPullRequestReviewComment,
   type PullRequestDiffData,
-} from '@/lib/github/api';
+} from '@/domains/github/api';
+import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
 
 import { queryClient } from './client';
 

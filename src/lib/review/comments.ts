@@ -6,7 +6,7 @@ import type {
   SelectedLineRange,
 } from '@pierre/diffs';
 
-import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
+import type { GitHubPullRequestReviewComment } from '@/domains/github/api';
 
 export function isReviewCommentHidden(comment: GitHubPullRequestReviewComment): boolean {
   return comment.is_minimized === true || comment.hidden === true;

@@ -1,5 +1,5 @@
-import type { GitHubPullRequestRef } from '@/lib/github/api';
-import { renderGitHubCommentBody } from '@/lib/github/comments/markdown';
+import type { GitHubPullRequestRef } from '@/domains/github/api';
+import { renderGitHubCommentBody } from '@/domains/github/comments/markdown';
 import { cn } from '@/shared/utils';
 
 type ReviewCommentBodyProps = {

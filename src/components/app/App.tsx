@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 
-import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
-import { useThemeSource } from '@/domains/theming/providers/useThemeSource';
-import { usePullRequestDiff } from '@/hooks/usePullRequestDiff';
-import { useStandaloneDocumentTitle } from '@/hooks/useStandaloneDocumentTitle';
 import {
   getLoadProgress,
   getPullRequestRefPrefix,
   parseGitHubPullRequestUrl,
   subscribeToLoadProgress,
-} from '@/lib/github/api';
+} from '@/domains/github/api';
+import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
+import { useThemeSource } from '@/domains/theming/providers/useThemeSource';
+import { usePullRequestDiff } from '@/hooks/usePullRequestDiff';
+import { useStandaloneDocumentTitle } from '@/hooks/useStandaloneDocumentTitle';
 import { refreshPullRequestData } from '@/lib/query/refresh';
 import { SidebarProvider } from '@/providers/SidebarContext';
 

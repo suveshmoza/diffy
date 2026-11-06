@@ -1,7 +1,7 @@
 import { IconComment, IconFiles } from '@pierre/icons';
 import { memo } from 'react';
 
-import type { GitHubPullRequest } from '@/lib/github/api';
+import type { GitHubPullRequest } from '@/domains/github/api';
 import { cn } from '@/shared/utils';
 
 const exact = new Intl.NumberFormat('en');

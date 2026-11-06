@@ -9,7 +9,7 @@ import {
   type Ref,
 } from 'react';
 
-import type { GitHubPullRequestRef } from '@/lib/github/api';
+import type { GitHubPullRequestRef } from '@/domains/github/api';
 import { useReviewOptional } from '@/providers/ReviewContext';
 import { cn } from '@/shared/utils';
 

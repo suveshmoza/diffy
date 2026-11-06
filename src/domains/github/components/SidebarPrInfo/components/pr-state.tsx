@@ -1,4 +1,4 @@
-import type { GitHubPullRequest } from '@/lib/github/api';
+import type { GitHubPullRequest } from '@/domains/github/api';
 
 export const PR_STATE = {
   merged: {

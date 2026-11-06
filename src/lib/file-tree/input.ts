@@ -5,7 +5,7 @@ import {
   type GitStatusEntry,
 } from '@pierre/trees';
 
-import type { GitHubPullRequestFile } from '@/lib/github/api';
+import type { GitHubPullRequestFile } from '@/domains/github/api';
 
 import { formatReviewCommentDecorationTitle } from './comment-badge';
 

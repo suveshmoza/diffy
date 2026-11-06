@@ -1,7 +1,7 @@
 import { IconCiWarning } from '@pierre/icons';
 import { memo, useMemo } from 'react';
 
-import type { RateLimitState } from '@/lib/github/api';
+import type { RateLimitState } from '@/domains/github/api';
 import { Alert, AlertDescription } from '@/shared/ui/alert';
 import { cn } from '@/shared/utils';
 

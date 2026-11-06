@@ -1,6 +1,6 @@
 import type { ChangeTypes } from '@pierre/diffs';
 
-import type { GitHubPullRequestFile } from '@/lib/github/api';
+import type { GitHubPullRequestFile } from '@/domains/github/api';
 
 export type MediaFileKind = 'image' | 'binary' | 'text';
 

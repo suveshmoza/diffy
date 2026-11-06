@@ -1,5 +1,5 @@
-import { getOrCreateOverlayRoot, removeOverlayRoot } from '@/lib/github/page';
-import { lockPageScroll, unlockPageScroll } from '@/lib/github/scroll-lock';
+import { getOrCreateOverlayRoot, removeOverlayRoot } from '@/domains/github/page';
+import { lockPageScroll, unlockPageScroll } from '@/domains/github/scroll-lock';
 import {
   OVERLAY_PARENT_SOURCE,
   isOverlayFrameMessage,

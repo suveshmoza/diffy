@@ -2,9 +2,9 @@ import { RequestError } from '@octokit/request-error';
 import type { Octokit } from '@octokit/rest';
 import type { RestEndpointMethodTypes } from '@octokit/rest';
 
+import { readGitHubToken, subscribeToGitHubTokenChanges } from './auth/token-storage';
 import { githubFetch } from './github-fetch';
 import { addRateLimitListener, getOctokitClient, resetOctokitClients } from './octokit';
-import { readGitHubToken, subscribeToGitHubTokenChanges } from './token-storage';
 
 export type GitHubPullRequestRef = {
   owner: string;

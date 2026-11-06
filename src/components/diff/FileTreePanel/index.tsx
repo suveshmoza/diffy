@@ -1,16 +1,16 @@
 import { FileTree, useFileTree, useFileTreeSearch } from '@pierre/trees/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { SidebarPrInfo } from '@/components/diff/SidebarPrInfo';
-import { SidebarPrStats } from '@/components/diff/SidebarPrStats';
 import { ReviewProgress, ReviewProgressSkeleton } from '@/components/review/ReviewProgress';
+import type { GitHubPullRequest, GitHubPullRequestFile } from '@/domains/github/api';
+import { useGitHubAuth } from '@/domains/github/auth/GitHubAuthProvider';
+import { SidebarPrInfo } from '@/domains/github/components/SidebarPrInfo';
+import { SidebarPrStats } from '@/domains/github/components/SidebarPrStats';
 import { useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
 import { buildCommentBadgeCountCss } from '@/lib/file-tree/comment-badge';
 import { FILE_TREE_PANEL_BASE_CSS } from '@/lib/file-tree/comment-icon';
 import { createFileTreeInput } from '@/lib/file-tree/input';
-import type { GitHubPullRequest, GitHubPullRequestFile } from '@/lib/github/api';
 import type { ViewedProgress } from '@/lib/review/viewed-files';
-import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 
 import { FileTreeSearchHeader } from './components/filetree-search-header';
 

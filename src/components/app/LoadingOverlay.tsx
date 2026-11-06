@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import type { LoadProgress } from '@/lib/github/api';
+import type { LoadProgress } from '@/domains/github/api';
 import { Progress, ProgressLabel, ProgressValue } from '@/shared/ui/progress';
 
 import { ChromeModal } from './ChromeModal';

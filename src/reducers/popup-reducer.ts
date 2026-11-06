@@ -1,4 +1,4 @@
-import { type GitHubViewer } from '@/lib/github/review-write';
+import { type GitHubViewer } from '@/domains/github/review-write';
 
 export type PopupState =
   | { status: 'loading' }

@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { getGitHubToken, type GitHubPullRequestRef } from '@/lib/github/api';
-import { fetchViewedFiles, type FileViewedState } from '@/lib/github/graphql';
+import { getGitHubToken, type GitHubPullRequestRef } from '@/domains/github/api';
+import { fetchViewedFiles, type FileViewedState } from '@/domains/github/graphql';
 
 const VIEWED_FILES_STALE_TIME = 60_000;
 const VIEWED_FILES_GC_TIME = 30 * 60 * 1000;

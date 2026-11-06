@@ -9,6 +9,12 @@ import {
   type SetStateAction,
 } from 'react';
 
+import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/domains/github/api';
+import {
+  deleteReviewComment,
+  GitHubReviewWriteError,
+  updateReviewComment,
+} from '@/domains/github/review-write';
 import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
 import {
   addDraftAnnotation,
@@ -21,12 +27,6 @@ import {
   updateCommentInAnnotation,
 } from '@/lib/code-view/review-mutations';
 import { runCodeViewMutationPreservingScroll } from '@/lib/code-view/scroll-anchor';
-import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
-import {
-  deleteReviewComment,
-  GitHubReviewWriteError,
-  updateReviewComment,
-} from '@/lib/github/review-write';
 import { removeReviewDraft, upsertReviewDraft } from '@/lib/overlay/review-session';
 import { getItemPath, type ReviewAnnotationMetadata } from '@/lib/review/comments';
 import { getReviewReplyKey } from '@/lib/review/reply-session';

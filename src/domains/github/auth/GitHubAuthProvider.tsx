@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { getGitHubToken } from '@/lib/github/api';
-import type { GitHubViewer } from '@/lib/github/review-write';
-import { subscribeToGitHubTokenChanges } from '@/lib/github/token-storage';
-import { githubViewerQueryOptions } from '@/lib/query/github-auth';
+import { getGitHubToken } from '@/domains/github/api';
+import { githubViewerQueryOptions } from '@/domains/github/auth/github-auth';
+import { subscribeToGitHubTokenChanges } from '@/domains/github/auth/token-storage';
+import type { GitHubViewer } from '@/domains/github/review-write';
 
 type GitHubAuthContextValue = {
   viewerUser: GitHubViewer | null;

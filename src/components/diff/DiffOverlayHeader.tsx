@@ -1,9 +1,9 @@
 import { IconConvo, IconSidebarLeft, IconSidebarLeftOpen, IconX } from '@pierre/icons';
 import { memo, useCallback } from 'react';
 
+import { type GitHubPullRequest, type RateLimitState } from '@/domains/github/api';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
-import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
 import { isStandaloneOverlay } from '@/lib/overlay/standalone';
 import { getStopReviewLabel } from '@/lib/review/publish-review';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';

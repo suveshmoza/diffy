@@ -1,9 +1,9 @@
 import { createRoot, type Root } from 'react-dom/client';
 
 import { App } from '@/components/app/App';
+import { warmGitHubTokenCache } from '@/domains/github/api';
 import { PreloadHighlighter } from '@/domains/theming/components/PreloadHighlighter';
 import { ThemeControllerProvider } from '@/domains/theming/providers/ThemeControllerProvider';
-import { warmGitHubTokenCache } from '@/lib/github/api';
 import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
 import { clearAllReviewSessions } from '@/lib/overlay/review-session';
 import { queryClient } from '@/lib/query/client';

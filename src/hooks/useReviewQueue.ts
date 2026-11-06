@@ -9,6 +9,12 @@ import {
   type SetStateAction,
 } from 'react';
 
+import {
+  fetchPullRequestReviewComments,
+  type GitHubPullRequestRef,
+  type GitHubPullRequestReviewComment,
+} from '@/domains/github/api';
+import { publishBatchedReview, type ReviewEvent } from '@/domains/github/review-write';
 import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
 import { getCodeViewItemIdForFile } from '@/lib/code-view/build-items';
 import {
@@ -18,12 +24,6 @@ import {
   updateQueuedAnnotationBody,
 } from '@/lib/code-view/review-mutations';
 import { runCodeViewMutationPreservingScroll } from '@/lib/code-view/scroll-anchor';
-import {
-  fetchPullRequestReviewComments,
-  type GitHubPullRequestRef,
-  type GitHubPullRequestReviewComment,
-} from '@/lib/github/api';
-import { publishBatchedReview, type ReviewEvent } from '@/lib/github/review-write';
 import {
   clearReviewSession,
   getReviewSession,

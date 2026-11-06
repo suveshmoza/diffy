@@ -8,18 +8,18 @@ import {
 } from '@pierre/diffs';
 
 import {
-  classifyChangedFile,
-  getImageDiffSides,
-  getMediaFileChangeType,
-  isMediaFileExcludedFromCodeView,
-} from '@/lib/diff/media-files';
-import {
   buildPatchFromFiles,
   getPullRequestContentCacheKey,
   type GitHubPullRequestFile,
   type GitHubPullRequestReviewComment,
   type PullRequestDiffData,
-} from '@/lib/github/api';
+} from '@/domains/github/api';
+import {
+  classifyChangedFile,
+  getImageDiffSides,
+  getMediaFileChangeType,
+  isMediaFileExcludedFromCodeView,
+} from '@/lib/diff/media-files';
 import {
   attachReviewCommentsToItems,
   mapReviewCommentsToItems,

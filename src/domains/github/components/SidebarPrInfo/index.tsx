@@ -1,13 +1,13 @@
 import { IconBrandGithub, IconBranch, IconPerson } from '@pierre/icons';
 import { memo } from 'react';
 
-import type { GitHubPullRequest } from '@/lib/github/api';
+import type { GitHubPullRequest } from '@/domains/github/api';
 import { Badge } from '@/shared/ui/badge';
 
-import { AuthorAvatar } from './components/author-avatar';
-import { PrStateBadge } from './components/pr-badge';
+import { AuthorAvatar } from './components/AuthorAvatar';
 import { getPrState } from './components/pr-state';
-import { PropertyList, Property, PropertyLabel, PropertyValue } from './components/property-list';
+import { PrStateBadge } from './components/PrBadge';
+import { PropertyList, Property, PropertyLabel, PropertyValue } from './components/PropertyList';
 
 type SidebarPrInfoProps = {
   pullRequest: GitHubPullRequest;

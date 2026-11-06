@@ -1,4 +1,4 @@
-import type { ReviewEvent } from '@/lib/github/review-write';
+import type { ReviewEvent } from '@/domains/github/review-write';
 
 export function canPublishReview(event: ReviewEvent, queuedCount: number, body: string): boolean {
   if (event === 'APPROVE') {

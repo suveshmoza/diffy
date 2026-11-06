@@ -14,16 +14,16 @@ import {
 } from 'react';
 
 import { SegmentedControl } from '@/components/diff/header/SegmentedControl';
+import type {
+  GitHubPullRequest,
+  GitHubPullRequestFile,
+  GitHubPullRequestRef,
+} from '@/domains/github/api';
 import { useImageDiffSources } from '@/hooks/useImageDiffSources';
 import type { ImageCompareMode } from '@/lib/diff/display-prefs';
 import type { ImageDiffSideSource } from '@/lib/diff/image-diff-cache';
 import { formatDimensions, formatImageBytes, getResizeDelta } from '@/lib/diff/image-diff-meta';
 import { formatFileChangeStatus } from '@/lib/diff/media-files';
-import type {
-  GitHubPullRequest,
-  GitHubPullRequestFile,
-  GitHubPullRequestRef,
-} from '@/lib/github/api';
 import { IconChevronLeft, IconChevronRight } from '@/shared/icons/Chevron';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';

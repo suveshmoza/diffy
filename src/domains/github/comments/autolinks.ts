@@ -1,4 +1,4 @@
-import type { GitHubPullRequestRef } from '@/lib/github/api';
+import type { GitHubPullRequestRef } from '@/domains/github/api';
 
 const FENCED_BLOCK_PATTERN = /(```[\s\S]*?```)/g;
 const INLINE_CODE_PATTERN = /(`[^`\n]+`)/g;

@@ -1,10 +1,10 @@
 import type { CodeViewHandle } from '@pierre/diffs/react';
 import { useEffect, useRef, type RefObject } from 'react';
 
+import type { GitHubPullRequestRef } from '@/domains/github/api';
 import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
 import { addDraftAnnotation, addQueuedAnnotation } from '@/lib/code-view/review-mutations';
 import { runCodeViewMutationPreservingScroll } from '@/lib/code-view/scroll-anchor';
-import type { GitHubPullRequestRef } from '@/lib/github/api';
 import { getReviewSession } from '@/lib/overlay/review-session';
 import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
 

@@ -1,7 +1,7 @@
 import type { CodeViewLineSelection } from '@pierre/diffs';
 import { createContext, use, type ReactNode } from 'react';
 
-import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/lib/github/api';
+import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/domains/github/api';
 
 /**
  * Actions shared by every review-thread surface (inline threads, orphaned

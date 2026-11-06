@@ -27,6 +27,13 @@ import { ImageDiffLightbox } from '@/components/diff/ImageDiffLightbox';
 import { ImageDiffViewer } from '@/components/diff/ImageDiffViewer';
 import { NotificationErrorBar } from '@/components/diff/NotificationErrorBar';
 import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
+import {
+  getRateLimitState,
+  subscribeToRateLimitChanges,
+  type PullRequestDiffData,
+} from '@/domains/github/api';
+import { GitHubAuthProvider } from '@/domains/github/auth/GitHubAuthProvider';
+import { formatViewedFilesError } from '@/domains/github/auth/token-hints';
 import { buildAnnotationThemeStyle } from '@/domains/theming/model/build-annotation-theme-style';
 import { diffyChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping';
 import { useChromeThemeProps } from '@/domains/theming/providers/useChromeThemeProps';
@@ -69,12 +76,6 @@ import {
   type DiffLayout,
 } from '@/lib/diff/layout-prefs';
 import { classifyChangedFile } from '@/lib/diff/media-files';
-import {
-  getRateLimitState,
-  subscribeToRateLimitChanges,
-  type PullRequestDiffData,
-} from '@/lib/github/api';
-import { formatViewedFilesError } from '@/lib/github/token-hints';
 import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
 import { getReviewDraftBody, updateReviewDraftBody } from '@/lib/overlay/review-session';
 import { updatePullRequestReviewComments } from '@/lib/query/pr-diff';
@@ -85,7 +86,6 @@ import {
   type ReviewThreadMetadata,
 } from '@/lib/review/comments';
 import { bindReplySession } from '@/lib/review/reply-session';
-import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
 import { OverlayPortalProvider } from '@/providers/OverlayPortalContext';
 import { ReviewProvider, type ReviewContextValue } from '@/providers/ReviewContext';
 import { ReviewQueueProvider, type ReviewQueueContextValue } from '@/providers/ReviewQueueContext';

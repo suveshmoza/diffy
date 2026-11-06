@@ -1,6 +1,6 @@
 import { IconCheck, IconCiWarning } from '@pierre/icons';
 
-import type { FileViewedState } from '@/lib/github/graphql';
+import type { FileViewedState } from '@/domains/github/graphql';
 import { Badge } from '@/shared/ui/badge';
 import { cn } from '@/shared/utils';
 

@@ -1,8 +1,8 @@
 import MarkdownToJsx, { type MarkdownToJSX } from 'markdown-to-jsx';
 import { useMemo, type ReactNode } from 'react';
 
-import type { GitHubPullRequestRef } from '@/lib/github/api';
-import { preprocessGithubCommentAutolinks } from '@/lib/github/comments/autolinks';
+import type { GitHubPullRequestRef } from '@/domains/github/api';
+import { preprocessGithubCommentAutolinks } from '@/domains/github/comments/autolinks';
 
 export type RenderGitHubCommentBodyOptions = {
   pullRequestRef?: GitHubPullRequestRef;

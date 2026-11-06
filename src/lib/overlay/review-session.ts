@@ -1,6 +1,6 @@
 import type { SelectedLineRange } from '@pierre/diffs';
 
-import { getPullRequestRefPrefix, type GitHubPullRequestRef } from '@/lib/github/api';
+import { getPullRequestRefPrefix, type GitHubPullRequestRef } from '@/domains/github/api';
 import type { QueuedComment } from '@/lib/review/comment-queue';
 
 export type PersistedReviewDraft = {

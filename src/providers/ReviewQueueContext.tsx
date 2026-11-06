@@ -1,7 +1,7 @@
 import { createContext, use, type ReactNode } from 'react';
 
-import type { GitHubPullRequestRef } from '@/lib/github/api';
-import type { ReviewEvent } from '@/lib/github/review-write';
+import type { GitHubPullRequestRef } from '@/domains/github/api';
+import type { ReviewEvent } from '@/domains/github/review-write';
 import type { QueuedComment } from '@/lib/review/comment-queue';
 
 /**

@@ -1,6 +1,6 @@
 import { IconCiWarning } from '@pierre/icons';
 
-import { isGitHubRateLimitError } from '@/lib/github/api';
+import { isGitHubRateLimitError } from '@/domains/github/api';
 import { IconGhost } from '@/shared/icons/Ghost';
 import { Button } from '@/shared/ui/button';
 

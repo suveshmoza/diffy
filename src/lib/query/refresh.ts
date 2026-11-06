@@ -1,6 +1,6 @@
+import type { GitHubPullRequestRef } from '@/domains/github/api';
+import { withBypassHttpCache } from '@/domains/github/github-fetch';
 import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
-import type { GitHubPullRequestRef } from '@/lib/github/api';
-import { withBypassHttpCache } from '@/lib/github/github-fetch';
 
 import { queryClient } from './client';
 import { prDiffQueryOptions } from './pr-diff';

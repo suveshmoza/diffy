@@ -1,6 +1,6 @@
 import type { SelectedLineRange } from '@pierre/diffs';
 
-import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
+import type { GitHubPullRequestReviewComment } from '@/domains/github/api';
 
 import { toAnnotationSide } from './comments';
 

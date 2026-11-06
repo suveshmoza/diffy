@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import type { GitHubPullRequestRef } from '@/domains/github/api';
 import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
-import type { GitHubPullRequestRef } from '@/lib/github/api';
 import { queryClient } from '@/lib/query/client';
 import { prDiffQueryOptions } from '@/lib/query/pr-diff';
 import { prHeadQueryOptions } from '@/lib/query/pr-head';

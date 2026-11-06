@@ -1,5 +1,9 @@
-import { getPullRequestRefPrefix, parseGitHubPullRequestUrl } from '@/lib/github/api';
-import { hideOverlayRoot, installViewDiffButton, uninstallViewDiffButton } from '@/lib/github/page';
+import { getPullRequestRefPrefix, parseGitHubPullRequestUrl } from '@/domains/github/api';
+import {
+  hideOverlayRoot,
+  installViewDiffButton,
+  uninstallViewDiffButton,
+} from '@/domains/github/page';
 import {
   destroyOverlayFrame,
   hideOverlayFrame,

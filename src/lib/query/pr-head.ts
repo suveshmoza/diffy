@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { fetchPullRequestHeadMeta, type GitHubPullRequestRef } from '@/lib/github/api';
+import { fetchPullRequestHeadMeta, type GitHubPullRequestRef } from '@/domains/github/api';
 
 const PR_HEAD_GC_TIME = 30 * 60 * 1000;
 

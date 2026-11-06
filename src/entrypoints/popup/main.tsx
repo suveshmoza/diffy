@@ -2,11 +2,11 @@ import { useState, type ReactNode, type SVGProps } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import logoUrl from '@/assets/logo.png';
-import { usePopup } from '@/hooks/use-popup';
 import {
   FINE_GRAINED_WARNING_DETAIL,
   FINE_GRAINED_WARNING_SUMMARY,
-} from '@/lib/github/token-hints';
+} from '@/domains/github/auth/token-hints';
+import { usePopup } from '@/hooks/use-popup';
 
 import './style.css';
 

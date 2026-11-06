@@ -1,8 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
-import type { GitHubPullRequestRef } from '@/lib/github/api';
-import { markFileAsViewed, unmarkFileAsViewed, type FileViewedState } from '@/lib/github/graphql';
+import type { GitHubPullRequestRef } from '@/domains/github/api';
+import {
+  markFileAsViewed,
+  unmarkFileAsViewed,
+  type FileViewedState,
+} from '@/domains/github/graphql';
 import { viewedFilesQueryOptions, type ViewedFilesQueryData } from '@/lib/query/viewed-files';
 import { computeViewedProgress, findNextUnviewedPath } from '@/lib/review/viewed-files';
 

@@ -1,4 +1,4 @@
-import type { FileViewedState } from '@/lib/github/graphql';
+import type { FileViewedState } from '@/domains/github/graphql';
 
 export type ViewedProgress = {
   viewed: number;

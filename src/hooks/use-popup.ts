@@ -1,14 +1,14 @@
 import { useEffect, useReducer, useState } from 'react';
 
-import { fetchGitHubViewer, type GitHubViewer } from '@/lib/github/review-write';
-import { shouldShowReviewFlowTokenWarning } from '@/lib/github/token-hints';
+import { shouldShowReviewFlowTokenWarning } from '@/domains/github/auth/token-hints';
 import {
   clearGitHubToken,
   readGitHubTokenCredentials,
   removeGitHubTokenViewer,
   setGitHubToken,
   setGitHubTokenViewer,
-} from '@/lib/github/token-storage';
+} from '@/domains/github/auth/token-storage';
+import { fetchGitHubViewer, type GitHubViewer } from '@/domains/github/review-write';
 import { popupReducer } from '@/reducers/popup-reducer';
 
 const storageAvailable = browser?.storage?.local != null;

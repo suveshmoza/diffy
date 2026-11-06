@@ -1,10 +1,10 @@
-import { classifyChangedFile, getImageDiffSides } from '@/lib/diff/media-files';
 import type {
   GitHubPullRequest,
   GitHubPullRequestFile,
   GitHubPullRequestRef,
-} from '@/lib/github/api';
-import { fetchRepoFileBytes, MediaFileFetchError } from '@/lib/github/blobs';
+} from '@/domains/github/api';
+import { fetchRepoFileBytes, MediaFileFetchError } from '@/domains/github/blobs';
+import { classifyChangedFile, getImageDiffSides } from '@/lib/diff/media-files';
 
 export type ImageDiffSideSource = {
   path: string;

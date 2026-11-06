@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 
-import { isGitHubRateLimitError } from '@/lib/github/api';
+import { isGitHubRateLimitError } from '@/domains/github/api';
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
