@@ -1,6 +1,6 @@
 import type { ColorMode, ColorScheme, ThemeController, ThemeSelection } from '@pierre/theming';
 
-import { diffyThemeCatalog } from '@/lib/theming/themeCatalog';
+import { diffyThemeCatalog } from '@/domains/theming/model/theme-catalog';
 
 const MODE_KEY = 'diffThemeMode';
 const LIGHT_THEME_KEY = 'diffThemeLight';

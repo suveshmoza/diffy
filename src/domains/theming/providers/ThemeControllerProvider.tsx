@@ -1,7 +1,7 @@
 import { useThemeController } from '@pierre/theming/react';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { themeController } from '@/lib/theming/themeController';
+import { themeController } from '@/domains/theming/model/theme-controller';
 import {
   applyThemeSelection,
   beginThemeHydration,
@@ -12,8 +12,8 @@ import {
   subscribeThemePersistence,
   themeSelectionFromController,
   themeSelectionsEqual,
-} from '@/lib/theming/themePersistence';
-import { ThemeSourceProvider } from '@/providers/theming/ThemeSourceProvider';
+} from '@/domains/theming/model/theme-persistence';
+import { ThemeSourceProvider } from '@/domains/theming/providers/ThemeSourceProvider';
 
 type ThemeControllerContextValue = {
   isReady: boolean;

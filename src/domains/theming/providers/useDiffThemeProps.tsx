@@ -1,10 +1,10 @@
 import type { ThemesType, ThemeTypes } from '@pierre/diffs';
 import { useMemo } from 'react';
 
-import { diffThemeProps } from '@/lib/theming/diffThemeProps';
-import { hasThemeNameSelection } from '@/lib/theming/ThemeSource';
-import { useThemeSelection } from '@/providers/theming/useThemeSelection';
-import { useThemeSource } from '@/providers/theming/useThemeSource';
+import { diffThemeProps } from '@/domains/theming/model/diff-theme-props';
+import { hasThemeNameSelection } from '@/domains/theming/model/theme-source';
+import { useThemeSelection } from '@/domains/theming/providers/useThemeSelection';
+import { useThemeSource } from '@/domains/theming/providers/useThemeSource';
 
 export function useDiffThemeProps(): {
   theme: ThemesType;

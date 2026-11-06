@@ -1,9 +1,9 @@
 import { IconX } from '@pierre/icons';
 import { useMemo, type ReactNode } from 'react';
 
-import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
-import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
-import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
+import { diffyChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping';
+import { useChromeThemeProps } from '@/domains/theming/providers/useChromeThemeProps';
+import { useThemeColorScheme } from '@/domains/theming/providers/useThemeSelection';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 

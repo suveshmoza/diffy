@@ -1,7 +1,7 @@
 import type { ThemeController } from '@pierre/theming';
 import { createContext, useContext, useRef, useSyncExternalStore } from 'react';
 
-import type { ActiveThemeSnapshot, ThemeSource } from '@/lib/theming/ThemeSource';
+import type { ActiveThemeSnapshot, ThemeSource } from '@/domains/theming/model/theme-source';
 
 export const ThemeSourceContext = createContext<ThemeSource | undefined>(undefined);
 

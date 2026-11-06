@@ -27,6 +27,11 @@ import { ImageDiffLightbox } from '@/components/diff/ImageDiffLightbox';
 import { ImageDiffViewer } from '@/components/diff/ImageDiffViewer';
 import { NotificationErrorBar } from '@/components/diff/NotificationErrorBar';
 import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
+import { buildAnnotationThemeStyle } from '@/domains/theming/model/build-annotation-theme-style';
+import { diffyChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping';
+import { useChromeThemeProps } from '@/domains/theming/providers/useChromeThemeProps';
+import { useDiffThemeReady } from '@/domains/theming/providers/useDiffThemeReady';
+import { useThemeColorScheme } from '@/domains/theming/providers/useThemeSelection';
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import {
   kickCodeViewLayout,
@@ -80,16 +85,11 @@ import {
   type ReviewThreadMetadata,
 } from '@/lib/review/comments';
 import { bindReplySession } from '@/lib/review/reply-session';
-import { buildAnnotationThemeStyle } from '@/lib/theming/buildAnnotationThemeStyle';
-import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
 import { OverlayPortalProvider } from '@/providers/OverlayPortalContext';
 import { ReviewProvider, type ReviewContextValue } from '@/providers/ReviewContext';
 import { ReviewQueueProvider, type ReviewQueueContextValue } from '@/providers/ReviewQueueContext';
 import { useSidebarContext, MOBILE_SIDEBAR_QUERY } from '@/providers/SidebarContext';
-import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
-import { useDiffThemeReady } from '@/providers/theming/useDiffThemeReady';
-import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
 import { IconChevronDown } from '@/shared/icons/Chevron';
 import { IconSpinner } from '@/shared/icons/Spinner';
 import { cn } from '@/shared/utils';

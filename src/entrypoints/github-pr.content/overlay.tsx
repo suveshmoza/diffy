@@ -1,7 +1,8 @@
 import { createRoot, type Root } from 'react-dom/client';
 
 import { App } from '@/components/app/App';
-import { PreloadHighlighter } from '@/components/theming/PreloadHighlighter';
+import { PreloadHighlighter } from '@/domains/theming/components/PreloadHighlighter';
+import { ThemeControllerProvider } from '@/domains/theming/providers/ThemeControllerProvider';
 import { warmGitHubTokenCache } from '@/lib/github/api';
 import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
 import { clearAllReviewSessions } from '@/lib/overlay/review-session';
@@ -9,7 +10,6 @@ import { queryClient } from '@/lib/query/client';
 import { prefetchPullRequestDiff } from '@/lib/query/pr-diff';
 import { PersistentWorkerPoolShell } from '@/providers/PersistentWorkerPoolShell';
 import { QueryProvider } from '@/providers/QueryProvider';
-import { ThemeControllerProvider } from '@/providers/theming/ThemeControllerProvider';
 
 export type MountOverlayOptions = {
   container: HTMLElement;

@@ -2,12 +2,12 @@ import type { ThemeLike } from '@pierre/theming';
 import { normalizeThemeColors } from '@pierre/theming/color';
 import type { CSSProperties } from 'react';
 
-import type { ChromeTokens } from '@/lib/theming/deriveChromeTokens';
+import type { ChromeTokens } from '@/domains/theming/model/derive-chrome-tokens';
 import {
   applyLegacyGprvTokens,
   applyShadcnSemanticTokens,
   mapShadcnSemanticTokens,
-} from '@/lib/theming/mapShadcnSemanticTokens';
+} from '@/domains/theming/model/map-shadcn-semantic-tokens';
 
 export type ChromeMapping = (
   chrome: ChromeTokens | undefined,

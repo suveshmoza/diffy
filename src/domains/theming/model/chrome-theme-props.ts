@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react';
 
-import { deriveChromeTokens } from '@/lib/theming/deriveChromeTokens';
-import type { ChromeMapping } from '@/lib/theming/diffyChromeMapping';
-import type { ActiveThemeSnapshot } from '@/lib/theming/ThemeSource';
+import { deriveChromeTokens } from '@/domains/theming/model/derive-chrome-tokens';
+import type { ChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping';
+import type { ActiveThemeSnapshot } from '@/domains/theming/model/theme-source';
 
 export function chromeThemeProps(
   active: ActiveThemeSnapshot,

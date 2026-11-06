@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 
+import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
+import { useThemeSource } from '@/domains/theming/providers/useThemeSource';
 import { usePullRequestDiff } from '@/hooks/usePullRequestDiff';
 import { useStandaloneDocumentTitle } from '@/hooks/useStandaloneDocumentTitle';
 import {
@@ -10,8 +12,6 @@ import {
 } from '@/lib/github/api';
 import { refreshPullRequestData } from '@/lib/query/refresh';
 import { SidebarProvider } from '@/providers/SidebarContext';
-import { useThemeControllerReady } from '@/providers/theming/ThemeControllerProvider';
-import { useThemeSource } from '@/providers/theming/useThemeSource';
 
 import { DiffOverlay } from '../diff/DiffOverlay';
 import { ErrorOverlay } from './ErrorOverlay';

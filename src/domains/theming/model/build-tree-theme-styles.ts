@@ -1,7 +1,7 @@
 import type { ColorScheme, ThemeLike } from '@pierre/theming';
 
-import { sanitizeTreeThemeStyles } from '@/lib/theming/sanitizeTreeThemeStyles';
-import { treeThemeProps } from '@/lib/theming/treeThemeProps';
+import { sanitizeTreeThemeStyles } from '@/domains/theming/model/sanitize-tree-theme-styles';
+import { treeThemeProps } from '@/domains/theming/model/tree-theme-props';
 
 export function buildTreeThemeStylesFromResolved(
   resolved: ThemeLike,

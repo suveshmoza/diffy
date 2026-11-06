@@ -1,8 +1,11 @@
 import type { ThemeController } from '@pierre/theming';
 import { type ReactNode, useMemo } from 'react';
 
-import { controllerSource } from '@/lib/theming/ThemeSource';
-import { ThemeControllerContext, ThemeSourceContext } from '@/providers/theming/useThemeSource';
+import { controllerSource } from '@/domains/theming/model/theme-source';
+import {
+  ThemeControllerContext,
+  ThemeSourceContext,
+} from '@/domains/theming/providers/useThemeSource';
 
 type ThemeSourceProviderProps = {
   controller: ThemeController;

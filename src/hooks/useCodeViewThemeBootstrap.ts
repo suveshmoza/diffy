@@ -1,11 +1,11 @@
 import type { CodeViewOptions } from '@pierre/diffs';
 import { useMemo } from 'react';
 
+import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { CODE_VIEW_CUSTOM_CSS } from '@/lib/diff/themes/unsafe-css';
 import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
-import { useThemeControllerReady } from '@/providers/theming/ThemeControllerProvider';
 
 type UseCodeViewThemeBootstrapOptions = {
   diffLayout: DiffLayout;

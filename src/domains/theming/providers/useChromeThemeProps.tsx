@@ -1,8 +1,8 @@
 import { type CSSProperties, useMemo } from 'react';
 
-import { chromeThemeProps } from '@/lib/theming/chromeThemeProps';
-import type { ChromeMapping } from '@/lib/theming/diffyChromeMapping';
-import { useThemeSource } from '@/providers/theming/useThemeSource';
+import { chromeThemeProps } from '@/domains/theming/model/chrome-theme-props';
+import type { ChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping';
+import { useThemeSource } from '@/domains/theming/providers/useThemeSource';
 
 export function useChromeThemeProps(mapping: ChromeMapping): { style: CSSProperties } {
   const { activeTheme } = useThemeSource();

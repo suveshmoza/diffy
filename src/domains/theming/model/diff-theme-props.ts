@@ -1,6 +1,6 @@
 import type { DiffsThemeNames, ThemesType, ThemeTypes } from '@pierre/diffs';
 
-import type { ThemeNameSelection } from '@/lib/theming/ThemeSource';
+import type { ThemeNameSelection } from '@/domains/theming/model/theme-source';
 
 export function diffThemeProps(sel: ThemeNameSelection): {
   theme: ThemesType;

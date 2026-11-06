@@ -14,6 +14,8 @@ import {
 import type { ColorMode } from '@pierre/theming';
 import { useState, type KeyboardEvent } from 'react';
 
+import { diffyThemeCatalog } from '@/domains/theming/model/theme-catalog';
+import { useThemeSelection } from '@/domains/theming/providers/useThemeSelection';
 import type { CodeViewDisplayPrefs, ImageCompareMode } from '@/lib/diff/display-prefs';
 import {
   CODE_FONT_FEATURE_OPTIONS,
@@ -31,8 +33,6 @@ import {
   type CodeFontPreset,
   type TreeFontPreset,
 } from '@/lib/diff/font-prefs';
-import { diffyThemeCatalog } from '@/lib/theming/themeCatalog';
-import { useThemeSelection } from '@/providers/theming/useThemeSelection';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';

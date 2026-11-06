@@ -1,9 +1,9 @@
 import { themeToTreeStyles, type TreeThemeInput, type TreeThemeStyles } from '@pierre/trees';
 
-import { deriveChromeTokens } from '@/lib/theming/deriveChromeTokens';
-import { mapShadcnSemanticTokens } from '@/lib/theming/mapShadcnSemanticTokens';
-import { reconcileTreeThemeWithShadcn } from '@/lib/theming/reconcileTreeThemeWithShadcn';
-import type { ActiveThemeSnapshot } from '@/lib/theming/ThemeSource';
+import { deriveChromeTokens } from '@/domains/theming/model/derive-chrome-tokens';
+import { mapShadcnSemanticTokens } from '@/domains/theming/model/map-shadcn-semantic-tokens';
+import { reconcileTreeThemeWithShadcn } from '@/domains/theming/model/reconcile-tree-theme-with-shadcn';
+import type { ActiveThemeSnapshot } from '@/domains/theming/model/theme-source';
 
 export interface TreeThemePropsOptions {
   reconcileForegroundFromChrome?: boolean;

@@ -1,4 +1,4 @@
-import type { ShadcnSemanticTokens } from '@/lib/theming/mapShadcnSemanticTokens';
+import type { ShadcnSemanticTokens } from '@/domains/theming/model/map-shadcn-semantic-tokens';
 
 type TreeThemeStyles = Record<string, string>;
 

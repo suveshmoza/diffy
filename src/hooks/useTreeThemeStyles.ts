@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
-import { buildTreeThemeStylesFromResolved } from '@/lib/theming/buildTreeThemeStyles';
-import { useThemeSource } from '@/providers/theming/useThemeSource';
+import { buildTreeThemeStylesFromResolved } from '@/domains/theming/model/build-tree-theme-styles';
+import { useThemeSource } from '@/domains/theming/providers/useThemeSource';
 
 export function useTreeThemeStyles(): Record<string, string> {
   const { activeTheme } = useThemeSource();

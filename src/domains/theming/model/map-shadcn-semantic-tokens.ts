@@ -1,4 +1,4 @@
-import type { ChromeTokens } from '@/lib/theming/deriveChromeTokens';
+import type { ChromeTokens } from '@/domains/theming/model/derive-chrome-tokens';
 
 export type ShadcnSemanticTokens = {
   background: string;

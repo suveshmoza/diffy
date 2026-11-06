@@ -3,9 +3,9 @@ import { createThemeResolver } from '@pierre/theming';
 import { useThemeController } from '@pierre/theming/react';
 import { useContext, useMemo } from 'react';
 
-import { diffyThemeCatalog } from '@/lib/theming/themeCatalog';
-import { pickTheme as pickThemeOnController } from '@/lib/theming/themePersistence';
-import { ThemeControllerContext, useThemeSource } from '@/providers/theming/useThemeSource';
+import { diffyThemeCatalog } from '@/domains/theming/model/theme-catalog';
+import { pickTheme as pickThemeOnController } from '@/domains/theming/model/theme-persistence';
+import { ThemeControllerContext, useThemeSource } from '@/domains/theming/providers/useThemeSource';
 
 export interface ThemeSelectionResult {
   colorMode: ColorMode;
