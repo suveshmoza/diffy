@@ -18,7 +18,9 @@
     "fmt:check": "oxfmt --check",
     "prepare": "husky",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix"
+    "lint:fix": "oxlint --fix",
+    "lint:boundaries": "node scripts/check-boundaries.mjs",
+    "check": "pnpm compile && pnpm lint && pnpm fmt:check && pnpm lint:boundaries"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
