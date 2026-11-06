@@ -1,9 +1,9 @@
 import { IconSearch, IconX } from '@pierre/icons';
 import { type KeyboardEvent, type RefObject } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { Button } from '@/shared/ui/button';
+import { Input } from '@/shared/ui/input';
+import { cn } from '@/shared/utils';
 
 const countFormatter = new Intl.NumberFormat('en');
 

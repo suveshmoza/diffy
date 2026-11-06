@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
-import { Button } from '@/components/ui/button';
 import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import { GitHubReviewWriteError } from '@/lib/github/review-write';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
+import { Button } from '@/shared/ui/button';
 
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 

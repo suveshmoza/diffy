@@ -14,10 +14,6 @@ import {
 } from 'react';
 
 import { SegmentedControl } from '@/components/diff/header/SegmentedControl';
-import { IconChevronLeft, IconChevronRight } from '@/components/icons/Chevron';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { useImageDiffSources } from '@/hooks/useImageDiffSources';
 import type { ImageCompareMode } from '@/lib/diff/display-prefs';
 import type { ImageDiffSideSource } from '@/lib/diff/image-diff-cache';
@@ -28,7 +24,11 @@ import type {
   GitHubPullRequestFile,
   GitHubPullRequestRef,
 } from '@/lib/github/api';
-import { cn } from '@/lib/utils';
+import { IconChevronLeft, IconChevronRight } from '@/shared/icons/Chevron';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
+import { Label } from '@/shared/ui/label';
+import { cn } from '@/shared/utils';
 
 const MODE_OPTIONS = [
   { value: '2up' as const, label: '2-up' },

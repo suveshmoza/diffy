@@ -1,11 +1,11 @@
 import { IconArrowUpRight, IconGearFill, IconGlobe, IconRefresh } from '@pierre/icons';
 import { useCallback, useId, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
-import { cn } from '@/lib/utils';
+import { Button } from '@/shared/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
+import { Separator } from '@/shared/ui/separator';
+import { cn } from '@/shared/utils';
 
 import { DisplaySettingsPanel } from './DisplaySettingsPanel';
 import { OverflowMenuItem, OverflowMenuSection } from './overflowMenuUi';

@@ -27,8 +27,6 @@ import { ImageDiffLightbox } from '@/components/diff/ImageDiffLightbox';
 import { ImageDiffViewer } from '@/components/diff/ImageDiffViewer';
 import { NotificationErrorBar } from '@/components/diff/NotificationErrorBar';
 import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
-import { IconChevronDown } from '@/components/icons/Chevron';
-import { IconSpinner } from '@/components/icons/Spinner';
 import { useCodeViewItems } from '@/hooks/useCodeViewItems';
 import {
   kickCodeViewLayout,
@@ -84,7 +82,6 @@ import {
 import { bindReplySession } from '@/lib/review/reply-session';
 import { buildAnnotationThemeStyle } from '@/lib/theming/buildAnnotationThemeStyle';
 import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
-import { cn } from '@/lib/utils';
 import { GitHubAuthProvider } from '@/providers/GitHubAuthProvider';
 import { OverlayPortalProvider } from '@/providers/OverlayPortalContext';
 import { ReviewProvider, type ReviewContextValue } from '@/providers/ReviewContext';
@@ -93,6 +90,9 @@ import { useSidebarContext, MOBILE_SIDEBAR_QUERY } from '@/providers/SidebarCont
 import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
 import { useDiffThemeReady } from '@/providers/theming/useDiffThemeReady';
 import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
+import { IconChevronDown } from '@/shared/icons/Chevron';
+import { IconSpinner } from '@/shared/icons/Spinner';
+import { cn } from '@/shared/utils';
 
 import { FileViewedCheckbox } from '../review/FileViewedCheckbox';
 import { OrphanedReviewCommentsBadge } from '../review/OrphanedReviewCommentsBadge';

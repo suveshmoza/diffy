@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { cn } from '@/lib/utils';
+import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group';
+import { cn } from '@/shared/utils';
 
 export type SegmentOption<T extends string | number> = {
   value: T;

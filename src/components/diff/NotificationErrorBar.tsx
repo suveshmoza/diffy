@@ -1,8 +1,8 @@
 import { IconWarningOctogonFill, IconX } from '@pierre/icons';
 
-import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Alert, AlertAction, AlertDescription } from '@/shared/ui/alert';
+import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/utils';
 
 type NotificationErrorBarProps = {
   message: string;

@@ -1,9 +1,9 @@
 import { IconCiWarning } from '@pierre/icons';
 import { memo, useMemo } from 'react';
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { RateLimitState } from '@/lib/github/api';
-import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/shared/ui/alert';
+import { cn } from '@/shared/utils';
 
 type HeaderStatusStripProps = {
   reviewCommentsLoadError?: string | null;

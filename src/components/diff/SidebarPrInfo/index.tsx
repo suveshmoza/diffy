@@ -1,8 +1,8 @@
 import { IconBrandGithub, IconBranch, IconPerson } from '@pierre/icons';
 import { memo } from 'react';
 
-import { Badge } from '@/components/ui/badge';
 import type { GitHubPullRequest } from '@/lib/github/api';
+import { Badge } from '@/shared/ui/badge';
 
 import { AuthorAvatar } from './components/author-avatar';
 import { PrStateBadge } from './components/pr-badge';

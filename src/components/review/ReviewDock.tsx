@@ -2,11 +2,6 @@ import { IconCheck, IconComment, IconX } from '@pierre/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { SegmentedControl } from '@/components/diff/header/SegmentedControl';
-import { IconChevronDown } from '@/components/icons/Chevron';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ReviewEvent } from '@/lib/github/review-write';
 import {
   canPublishReview,
@@ -17,8 +12,13 @@ import {
   summaryPlaceholder,
   verdictHelperText,
 } from '@/lib/review/publish-review';
-import { cn } from '@/lib/utils';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
+import { IconChevronDown } from '@/shared/icons/Chevron';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
+import { Label } from '@/shared/ui/label';
+import { ScrollArea } from '@/shared/ui/scroll-area';
+import { cn } from '@/shared/utils';
 
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 

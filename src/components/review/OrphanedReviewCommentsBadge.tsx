@@ -1,8 +1,8 @@
 import type { LineAnnotation } from '@pierre/diffs';
 import { memo, useMemo } from 'react';
 
-import { Badge } from '@/components/ui/badge';
 import type { ReviewThreadMetadata } from '@/lib/review/comments';
+import { Badge } from '@/shared/ui/badge';
 
 import { HeaderReviewCommentThread } from './ReviewCommentThread';
 

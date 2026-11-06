@@ -1,11 +1,11 @@
 import { IconX } from '@pierre/icons';
 import { useMemo, type ReactNode } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { diffyChromeMapping } from '@/lib/theming/diffyChromeMapping';
-import { cn } from '@/lib/utils';
 import { useChromeThemeProps } from '@/providers/theming/useChromeThemeProps';
 import { useThemeColorScheme } from '@/providers/theming/useThemeSelection';
+import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/utils';
 
 type ChromeModalProps = {
   title: string;

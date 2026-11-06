@@ -14,16 +14,6 @@ import {
 import type { ColorMode } from '@pierre/theming';
 import { useState, type KeyboardEvent } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import type { CodeViewDisplayPrefs, ImageCompareMode } from '@/lib/diff/display-prefs';
 import {
   CODE_FONT_FEATURE_OPTIONS,
@@ -42,8 +32,12 @@ import {
   type TreeFontPreset,
 } from '@/lib/diff/font-prefs';
 import { diffyThemeCatalog } from '@/lib/theming/themeCatalog';
-import { cn } from '@/lib/utils';
 import { useThemeSelection } from '@/providers/theming/useThemeSelection';
+import { Button } from '@/shared/ui/button';
+import { Input } from '@/shared/ui/input';
+import { Label } from '@/shared/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+import { cn } from '@/shared/utils';
 
 import {
   OverflowMenuBackHeader,

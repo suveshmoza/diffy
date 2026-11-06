@@ -1,16 +1,16 @@
 import { IconConvo, IconSidebarLeft, IconSidebarLeftOpen, IconX } from '@pierre/icons';
 import { memo, useCallback } from 'react';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
 import type { DiffLayout } from '@/lib/diff/layout-prefs';
 import { type GitHubPullRequest, type RateLimitState } from '@/lib/github/api';
 import { isStandaloneOverlay } from '@/lib/overlay/standalone';
 import { getStopReviewLabel } from '@/lib/review/publish-review';
-import { cn } from '@/lib/utils';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
 import { useSidebarContext } from '@/providers/SidebarContext';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/utils';
 
 import { AppearanceSettingsMenu } from './header/AppearanceSettingsMenu';
 import { BranchContextPopover } from './header/BranchContextPopover';

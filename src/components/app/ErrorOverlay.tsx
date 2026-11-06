@@ -1,8 +1,8 @@
 import { IconCiWarning } from '@pierre/icons';
 
-import { IconGhost } from '@/components/icons/Ghost';
-import { Button } from '@/components/ui/button';
 import { isGitHubRateLimitError } from '@/lib/github/api';
+import { IconGhost } from '@/shared/icons/Ghost';
+import { Button } from '@/shared/ui/button';
 
 import { ChromeModal } from './ChromeModal';
 

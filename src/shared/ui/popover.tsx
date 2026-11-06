@@ -3,8 +3,8 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 import * as React from 'react';
 
-import { cn } from '@/lib/utils';
 import { useOverlayPortalContainer } from '@/providers/OverlayPortalContext';
+import { cn } from '@/shared/utils';
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return (

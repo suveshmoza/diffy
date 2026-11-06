@@ -1,6 +1,6 @@
 import { IconChevrons, IconChevronsClose } from '@pierre/icons';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 
 type CollapseAllToggleProps = {
   allCollapsed: boolean;

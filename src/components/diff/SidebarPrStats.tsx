@@ -2,7 +2,7 @@ import { IconComment, IconFiles } from '@pierre/icons';
 import { memo } from 'react';
 
 import type { GitHubPullRequest } from '@/lib/github/api';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/utils';
 
 const exact = new Intl.NumberFormat('en');
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });

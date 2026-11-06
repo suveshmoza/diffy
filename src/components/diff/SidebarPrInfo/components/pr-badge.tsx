@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/shared/ui/badge';
+import { cn } from '@/shared/utils';
 
 import { PR_STATE, type PrState } from './pr-state';
 

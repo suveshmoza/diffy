@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 
-import { IconChevronLeft, IconChevronRight } from '@/components/icons/Chevron';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
+import { IconChevronLeft, IconChevronRight } from '@/shared/icons/Chevron';
+import { Button } from '@/shared/ui/button';
+import { Separator } from '@/shared/ui/separator';
+import { cn } from '@/shared/utils';
 
 type OverflowMenuSectionHeadingProps = {
   id?: string;

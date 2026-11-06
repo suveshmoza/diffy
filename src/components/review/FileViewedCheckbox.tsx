@@ -1,8 +1,8 @@
 import { IconCheck, IconCiWarning } from '@pierre/icons';
 
-import { Badge } from '@/components/ui/badge';
 import type { FileViewedState } from '@/lib/github/graphql';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/shared/ui/badge';
+import { cn } from '@/shared/utils';
 
 type FileViewedCheckboxProps = {
   state: FileViewedState | undefined;

@@ -1,8 +1,8 @@
 import { IconThemes } from '@pierre/icons';
 import { useCallback, useId, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/shared/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
 
 import { DisplaySettingsPanel } from './DisplaySettingsPanel';
 

@@ -2,7 +2,6 @@ import type { DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
 import { IconComment } from '@pierre/icons';
 import { memo, useCallback, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
 import type { GitHubPullRequestReviewComment } from '@/lib/github/api';
 import {
   formatReviewCommentHiddenLabel,
@@ -15,9 +14,10 @@ import {
 } from '@/lib/review/format-line-range';
 import { formatQuoteReplyPrefill } from '@/lib/review/format-quote-reply';
 import { getReviewReplyKey } from '@/lib/review/reply-session';
-import { cn } from '@/lib/utils';
 import { useGitHubAuth } from '@/providers/GitHubAuthProvider';
 import { useReview } from '@/providers/ReviewContext';
+import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/utils';
 
 import { ReviewCommentBody } from './ReviewCommentBody';
 import { ReviewCommentEditComposer } from './ReviewCommentEditComposer';

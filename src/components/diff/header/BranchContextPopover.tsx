@@ -1,15 +1,15 @@
 import { IconArrow, IconCheck, IconCopy } from '@pierre/icons';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+} from '@/shared/ui/popover';
+import { cn } from '@/shared/utils';
 
 type BranchContextPopoverProps = {
   baseRef: string;

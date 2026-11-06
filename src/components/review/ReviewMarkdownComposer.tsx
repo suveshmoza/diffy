@@ -10,8 +10,8 @@ import {
 } from 'react';
 
 import type { GitHubPullRequestRef } from '@/lib/github/api';
-import { cn } from '@/lib/utils';
 import { useReviewOptional } from '@/providers/ReviewContext';
+import { cn } from '@/shared/utils';
 
 import { ReviewCommentBody } from './ReviewCommentBody';
 import {

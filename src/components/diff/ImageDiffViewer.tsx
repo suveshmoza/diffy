@@ -1,8 +1,5 @@
 import { IconArrowsExpand } from '@pierre/icons';
 
-import { IconSpinner } from '@/components/icons/Spinner';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { useImageDiffSources } from '@/hooks/useImageDiffSources';
 import { formatDimensions, formatImageBytes, getResizeDelta } from '@/lib/diff/image-diff-meta';
 import { formatFileChangeStatus, getImageDiffSides } from '@/lib/diff/media-files';
@@ -12,7 +9,10 @@ import type {
   GitHubPullRequestRef,
 } from '@/lib/github/api';
 import type { ReviewMediaImagePane } from '@/lib/review/comments';
-import { cn } from '@/lib/utils';
+import { IconSpinner } from '@/shared/icons/Spinner';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/utils';
 
 const IMAGE_DIFF_CHECKERBOARD =
   'data-checkerboard:bg-background data-checkerboard:[background-image:linear-gradient(45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(-45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%),linear-gradient(-45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%)] data-checkerboard:[background-position:0_0,0_8px,8px_-8px,-8px_0] data-checkerboard:[background-size:16px_16px]';

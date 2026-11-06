@@ -7,12 +7,12 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
-import { cn } from '@/lib/utils';
 import { useReview } from '@/providers/ReviewContext';
 import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/utils';
 
 import { ReviewCommentBody } from './ReviewCommentBody';
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
