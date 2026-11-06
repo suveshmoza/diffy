@@ -7,8 +7,11 @@ import {
   unmarkFileAsViewed,
   type FileViewedState,
 } from '@/domains/github/graphql';
-import { viewedFilesQueryOptions, type ViewedFilesQueryData } from '@/lib/query/viewed-files';
-import { computeViewedProgress, findNextUnviewedPath } from '@/lib/review/viewed-files';
+import { computeViewedProgress, findNextUnviewedPath } from '@/domains/review/model/viewed-files';
+import {
+  viewedFilesQueryOptions,
+  type ViewedFilesQueryData,
+} from '@/domains/review/queries/viewed-files';
 
 export type UseViewedFilesResult = {
   viewedByPath: ReadonlyMap<string, FileViewedState>;

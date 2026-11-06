@@ -7,6 +7,7 @@ import type {
   PullRequestDiffData,
 } from '@/domains/github/api';
 import { MediaFileFetchError } from '@/domains/github/blobs';
+import type { ReviewMediaImagePane } from '@/domains/review/model/comments';
 import {
   clearImageDiffCache,
   ensureImageDiffSide,
@@ -16,7 +17,6 @@ import {
   type ImageDiffSideSource,
 } from '@/lib/diff/image-diff-cache';
 import { getImageDiffSides } from '@/lib/diff/media-files';
-import type { ReviewMediaImagePane } from '@/lib/review/comments';
 
 export type { ImageDiffSideSource };
 

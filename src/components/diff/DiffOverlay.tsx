@@ -35,6 +35,30 @@ import {
 import { GitHubAuthProvider } from '@/domains/github/auth/GitHubAuthProvider';
 import { formatViewedFilesError } from '@/domains/github/auth/token-hints';
 import { OVERLAY_LAYOUT_KICK_EVENT } from '@/domains/overlay/messages';
+import { FileViewedCheckbox } from '@/domains/review/components/FileViewedCheckbox';
+import { OrphanedReviewCommentsBadge } from '@/domains/review/components/OrphanedReviewCommentsBadge';
+import { QueuedCommentCard } from '@/domains/review/components/QueuedCommentCard';
+import { ReviewCommentComposer } from '@/domains/review/components/ReviewCommentComposer';
+import { ReviewCommentThread } from '@/domains/review/components/ReviewCommentThread';
+import { ReviewDock } from '@/domains/review/components/ReviewDock';
+import { useCodeViewReviewMutations } from '@/domains/review/hooks/useCodeViewReviewMutations';
+import { useRestoreReviewSession } from '@/domains/review/hooks/useRestoreReviewSession';
+import { useReviewQueue } from '@/domains/review/hooks/useReviewQueue';
+import { useViewedFiles } from '@/domains/review/hooks/useViewedFiles';
+import {
+  buildReviewCommentCountByPath,
+  getItemPath,
+  type ReviewAnnotationMetadata,
+  type ReviewThreadMetadata,
+} from '@/domains/review/model/comments';
+import { bindReplySession } from '@/domains/review/model/reply-session';
+import { hasAnyDraftAnnotation } from '@/domains/review/model/review-mutations';
+import { ReviewProvider, type ReviewContextValue } from '@/domains/review/providers/ReviewContext';
+import {
+  ReviewQueueProvider,
+  type ReviewQueueContextValue,
+} from '@/domains/review/providers/ReviewQueueContext';
+import { getReviewDraftBody, updateReviewDraftBody } from '@/domains/review/state/review-session';
 import { buildAnnotationThemeStyle } from '@/domains/theming/model/build-annotation-theme-style';
 import { diffyChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping';
 import { useChromeThemeProps } from '@/domains/theming/providers/useChromeThemeProps';
@@ -46,15 +70,10 @@ import {
   useCodeViewHostReady,
   useCodeViewLayoutRefresh,
 } from '@/hooks/useCodeViewLayoutRefresh';
-import { useCodeViewReviewMutations } from '@/hooks/useCodeViewReviewMutations';
 import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
 import { usePrefetchImageDiffs } from '@/hooks/useImageDiffSources';
-import { useRestoreReviewSession } from '@/hooks/useRestoreReviewSession';
-import { useReviewQueue } from '@/hooks/useReviewQueue';
 import { pickTreeThemeCustomProperties, useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
-import { useViewedFiles } from '@/hooks/useViewedFiles';
 import { getCodeViewItemIdForFile } from '@/lib/code-view/build-items';
-import { hasAnyDraftAnnotation } from '@/lib/code-view/review-mutations';
 import { deferCodeViewControlledSync } from '@/lib/code-view/scroll-anchor';
 import {
   DEFAULT_CODE_VIEW_DISPLAY_PREFS,
@@ -77,29 +96,13 @@ import {
   type DiffLayout,
 } from '@/lib/diff/layout-prefs';
 import { classifyChangedFile } from '@/lib/diff/media-files';
-import { getReviewDraftBody, updateReviewDraftBody } from '@/lib/overlay/review-session';
 import { updatePullRequestReviewComments } from '@/lib/query/pr-diff';
-import {
-  buildReviewCommentCountByPath,
-  getItemPath,
-  type ReviewAnnotationMetadata,
-  type ReviewThreadMetadata,
-} from '@/lib/review/comments';
-import { bindReplySession } from '@/lib/review/reply-session';
 import { OverlayPortalProvider } from '@/providers/OverlayPortalContext';
-import { ReviewProvider, type ReviewContextValue } from '@/providers/ReviewContext';
-import { ReviewQueueProvider, type ReviewQueueContextValue } from '@/providers/ReviewQueueContext';
 import { useSidebarContext, MOBILE_SIDEBAR_QUERY } from '@/providers/SidebarContext';
 import { IconChevronDown } from '@/shared/icons/Chevron';
 import { IconSpinner } from '@/shared/icons/Spinner';
 import { cn } from '@/shared/utils';
 
-import { FileViewedCheckbox } from '../review/FileViewedCheckbox';
-import { OrphanedReviewCommentsBadge } from '../review/OrphanedReviewCommentsBadge';
-import { QueuedCommentCard } from '../review/QueuedCommentCard';
-import { ReviewCommentComposer } from '../review/ReviewCommentComposer';
-import { ReviewCommentThread } from '../review/ReviewCommentThread';
-import { ReviewDock } from '../review/ReviewDock';
 import { DiffOverlayHeader } from './DiffOverlayHeader';
 import { FileTreePanel } from './FileTreePanel';
 

@@ -15,24 +15,24 @@ import {
   type GitHubPullRequestReviewComment,
 } from '@/domains/github/api';
 import { publishBatchedReview, type ReviewEvent } from '@/domains/github/review-write';
-import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
-import { getCodeViewItemIdForFile } from '@/lib/code-view/build-items';
+import { toBatchedReviewComments, type QueuedComment } from '@/domains/review/model/comment-queue';
+import type { ReviewAnnotationMetadata } from '@/domains/review/model/comments';
+import { confirmDiscardQueuedComments } from '@/domains/review/model/publish-review';
 import {
   addThreadAnnotationForComment,
   removeQueuedAnnotation,
   replaceDraftWithQueuedAnnotation,
   updateQueuedAnnotationBody,
-} from '@/lib/code-view/review-mutations';
-import { runCodeViewMutationPreservingScroll } from '@/lib/code-view/scroll-anchor';
+} from '@/domains/review/model/review-mutations';
 import {
   clearReviewSession,
   getReviewSession,
   removeReviewDraft,
   syncReviewQueue,
-} from '@/lib/overlay/review-session';
-import { toBatchedReviewComments, type QueuedComment } from '@/lib/review/comment-queue';
-import type { ReviewAnnotationMetadata } from '@/lib/review/comments';
-import { confirmDiscardQueuedComments } from '@/lib/review/publish-review';
+} from '@/domains/review/state/review-session';
+import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
+import { getCodeViewItemIdForFile } from '@/lib/code-view/build-items';
+import { runCodeViewMutationPreservingScroll } from '@/lib/code-view/scroll-anchor';
 
 type UseReviewQueueParams = {
   viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata, undefined> | null>;

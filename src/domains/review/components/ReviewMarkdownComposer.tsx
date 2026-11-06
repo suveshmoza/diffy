@@ -10,15 +10,15 @@ import {
 } from 'react';
 
 import type { GitHubPullRequestRef } from '@/domains/github/api';
-import { useReviewOptional } from '@/providers/ReviewContext';
+import { useReviewOptional } from '@/domains/review/providers/ReviewContext';
 import { cn } from '@/shared/utils';
 
-import { ReviewCommentBody } from './ReviewCommentBody';
 import {
   reviewComposerToolbarClassName,
   reviewPreviewPaneClassName,
   reviewTextareaClassName,
-} from './reviewComposerStyles';
+} from './review-composer-styles';
+import { ReviewCommentBody } from './ReviewCommentBody';
 
 type ComposerMode = 'write' | 'preview';
 

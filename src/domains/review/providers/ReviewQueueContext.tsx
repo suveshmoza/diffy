@@ -2,7 +2,7 @@ import { createContext, use, type ReactNode } from 'react';
 
 import type { GitHubPullRequestRef } from '@/domains/github/api';
 import type { ReviewEvent } from '@/domains/github/review-write';
-import type { QueuedComment } from '@/lib/review/comment-queue';
+import type { QueuedComment } from '@/domains/review/model/comment-queue';
 
 /**
  * Batched-review (queue) state shared by every surface that touches it: the

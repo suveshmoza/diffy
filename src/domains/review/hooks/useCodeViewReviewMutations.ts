@@ -15,7 +15,13 @@ import {
   GitHubReviewWriteError,
   updateReviewComment,
 } from '@/domains/github/review-write';
-import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
+import { getItemPath, type ReviewAnnotationMetadata } from '@/domains/review/model/comments';
+import { getReviewReplyKey } from '@/domains/review/model/reply-session';
+import {
+  closeAllReplyComposers,
+  closeReplyComposer,
+  openReplySession,
+} from '@/domains/review/model/reply-session';
 import {
   addDraftAnnotation,
   appendReplyToThreadAnnotation,
@@ -25,16 +31,10 @@ import {
   removeDraftAnnotation,
   replaceDraftWithThreadAnnotation,
   updateCommentInAnnotation,
-} from '@/lib/code-view/review-mutations';
+} from '@/domains/review/model/review-mutations';
+import { removeReviewDraft, upsertReviewDraft } from '@/domains/review/state/review-session';
+import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
 import { runCodeViewMutationPreservingScroll } from '@/lib/code-view/scroll-anchor';
-import { removeReviewDraft, upsertReviewDraft } from '@/lib/overlay/review-session';
-import { getItemPath, type ReviewAnnotationMetadata } from '@/lib/review/comments';
-import { getReviewReplyKey } from '@/lib/review/reply-session';
-import {
-  closeAllReplyComposers,
-  closeReplyComposer,
-  openReplySession,
-} from '@/lib/review/reply-session';
 
 type UseCodeViewReviewMutationsParams = {
   viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata, undefined> | null>;

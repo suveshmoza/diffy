@@ -11,8 +11,8 @@ import {
   summaryLabel,
   summaryPlaceholder,
   verdictHelperText,
-} from '@/lib/review/publish-review';
-import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
+} from '@/domains/review/model/publish-review';
+import { useReviewQueueContext } from '@/domains/review/providers/ReviewQueueContext';
 import { IconChevronDown } from '@/shared/icons/Chevron';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';

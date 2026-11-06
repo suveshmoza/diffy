@@ -5,10 +5,10 @@ import type {
   GitHubPullRequestFile,
   GitHubPullRequestRef,
 } from '@/domains/github/api';
+import type { ReviewMediaImagePane } from '@/domains/review/model/comments';
 import { useImageDiffSources } from '@/hooks/useImageDiffSources';
 import { formatDimensions, formatImageBytes, getResizeDelta } from '@/lib/diff/image-diff-meta';
 import { formatFileChangeStatus, getImageDiffSides } from '@/lib/diff/media-files';
-import type { ReviewMediaImagePane } from '@/lib/review/comments';
 import { IconSpinner } from '@/shared/icons/Spinner';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';

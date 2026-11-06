@@ -15,17 +15,17 @@ import {
   type PullRequestDiffData,
 } from '@/domains/github/api';
 import {
+  attachReviewCommentsToItems,
+  mapReviewCommentsToItems,
+  type ReviewAnnotationMetadata,
+  type ReviewMediaMetadata,
+} from '@/domains/review/model/comments';
+import {
   classifyChangedFile,
   getImageDiffSides,
   getMediaFileChangeType,
   isMediaFileExcludedFromCodeView,
 } from '@/lib/diff/media-files';
-import {
-  attachReviewCommentsToItems,
-  mapReviewCommentsToItems,
-  type ReviewAnnotationMetadata,
-  type ReviewMediaMetadata,
-} from '@/lib/review/comments';
 
 export type CodeViewItemsResult = {
   items: CodeViewItem<ReviewAnnotationMetadata>[];

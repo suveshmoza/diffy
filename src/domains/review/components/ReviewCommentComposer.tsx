@@ -7,8 +7,8 @@ import {
   createImmediateReviewComment,
   GitHubReviewWriteError,
 } from '@/domains/github/review-write';
-import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
-import { useReview } from '@/providers/ReviewContext';
+import { formatSelectedLineRangeLabel } from '@/domains/review/model/format-line-range';
+import { useReview } from '@/domains/review/providers/ReviewContext';
 import { Button } from '@/shared/ui/button';
 
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';

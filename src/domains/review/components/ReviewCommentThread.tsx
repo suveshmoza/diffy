@@ -8,14 +8,14 @@ import {
   formatReviewCommentHiddenLabel,
   isReviewCommentHidden,
   type ReviewAnnotationMetadata,
-} from '@/lib/review/comments';
+} from '@/domains/review/model/comments';
 import {
   formatReviewCommentLineLabel,
   reviewCommentToSelectedLineRange,
-} from '@/lib/review/format-line-range';
-import { formatQuoteReplyPrefill } from '@/lib/review/format-quote-reply';
-import { getReviewReplyKey } from '@/lib/review/reply-session';
-import { useReview } from '@/providers/ReviewContext';
+} from '@/domains/review/model/format-line-range';
+import { formatQuoteReplyPrefill } from '@/domains/review/model/format-quote-reply';
+import { getReviewReplyKey } from '@/domains/review/model/reply-session';
+import { useReview } from '@/domains/review/providers/ReviewContext';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
 

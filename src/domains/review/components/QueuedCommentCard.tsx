@@ -7,9 +7,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 
-import { formatSelectedLineRangeLabel } from '@/lib/review/format-line-range';
-import { useReview } from '@/providers/ReviewContext';
-import { useReviewQueueContext } from '@/providers/ReviewQueueContext';
+import { formatSelectedLineRangeLabel } from '@/domains/review/model/format-line-range';
+import { useReview } from '@/domains/review/providers/ReviewContext';
+import { useReviewQueueContext } from '@/domains/review/providers/ReviewQueueContext';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';

@@ -15,7 +15,7 @@ import {
   type ReviewDraftMetadata,
   type ReviewQueuedMetadata,
   type ReviewThreadMetadata,
-} from '@/lib/review/comments';
+} from '@/domains/review/model/comments';
 
 type ReviewAnnotation =
   | DiffLineAnnotation<ReviewAnnotationMetadata>
