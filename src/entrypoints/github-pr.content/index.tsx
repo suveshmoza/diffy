@@ -11,7 +11,7 @@ import {
   preloadOverlayFrame,
   prefetchOverlayFrame,
   setOverlayCloseHandler,
-} from '@/lib/overlay/frame';
+} from '@/domains/overlay/frame';
 
 import './content.css';
 

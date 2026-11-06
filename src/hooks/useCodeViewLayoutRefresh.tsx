@@ -1,7 +1,7 @@
 import type { CodeViewHandle } from '@pierre/diffs/react';
 import { useCallback, useEffect, useLayoutEffect, useState, type RefObject } from 'react';
 
-import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
+import { OVERLAY_LAYOUT_KICK_EVENT } from '@/domains/overlay/messages';
 
 type CodeViewLayoutHandle<T> = CodeViewHandle<T, undefined> & {
   getContainerElement?: () => HTMLElement | null;

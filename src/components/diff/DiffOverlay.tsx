@@ -34,6 +34,7 @@ import {
 } from '@/domains/github/api';
 import { GitHubAuthProvider } from '@/domains/github/auth/GitHubAuthProvider';
 import { formatViewedFilesError } from '@/domains/github/auth/token-hints';
+import { OVERLAY_LAYOUT_KICK_EVENT } from '@/domains/overlay/messages';
 import { buildAnnotationThemeStyle } from '@/domains/theming/model/build-annotation-theme-style';
 import { diffyChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping';
 import { useChromeThemeProps } from '@/domains/theming/providers/useChromeThemeProps';
@@ -76,7 +77,6 @@ import {
   type DiffLayout,
 } from '@/lib/diff/layout-prefs';
 import { classifyChangedFile } from '@/lib/diff/media-files';
-import { OVERLAY_LAYOUT_KICK_EVENT } from '@/lib/overlay/messages';
 import { getReviewDraftBody, updateReviewDraftBody } from '@/lib/overlay/review-session';
 import { updatePullRequestReviewComments } from '@/lib/query/pr-diff';
 import {

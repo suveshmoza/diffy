@@ -2,7 +2,7 @@ import {
   OVERLAY_CHILD_SOURCE,
   isOverlayHostMessage,
   type OverlayFrameMessage,
-} from '@/lib/overlay/messages';
+} from '@/domains/overlay/messages';
 
 import {
   destroyOverlayRuntime,

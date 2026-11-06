@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { isStandaloneOverlay } from '@/lib/overlay/standalone';
+import { isStandaloneOverlay } from '@/domains/overlay/standalone';
 
 const DEFAULT_TITLE = 'diffy';
 const MAX_TITLE_LENGTH = 80;
