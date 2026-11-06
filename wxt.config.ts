@@ -1,4 +1,3 @@
-import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,44 +7,6 @@ import { defineConfig } from 'wxt';
 
 /** Stable output path for Pierre's portable highlighter worker (see src/lib/diff/worker.ts). */
 const DIFF_WORKER_DEST = 'diff-highlighter-worker.js';
-
-function escapeToAscii(code: string): string {
-  return code
-    .split('')
-    .map((ch) =>
-      ch.charCodeAt(0) <= 0x7f ? ch : '\\u' + ('0000' + ch.charCodeAt(0).toString(16)).slice(-4),
-    )
-    .join('');
-}
-
-/** Chrome rejects content scripts with non-ASCII bytes (e.g. Shiki grammars). */
-function toAscii(): Plugin {
-  return {
-    name: 'vite-plugin-to-ascii',
-    enforce: 'post',
-    generateBundle(_options, bundle) {
-      for (const fileName in bundle) {
-        if (!fileName.startsWith('src/content-scripts/') || !fileName.endsWith('.js')) continue;
-        const chunk = bundle[fileName];
-        if (chunk != null && chunk.type === 'chunk') {
-          chunk.code = escapeToAscii(chunk.code);
-        }
-      }
-    },
-    async writeBundle(options, bundle) {
-      const outDir = options.dir;
-      if (!outDir) return;
-
-      for (const fileName in bundle) {
-        if (!fileName.startsWith('src/content-scripts/') || !fileName.endsWith('.js')) continue;
-        const path = resolve(outDir, fileName);
-        const code = await readFile(path, 'utf-8');
-        const ascii = escapeToAscii(code);
-        if (ascii !== code) await writeFile(path, ascii, 'utf-8');
-      }
-    },
-  };
-}
 
 function tolerateNullCustomElements(): Plugin {
   return {
@@ -72,6 +33,9 @@ function tolerateNullCustomElements(): Plugin {
 }
 
 export default defineConfig({
+  experimental: {
+    escapeUnicode: true,
+  },
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
   // Auto-load local modules (relative paths in `modules` break on WXT 0.21 + Node).
   modulesDir: 'src/modules',
@@ -151,6 +115,6 @@ export default defineConfig({
     worker: {
       format: 'es',
     },
-    plugins: [tailwindcss(), tolerateNullCustomElements(), toAscii()],
+    plugins: [tailwindcss(), tolerateNullCustomElements()],
   }),
 });
