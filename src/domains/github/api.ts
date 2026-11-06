@@ -6,6 +6,8 @@ import { readGitHubToken, subscribeToGitHubTokenChanges } from './auth/token-sto
 import { githubFetch } from './github-fetch';
 import { addRateLimitListener, getOctokitClient, resetOctokitClients } from './octokit';
 
+export { isGitHubRateLimitError } from '@/shared/rate-limit';
+
 export type GitHubPullRequestRef = {
   owner: string;
   repo: string;
@@ -92,22 +94,6 @@ export function subscribeToRateLimitChanges(listener: () => void): () => void {
   return () => {
     rateLimitListeners.delete(listener);
   };
-}
-
-export function isGitHubRateLimitError(error: unknown): boolean {
-  if (error instanceof RequestError) {
-    return error.status === 429;
-  }
-
-  if (typeof error === 'string' && error.includes('429')) {
-    return true;
-  }
-
-  if (error instanceof Error && error.message.includes('429')) {
-    return true;
-  }
-
-  return false;
 }
 
 export function warmGitHubTokenCache(): void {

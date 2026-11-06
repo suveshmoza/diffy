@@ -2,7 +2,7 @@ import { invalidateCodeViewItemsCache } from '@/domains/diff/model/build-items';
 import type { GitHubPullRequestRef } from '@/domains/github/api';
 import { withBypassHttpCache } from '@/domains/github/github-fetch';
 import { viewedFilesQueryOptions } from '@/domains/review/queries/viewed-files';
-import { queryClient } from '@/lib/query/client';
+import { queryClient } from '@/shared/query-client';
 
 import { prDiffQueryOptions } from './pr-diff';
 

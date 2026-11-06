@@ -1,16 +1,15 @@
 import {
-  OVERLAY_CHILD_SOURCE,
-  isOverlayHostMessage,
-  type OverlayFrameMessage,
-} from '@/domains/overlay/messages';
-
-import {
   destroyOverlayRuntime,
   kickOverlayLayout,
   mountOverlay,
   prefetchOverlayData,
   unmountOverlayApp,
-} from '../github-pr.content/overlay';
+} from '@/app/OverlayRuntime';
+import {
+  OVERLAY_CHILD_SOURCE,
+  isOverlayHostMessage,
+  type OverlayFrameMessage,
+} from '@/domains/overlay/messages';
 
 import '../github-pr.content/style.css';
 

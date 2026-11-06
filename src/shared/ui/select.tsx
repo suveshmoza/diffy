@@ -2,7 +2,7 @@ import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { IconChevron, IconCheck } from '@pierre/icons';
 import * as React from 'react';
 
-import { useOverlayPortalContainer } from '@/providers/OverlayPortalContext';
+import { useOverlayPortalContainer } from '@/shared/overlay-portal-context';
 import { cn } from '@/shared/utils';
 
 const Select = SelectPrimitive.Root;

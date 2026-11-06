@@ -9,7 +9,7 @@ import {
   type GitHubPullRequestReviewComment,
   type PullRequestDiffData,
 } from '@/domains/github/api';
-import { queryClient } from '@/lib/query/client';
+import { queryClient } from '@/shared/query-client';
 
 const PR_DIFF_STALE_TIME = Number.POSITIVE_INFINITY;
 const PR_DIFF_GC_TIME = 30 * 60 * 1000;

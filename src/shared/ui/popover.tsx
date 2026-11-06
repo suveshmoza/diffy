@@ -3,7 +3,7 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 import * as React from 'react';
 
-import { useOverlayPortalContainer } from '@/providers/OverlayPortalContext';
+import { useOverlayPortalContainer } from '@/shared/overlay-portal-context';
 import { cn } from '@/shared/utils';
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {

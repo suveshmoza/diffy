@@ -101,9 +101,9 @@ import { diffyChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping
 import { useChromeThemeProps } from '@/domains/theming/providers/useChromeThemeProps';
 import { useDiffThemeReady } from '@/domains/theming/providers/useDiffThemeReady';
 import { useThemeColorScheme } from '@/domains/theming/providers/useThemeSelection';
-import { OverlayPortalProvider } from '@/providers/OverlayPortalContext';
 import { IconChevronDown } from '@/shared/icons/Chevron';
 import { IconSpinner } from '@/shared/icons/Spinner';
+import { OverlayPortalProvider } from '@/shared/overlay-portal-context';
 import { cn } from '@/shared/utils';
 
 import { DiffOverlayHeader } from './DiffOverlayHeader';

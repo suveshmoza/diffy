@@ -5,7 +5,7 @@ import { invalidateCodeViewItemsCache } from '@/domains/diff/model/build-items';
 import { prDiffQueryOptions } from '@/domains/diff/queries/pr-diff';
 import { prHeadQueryOptions } from '@/domains/diff/queries/pr-head';
 import type { GitHubPullRequestRef } from '@/domains/github/api';
-import { queryClient } from '@/lib/query/client';
+import { queryClient } from '@/shared/query-client';
 
 export function usePullRequestDiff(ref: GitHubPullRequestRef | null) {
   const headQuery = useQuery({
