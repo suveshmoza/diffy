@@ -1,7 +1,7 @@
 import { defineConfig } from 'oxlint';
 
 export default defineConfig({
-  plugins: ['oxc', 'typescript', 'unicorn', 'react', 'import', 'promise'],
+  plugins: ['oxc', 'typescript', 'unicorn', 'react', 'react-perf', 'import', 'promise'],
 
   categories: {
     correctness: 'error',
@@ -46,6 +46,12 @@ export default defineConfig({
     {
       files: ['wxt.config.ts', 'oxfmt.config.ts', 'oxlint.config.ts'],
       env: { node: true },
+    },
+    {
+      files: ['**/*.{jsx,tsx}'],
+      rules: {
+        'typescript/consistent-return': 'off',
+      },
     },
   ],
 });
