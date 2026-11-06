@@ -9,7 +9,7 @@ import {
   setGitHubTokenViewer,
 } from '@/domains/github/auth/token-storage';
 import { fetchGitHubViewer, type GitHubViewer } from '@/domains/github/review-write';
-import { popupReducer } from '@/reducers/popup-reducer';
+import { popupReducer } from '@/domains/popup/popup-reducer';
 
 const storageAvailable = browser?.storage?.local != null;
 
