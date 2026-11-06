@@ -12,10 +12,11 @@
  *   - shared -> app | domains | entrypoints
  *   - domains -> app
  *   - anything (outside entrypoints) -> entrypoints
+ *   - a cycle in the cross-domain import graph
  *
  * Cross-domain imports (domains/a -> domains/b) are reported as warnings so
  * the remaining coupling stays visible without blocking work. Run with
- * `--strict` to turn warnings into errors.
+ * `--strict` to turn warnings into errors. Cycles are always errors.
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -68,6 +69,37 @@ function lineOf(code, index) {
 const errors = [];
 const warnings = [];
 const crossDomainCounts = new Map();
+const domainGraph = new Map();
+
+/** Depth-first search for cycles in the cross-domain import graph. */
+function findDomainCycles(graph) {
+  const state = new Map();
+  const stack = [];
+  const cycles = [];
+
+  function visit(node) {
+    state.set(node, 'visiting');
+    stack.push(node);
+
+    for (const next of graph.get(node) ?? []) {
+      const nextState = state.get(next) ?? 'unvisited';
+      if (nextState === 'visiting') {
+        cycles.push([...stack.slice(stack.indexOf(next)), next]);
+      } else if (nextState === 'unvisited') {
+        visit(next);
+      }
+    }
+
+    stack.pop();
+    state.set(node, 'done');
+  }
+
+  for (const node of [...graph.keys()].toSorted()) {
+    if ((state.get(node) ?? 'unvisited') === 'unvisited') visit(node);
+  }
+
+  return cycles;
+}
 
 for (const file of walk(SRC)) {
   const srcRelative = relative(SRC, file).split(sep).join('/');
@@ -101,6 +133,9 @@ for (const file of walk(SRC)) {
     if (from.top === 'domains' && to.top === 'domains' && from.domain !== to.domain) {
       const edge = `${from.domain} -> ${to.domain}`;
       crossDomainCounts.set(edge, (crossDomainCounts.get(edge) ?? 0) + 1);
+      const targets = domainGraph.get(from.domain) ?? new Set();
+      targets.add(to.domain);
+      domainGraph.set(from.domain, targets);
       warnings.push(`${at}  cross-domain import ${edge} (${match[1]})`);
     }
   }
@@ -118,6 +153,14 @@ if (process.argv.includes('--verbose') && warnings.length > 0) {
   console.warn(`${warnings.length} cross-domain import(s):`);
   for (const warning of warnings) console.warn(`  ${warning}`);
   console.warn('');
+}
+
+const domainCycles = findDomainCycles(domainGraph);
+if (domainCycles.length > 0) {
+  console.error(`${domainCycles.length} domain cycle(s):`);
+  for (const cycle of domainCycles) console.error(`  ${cycle.join(' -> ')}`);
+  console.error('');
+  process.exit(1);
 }
 
 if (errors.length > 0) {
