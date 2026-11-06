@@ -27,25 +27,26 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
   const diffTheme = useDiffThemeProps();
   const [areThemesResolved, setAreThemesResolved] = useState(false);
   const hasResolvedForPoolRef = useRef(false);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     if (!isThemeReady || hasResolvedForPoolRef.current) {
       return;
     }
 
-    let cancelled = false;
+    cancelledRef.current = false;
 
     void ensureDiffThemesResolved(diffTheme.theme)
       .catch(() => undefined)
       .finally(() => {
-        if (!cancelled) {
+        if (!cancelledRef.current) {
           hasResolvedForPoolRef.current = true;
           setAreThemesResolved(true);
         }
       });
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
   }, [diffTheme.theme, isThemeReady]);
 

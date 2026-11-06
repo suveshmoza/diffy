@@ -38,25 +38,26 @@ export function useDiffThemeReady(): boolean {
   const workerPool = useWorkerPool();
   const [isReady, setIsReady] = useState(false);
   const hasPreparedRef = useRef(false);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     if (hasPreparedRef.current) {
       return;
     }
 
-    let cancelled = false;
+    cancelledRef.current = false;
 
     void ensureWorkerDiffTheme(diffTheme.theme, workerPool)
       .catch(() => undefined)
       .finally(() => {
-        if (!cancelled && workerPool != null) {
+        if (!cancelledRef.current && workerPool != null) {
           hasPreparedRef.current = true;
           setIsReady(true);
         }
       });
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
   }, [diffTheme.theme, workerPool]);
 

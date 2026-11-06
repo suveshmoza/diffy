@@ -847,13 +847,14 @@ type FrozenImageProps = {
 
 function FrozenImage({ source, label, primary, className, style }: FrozenImageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
+    cancelledRef.current = false;
     void (async () => {
       const response = await fetch(source.url);
       const bitmap = await createImageBitmap(await response.blob());
-      if (cancelled) {
+      if (cancelledRef.current) {
         bitmap.close();
         return;
       }
@@ -868,7 +869,7 @@ function FrozenImage({ source, label, primary, className, style }: FrozenImagePr
     })().catch(() => undefined);
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
   }, [source.height, source.url, source.width]);
 

@@ -21,10 +21,13 @@ export function kickCodeViewLayout<T>(
   host: HTMLDivElement | null,
 ): void {
   const container = getCodeViewScrollRoot(viewer, host);
+
   if (container) {
     void container.offsetHeight;
     container.dispatchEvent(new Event('resize'));
+
     const scrollTop = container.scrollTop;
+
     if (container.scrollHeight > container.clientHeight) {
       container.scrollTop = scrollTop + 1;
       container.scrollTop = scrollTop;
@@ -47,7 +50,7 @@ export function useCodeViewLayoutRefresh<T>(
   }, []);
 
   const refresh = useCallback(() => {
-    kickCodeViewLayout(viewerRef.current as CodeViewLayoutHandle<T> | null, hostRef.current);
+    kickCodeViewLayout(viewerRef.current, hostRef.current);
   }, [hostRef, viewerRef]);
 
   useEffect(() => {
@@ -67,28 +70,34 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
 
   useLayoutEffect(() => {
     const currentHost = hostRef.current;
+
     if (!currentHost) {
       return;
     }
 
-    let cancelled = false;
-    let observer: ResizeObserver | null = null;
-    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
-    let rafId = 0;
+    const lifecycle = {
+      cancelled: false,
+      observer: null as ResizeObserver | null,
+      fallbackTimer: null as ReturnType<typeof setTimeout> | null,
+      rafId: 0,
+    };
 
     const markReadyIfSized = () => {
-      if (cancelled) {
+      if (lifecycle.cancelled) {
         return true;
       }
 
       if (currentHost.getBoundingClientRect().height > 0) {
         setIsReady(true);
-        observer?.disconnect();
-        observer = null;
-        if (fallbackTimer != null) {
-          clearTimeout(fallbackTimer);
-          fallbackTimer = null;
+
+        lifecycle.observer?.disconnect();
+        lifecycle.observer = null;
+
+        if (lifecycle.fallbackTimer != null) {
+          clearTimeout(lifecycle.fallbackTimer);
+          lifecycle.fallbackTimer = null;
         }
+
         return true;
       }
 
@@ -100,7 +109,7 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
         return;
       }
 
-      rafId = requestAnimationFrame(() => {
+      lifecycle.rafId = requestAnimationFrame(() => {
         scheduleRafChecks(framesLeft - 1);
       });
     };
@@ -114,28 +123,33 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
       return;
     }
 
-    observer = new ResizeObserver(() => {
+    lifecycle.observer = new ResizeObserver(() => {
       markReadyIfSized();
     });
-    observer.observe(currentHost);
+
+    lifecycle.observer.observe(currentHost);
 
     window.addEventListener(OVERLAY_LAYOUT_KICK_EVENT, onLayoutKick);
+
     scheduleRafChecks(HOST_READY_RAF_FRAMES);
-    fallbackTimer = setTimeout(() => {
-      if (!cancelled) {
+
+    lifecycle.fallbackTimer = setTimeout(() => {
+      if (!lifecycle.cancelled) {
         setIsReady(true);
       }
     }, HOST_READY_FALLBACK_MS);
 
     return () => {
-      cancelled = true;
-      cancelAnimationFrame(rafId);
-      observer?.disconnect();
-      if (fallbackTimer != null) {
-        clearTimeout(fallbackTimer);
+      lifecycle.cancelled = true;
+
+      cancelAnimationFrame(lifecycle.rafId);
+      lifecycle.observer?.disconnect();
+
+      if (lifecycle.fallbackTimer != null) {
+        clearTimeout(lifecycle.fallbackTimer);
       }
+
       window.removeEventListener(OVERLAY_LAYOUT_KICK_EVENT, onLayoutKick);
-      setIsReady(false);
     };
   }, [hostRef]);
 
