@@ -1,14 +1,14 @@
 import { createRoot, type Root } from 'react-dom/client';
 
 import { App } from '@/components/app/App';
+import { PersistentWorkerPoolShell } from '@/domains/diff/providers/PersistentWorkerPoolShell';
+import { prefetchPullRequestDiff } from '@/domains/diff/queries/pr-diff';
 import { warmGitHubTokenCache } from '@/domains/github/api';
 import { OVERLAY_LAYOUT_KICK_EVENT } from '@/domains/overlay/messages';
 import { clearAllReviewSessions } from '@/domains/review/state/review-session';
 import { PreloadHighlighter } from '@/domains/theming/components/PreloadHighlighter';
 import { ThemeControllerProvider } from '@/domains/theming/providers/ThemeControllerProvider';
 import { queryClient } from '@/lib/query/client';
-import { prefetchPullRequestDiff } from '@/lib/query/pr-diff';
-import { PersistentWorkerPoolShell } from '@/providers/PersistentWorkerPoolShell';
 import { QueryProvider } from '@/providers/QueryProvider';
 
 export type MountOverlayOptions = {

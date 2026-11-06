@@ -1,6 +1,6 @@
+import { formatFileChangeStatus } from '@/domains/diff/media/media-files';
 import type { GitHubPullRequestFile } from '@/domains/github/api';
 import { buildGitHubBlobUrl } from '@/domains/github/blobs';
-import { formatFileChangeStatus } from '@/lib/diff/media-files';
 import { Button } from '@/shared/ui/button';
 
 type BinaryFilePanelProps = {

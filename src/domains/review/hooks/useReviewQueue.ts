@@ -9,6 +9,9 @@ import {
   type SetStateAction,
 } from 'react';
 
+import type { CodeViewItemsResult } from '@/domains/diff/model/build-items';
+import { getCodeViewItemIdForFile } from '@/domains/diff/model/build-items';
+import { runCodeViewMutationPreservingScroll } from '@/domains/diff/model/scroll-anchor';
 import {
   fetchPullRequestReviewComments,
   type GitHubPullRequestRef,
@@ -30,9 +33,6 @@ import {
   removeReviewDraft,
   syncReviewQueue,
 } from '@/domains/review/state/review-session';
-import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
-import { getCodeViewItemIdForFile } from '@/lib/code-view/build-items';
-import { runCodeViewMutationPreservingScroll } from '@/lib/code-view/scroll-anchor';
 
 type UseReviewQueueParams = {
   viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata, undefined> | null>;

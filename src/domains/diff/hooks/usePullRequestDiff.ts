@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import { invalidateCodeViewItemsCache } from '@/domains/diff/model/build-items';
+import { prDiffQueryOptions } from '@/domains/diff/queries/pr-diff';
+import { prHeadQueryOptions } from '@/domains/diff/queries/pr-head';
 import type { GitHubPullRequestRef } from '@/domains/github/api';
-import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
 import { queryClient } from '@/lib/query/client';
-import { prDiffQueryOptions } from '@/lib/query/pr-diff';
-import { prHeadQueryOptions } from '@/lib/query/pr-head';
 
 export function usePullRequestDiff(ref: GitHubPullRequestRef | null) {
   const headQuery = useQuery({

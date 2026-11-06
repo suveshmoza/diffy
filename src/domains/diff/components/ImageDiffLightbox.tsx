@@ -13,17 +13,21 @@ import {
   type WheelEvent,
 } from 'react';
 
-import { SegmentedControl } from '@/components/diff/header/SegmentedControl';
+import { SegmentedControl } from '@/domains/diff/components/header/SegmentedControl';
+import { useImageDiffSources } from '@/domains/diff/hooks/useImageDiffSources';
+import type { ImageDiffSideSource } from '@/domains/diff/media/image-diff-cache';
+import {
+  formatDimensions,
+  formatImageBytes,
+  getResizeDelta,
+} from '@/domains/diff/media/image-diff-meta';
+import { formatFileChangeStatus } from '@/domains/diff/media/media-files';
+import type { ImageCompareMode } from '@/domains/diff/prefs/display-prefs';
 import type {
   GitHubPullRequest,
   GitHubPullRequestFile,
   GitHubPullRequestRef,
 } from '@/domains/github/api';
-import { useImageDiffSources } from '@/hooks/useImageDiffSources';
-import type { ImageCompareMode } from '@/lib/diff/display-prefs';
-import type { ImageDiffSideSource } from '@/lib/diff/image-diff-cache';
-import { formatDimensions, formatImageBytes, getResizeDelta } from '@/lib/diff/image-diff-meta';
-import { formatFileChangeStatus } from '@/lib/diff/media-files';
 import { IconChevronLeft, IconChevronRight } from '@/shared/icons/Chevron';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';

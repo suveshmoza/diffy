@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { SetStateAction } from 'react';
 
+import { invalidateCodeViewItemsCache } from '@/domains/diff/model/build-items';
 import {
   fetchPullRequestDiffData,
   parseGitHubPullRequestUrl,
@@ -8,9 +9,7 @@ import {
   type GitHubPullRequestReviewComment,
   type PullRequestDiffData,
 } from '@/domains/github/api';
-import { invalidateCodeViewItemsCache } from '@/lib/code-view/build-items';
-
-import { queryClient } from './client';
+import { queryClient } from '@/lib/query/client';
 
 const PR_DIFF_STALE_TIME = Number.POSITIVE_INFINITY;
 const PR_DIFF_GC_TIME = 30 * 60 * 1000;

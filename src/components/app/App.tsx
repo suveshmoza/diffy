@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 
+import { DiffOverlay } from '@/domains/diff/components/DiffOverlay';
+import { usePullRequestDiff } from '@/domains/diff/hooks/usePullRequestDiff';
+import { SidebarProvider } from '@/domains/diff/providers/SidebarContext';
+import { refreshPullRequestData } from '@/domains/diff/queries/refresh';
 import {
   getLoadProgress,
   getPullRequestRefPrefix,
@@ -8,12 +12,8 @@ import {
 } from '@/domains/github/api';
 import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
 import { useThemeSource } from '@/domains/theming/providers/useThemeSource';
-import { usePullRequestDiff } from '@/hooks/usePullRequestDiff';
 import { useStandaloneDocumentTitle } from '@/hooks/useStandaloneDocumentTitle';
-import { refreshPullRequestData } from '@/lib/query/refresh';
-import { SidebarProvider } from '@/providers/SidebarContext';
 
-import { DiffOverlay } from '../diff/DiffOverlay';
 import { ErrorOverlay } from './ErrorOverlay';
 import { LoadingOverlay } from './LoadingOverlay';
 

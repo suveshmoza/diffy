@@ -1,11 +1,11 @@
 import { startTransition, useEffect, useMemo, useState } from 'react';
 
-import type { PullRequestDiffData } from '@/domains/github/api';
 import {
   buildCodeViewItems,
   isLargePullRequestData,
   type CodeViewItemsResult,
-} from '@/lib/code-view/build-items';
+} from '@/domains/diff/model/build-items';
+import type { PullRequestDiffData } from '@/domains/github/api';
 
 type UseCodeViewItemsState = {
   result: CodeViewItemsResult | null;

@@ -1,6 +1,6 @@
 import { IconDiffSplit, IconDiffUnified } from '@pierre/icons';
 
-import type { DiffLayout } from '@/lib/diff/layout-prefs';
+import type { DiffLayout } from '@/domains/diff/prefs/layout-prefs';
 import { Button } from '@/shared/ui/button';
 
 type DiffLayoutToggleProps = {

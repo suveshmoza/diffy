@@ -2,12 +2,12 @@ import { setCustomExtension } from '@pierre/diffs';
 import { WorkerPoolContextProvider } from '@pierre/diffs/react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
+import { DIFF_HIGHLIGHTER } from '@/domains/diff/highlighting/highlighter';
+import { DIFF_LANG_IDS } from '@/domains/diff/highlighting/lang-ids';
+import { workerFactory } from '@/domains/diff/highlighting/worker';
 import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
 import { useDiffThemeProps } from '@/domains/theming/providers/useDiffThemeProps';
 import { ensureDiffThemesResolved } from '@/domains/theming/providers/useDiffThemeReady';
-import { DIFF_HIGHLIGHTER } from '@/lib/diff/highlighter';
-import { DIFF_LANG_IDS } from '@/lib/diff/lang-ids';
-import { workerFactory } from '@/lib/diff/worker';
 
 setCustomExtension('mts', 'typescript');
 setCustomExtension('cts', 'typescript');

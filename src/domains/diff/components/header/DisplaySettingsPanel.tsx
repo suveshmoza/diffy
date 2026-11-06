@@ -14,9 +14,7 @@ import {
 import type { ColorMode } from '@pierre/theming';
 import { useState, type KeyboardEvent } from 'react';
 
-import { diffyThemeCatalog } from '@/domains/theming/model/theme-catalog';
-import { useThemeSelection } from '@/domains/theming/providers/useThemeSelection';
-import type { CodeViewDisplayPrefs, ImageCompareMode } from '@/lib/diff/display-prefs';
+import type { CodeViewDisplayPrefs, ImageCompareMode } from '@/domains/diff/prefs/display-prefs';
 import {
   CODE_FONT_FEATURE_OPTIONS,
   CODE_FONT_OPTIONS,
@@ -32,7 +30,9 @@ import {
   type CodeFontFeaturesPreset,
   type CodeFontPreset,
   type TreeFontPreset,
-} from '@/lib/diff/font-prefs';
+} from '@/domains/diff/prefs/font-prefs';
+import { diffyThemeCatalog } from '@/domains/theming/model/theme-catalog';
+import { useThemeSelection } from '@/domains/theming/providers/useThemeSelection';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -46,7 +46,7 @@ import {
   OverflowMenuPickerItem,
   OverflowMenuSettingsRow,
   OverflowMenuSettingsSection,
-} from './overflowMenuUi';
+} from './OverflowMenuUi';
 import { SegmentedControl, type SegmentOption } from './SegmentedControl';
 import { SettingsSwitch } from './SettingsSwitch';
 

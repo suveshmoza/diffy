@@ -1,14 +1,14 @@
 import { IconArrowUpRight, IconGearFill, IconGlobe, IconRefresh } from '@pierre/icons';
 import { useCallback, useId, useState } from 'react';
 
-import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
+import type { CodeViewDisplayPrefs } from '@/domains/diff/prefs/display-prefs';
 import { Button } from '@/shared/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
 import { Separator } from '@/shared/ui/separator';
 import { cn } from '@/shared/utils';
 
 import { DisplaySettingsPanel } from './DisplaySettingsPanel';
-import { OverflowMenuItem, OverflowMenuSection } from './overflowMenuUi';
+import { OverflowMenuItem, OverflowMenuSection } from './OverflowMenuUi';
 
 type HeaderOverflowMenuProps = {
   displayPrefs: CodeViewDisplayPrefs;

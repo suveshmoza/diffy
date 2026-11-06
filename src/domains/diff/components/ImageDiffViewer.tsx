@@ -1,14 +1,18 @@
 import { IconArrowsExpand } from '@pierre/icons';
 
+import { useImageDiffSources } from '@/domains/diff/hooks/useImageDiffSources';
+import {
+  formatDimensions,
+  formatImageBytes,
+  getResizeDelta,
+} from '@/domains/diff/media/image-diff-meta';
+import { formatFileChangeStatus, getImageDiffSides } from '@/domains/diff/media/media-files';
 import type {
   GitHubPullRequest,
   GitHubPullRequestFile,
   GitHubPullRequestRef,
 } from '@/domains/github/api';
 import type { ReviewMediaImagePane } from '@/domains/review/model/comments';
-import { useImageDiffSources } from '@/hooks/useImageDiffSources';
-import { formatDimensions, formatImageBytes, getResizeDelta } from '@/lib/diff/image-diff-meta';
-import { formatFileChangeStatus, getImageDiffSides } from '@/lib/diff/media-files';
 import { IconSpinner } from '@/shared/icons/Spinner';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';

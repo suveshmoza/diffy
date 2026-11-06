@@ -1,7 +1,7 @@
 import { IconCheck, IconComment, IconX } from '@pierre/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { SegmentedControl } from '@/components/diff/header/SegmentedControl';
+import { SegmentedControl } from '@/domains/diff/components/header/SegmentedControl';
 import type { ReviewEvent } from '@/domains/github/review-write';
 import {
   canPublishReview,

@@ -9,6 +9,8 @@ import {
   type SetStateAction,
 } from 'react';
 
+import type { CodeViewItemsResult } from '@/domains/diff/model/build-items';
+import { runCodeViewMutationPreservingScroll } from '@/domains/diff/model/scroll-anchor';
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/domains/github/api';
 import {
   deleteReviewComment,
@@ -33,8 +35,6 @@ import {
   updateCommentInAnnotation,
 } from '@/domains/review/model/review-mutations';
 import { removeReviewDraft, upsertReviewDraft } from '@/domains/review/state/review-session';
-import type { CodeViewItemsResult } from '@/lib/code-view/build-items';
-import { runCodeViewMutationPreservingScroll } from '@/lib/code-view/scroll-anchor';
 
 type UseCodeViewReviewMutationsParams = {
   viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata, undefined> | null>;

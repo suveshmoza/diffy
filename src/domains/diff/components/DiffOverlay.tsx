@@ -22,11 +22,48 @@ import {
   type SetStateAction,
 } from 'react';
 
-import { BinaryFilePanel } from '@/components/diff/BinaryFilePanel';
-import { ImageDiffLightbox } from '@/components/diff/ImageDiffLightbox';
-import { ImageDiffViewer } from '@/components/diff/ImageDiffViewer';
-import { NotificationErrorBar } from '@/components/diff/NotificationErrorBar';
-import { ThemedCodeView } from '@/components/diff/ThemedCodeView';
+import { BinaryFilePanel } from '@/domains/diff/components/BinaryFilePanel';
+import { ImageDiffLightbox } from '@/domains/diff/components/ImageDiffLightbox';
+import { ImageDiffViewer } from '@/domains/diff/components/ImageDiffViewer';
+import { NotificationErrorBar } from '@/domains/diff/components/NotificationErrorBar';
+import { ThemedCodeView } from '@/domains/diff/components/ThemedCodeView';
+import { useCodeViewItems } from '@/domains/diff/hooks/useCodeViewItems';
+import {
+  kickCodeViewLayout,
+  useCodeViewHostReady,
+  useCodeViewLayoutRefresh,
+} from '@/domains/diff/hooks/useCodeViewLayoutRefresh';
+import { useCodeViewThemeBootstrap } from '@/domains/diff/hooks/useCodeViewThemeBootstrap';
+import { usePrefetchImageDiffs } from '@/domains/diff/hooks/useImageDiffSources';
+import {
+  pickTreeThemeCustomProperties,
+  useTreeThemeStyles,
+} from '@/domains/diff/hooks/useTreeThemeStyles';
+import { bumpImageDiffPriority } from '@/domains/diff/media/image-diff-cache';
+import { classifyChangedFile } from '@/domains/diff/media/media-files';
+import { getCodeViewItemIdForFile } from '@/domains/diff/model/build-items';
+import { deferCodeViewControlledSync } from '@/domains/diff/model/scroll-anchor';
+import {
+  DEFAULT_CODE_VIEW_DISPLAY_PREFS,
+  readCodeViewDisplayPrefs,
+  writeCodeViewDisplayPrefs,
+  type CodeViewDisplayPrefs,
+} from '@/domains/diff/prefs/display-prefs';
+import { ensureGoogleFontsLoaded, resolveFontCssVariables } from '@/domains/diff/prefs/font-prefs';
+import {
+  clampSidebarWidth,
+  DEFAULT_DIFF_LAYOUT,
+  DEFAULT_SIDEBAR_WIDTH,
+  MAX_SIDEBAR_WIDTH,
+  MIN_SIDEBAR_WIDTH,
+  readDiffLayoutPreference,
+  readSidebarWidthPreference,
+  writeDiffLayoutPreference,
+  writeSidebarWidthPreference,
+  type DiffLayout,
+} from '@/domains/diff/prefs/layout-prefs';
+import { useSidebarContext, MOBILE_SIDEBAR_QUERY } from '@/domains/diff/providers/SidebarContext';
+import { updatePullRequestReviewComments } from '@/domains/diff/queries/pr-diff';
 import {
   getRateLimitState,
   subscribeToRateLimitChanges,
@@ -64,41 +101,7 @@ import { diffyChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping
 import { useChromeThemeProps } from '@/domains/theming/providers/useChromeThemeProps';
 import { useDiffThemeReady } from '@/domains/theming/providers/useDiffThemeReady';
 import { useThemeColorScheme } from '@/domains/theming/providers/useThemeSelection';
-import { useCodeViewItems } from '@/hooks/useCodeViewItems';
-import {
-  kickCodeViewLayout,
-  useCodeViewHostReady,
-  useCodeViewLayoutRefresh,
-} from '@/hooks/useCodeViewLayoutRefresh';
-import { useCodeViewThemeBootstrap } from '@/hooks/useCodeViewThemeBootstrap';
-import { usePrefetchImageDiffs } from '@/hooks/useImageDiffSources';
-import { pickTreeThemeCustomProperties, useTreeThemeStyles } from '@/hooks/useTreeThemeStyles';
-import { getCodeViewItemIdForFile } from '@/lib/code-view/build-items';
-import { deferCodeViewControlledSync } from '@/lib/code-view/scroll-anchor';
-import {
-  DEFAULT_CODE_VIEW_DISPLAY_PREFS,
-  readCodeViewDisplayPrefs,
-  writeCodeViewDisplayPrefs,
-  type CodeViewDisplayPrefs,
-} from '@/lib/diff/display-prefs';
-import { ensureGoogleFontsLoaded, resolveFontCssVariables } from '@/lib/diff/font-prefs';
-import { bumpImageDiffPriority } from '@/lib/diff/image-diff-cache';
-import {
-  clampSidebarWidth,
-  DEFAULT_DIFF_LAYOUT,
-  DEFAULT_SIDEBAR_WIDTH,
-  MAX_SIDEBAR_WIDTH,
-  MIN_SIDEBAR_WIDTH,
-  readDiffLayoutPreference,
-  readSidebarWidthPreference,
-  writeDiffLayoutPreference,
-  writeSidebarWidthPreference,
-  type DiffLayout,
-} from '@/lib/diff/layout-prefs';
-import { classifyChangedFile } from '@/lib/diff/media-files';
-import { updatePullRequestReviewComments } from '@/lib/query/pr-diff';
 import { OverlayPortalProvider } from '@/providers/OverlayPortalContext';
-import { useSidebarContext, MOBILE_SIDEBAR_QUERY } from '@/providers/SidebarContext';
 import { IconChevronDown } from '@/shared/icons/Chevron';
 import { IconSpinner } from '@/shared/icons/Spinner';
 import { cn } from '@/shared/utils';

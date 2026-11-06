@@ -8,6 +8,12 @@ import {
 } from '@pierre/diffs';
 
 import {
+  classifyChangedFile,
+  getImageDiffSides,
+  getMediaFileChangeType,
+  isMediaFileExcludedFromCodeView,
+} from '@/domains/diff/media/media-files';
+import {
   buildPatchFromFiles,
   getPullRequestContentCacheKey,
   type GitHubPullRequestFile,
@@ -20,12 +26,6 @@ import {
   type ReviewAnnotationMetadata,
   type ReviewMediaMetadata,
 } from '@/domains/review/model/comments';
-import {
-  classifyChangedFile,
-  getImageDiffSides,
-  getMediaFileChangeType,
-  isMediaFileExcludedFromCodeView,
-} from '@/lib/diff/media-files';
 
 export type CodeViewItemsResult = {
   items: CodeViewItem<ReviewAnnotationMetadata>[];

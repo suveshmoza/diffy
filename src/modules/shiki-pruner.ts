@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { bundledLanguages, bundledThemes } from 'shiki';
 import { defineWxtModule } from 'wxt/modules';
 
-import blockedLangIds from '../lib/diff/blocked-lang-ids.json' with { type: 'json' };
+import blockedLangIds from '../domains/diff/highlighting/blocked-lang-ids.json' with { type: 'json' };
 
 /** Shiki chunk stems that alias to a canonical lang id. */
 const DIFF_LANG_ALIASES: Record<string, string> = {

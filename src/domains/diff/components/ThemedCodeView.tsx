@@ -1,9 +1,9 @@
 import { CodeView, type CodeViewHandle, type CodeViewProps } from '@pierre/diffs/react';
 import { type Ref, useMemo } from 'react';
 
+import { DIFF_HIGHLIGHTER } from '@/domains/diff/highlighting/highlighter';
 import { useDiffThemeProps } from '@/domains/theming/providers/useDiffThemeProps';
 import { useWorkerDiffTheme } from '@/domains/theming/providers/useWorkerDiffTheme';
-import { DIFF_HIGHLIGHTER } from '@/lib/diff/highlighter';
 
 type ThemedCodeViewComponent = <LAnnotation = undefined, Caret = undefined>(
   props: CodeViewProps<LAnnotation, Caret> & {

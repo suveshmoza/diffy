@@ -1,7 +1,7 @@
+import { mimeTypeForImagePath } from '@/domains/diff/media/media-files';
 import { getGitHubToken, type GitHubPullRequestRef } from '@/domains/github/api';
 import { githubFetch } from '@/domains/github/github-fetch';
 import { updateRateLimitFromResponse } from '@/domains/github/octokit';
-import { mimeTypeForImagePath } from '@/lib/diff/media-files';
 
 /** Soft cap to avoid loading huge assets into the overlay. */
 export const MAX_MEDIA_FILE_BYTES = 10 * 1024 * 1024;

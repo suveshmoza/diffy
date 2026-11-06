@@ -2,8 +2,8 @@ import { hasResolvedThemes, resolveThemes, type ThemesType } from '@pierre/diffs
 import { useWorkerPool } from '@pierre/diffs/react';
 import { useEffect, useRef, useState } from 'react';
 
+import { DIFF_HIGHLIGHTER } from '@/domains/diff/highlighting/highlighter';
 import { useDiffThemeProps } from '@/domains/theming/providers/useDiffThemeProps';
-import { DIFF_HIGHLIGHTER } from '@/lib/diff/highlighter';
 
 export function diffThemeNames(theme: ThemesType): string[] {
   if (typeof theme === 'string') {

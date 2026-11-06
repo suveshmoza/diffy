@@ -1,8 +1,8 @@
 import { preloadHighlighter } from '@pierre/diffs';
 import { useEffect } from 'react';
 
-import { DIFF_HIGHLIGHTER } from '@/lib/diff/highlighter';
-import { DIFF_LANG_IDS } from '@/lib/diff/lang-ids';
+import { DIFF_HIGHLIGHTER } from '@/domains/diff/highlighting/highlighter';
+import { DIFF_LANG_IDS } from '@/domains/diff/highlighting/lang-ids';
 
 export function PreloadHighlighter() {
   useEffect(() => {

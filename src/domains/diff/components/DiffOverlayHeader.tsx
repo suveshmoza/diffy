@@ -1,13 +1,13 @@
 import { IconConvo, IconSidebarLeft, IconSidebarLeftOpen, IconX } from '@pierre/icons';
 import { memo, useCallback } from 'react';
 
+import type { CodeViewDisplayPrefs } from '@/domains/diff/prefs/display-prefs';
+import type { DiffLayout } from '@/domains/diff/prefs/layout-prefs';
+import { useSidebarContext } from '@/domains/diff/providers/SidebarContext';
 import { type GitHubPullRequest, type RateLimitState } from '@/domains/github/api';
 import { isStandaloneOverlay } from '@/domains/overlay/standalone';
 import { getStopReviewLabel } from '@/domains/review/model/publish-review';
 import { useReviewQueueContext } from '@/domains/review/providers/ReviewQueueContext';
-import type { CodeViewDisplayPrefs } from '@/lib/diff/display-prefs';
-import type { DiffLayout } from '@/lib/diff/layout-prefs';
-import { useSidebarContext } from '@/providers/SidebarContext';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils';
