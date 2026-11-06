@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { getImageDiffSides } from '@/domains/code-view/media/media-files';
+import type { ReviewMediaImagePane } from '@/domains/code-view/model/comments';
 import {
   clearImageDiffCache,
   ensureImageDiffSide,
@@ -8,7 +10,6 @@ import {
   subscribeImageDiffCache,
   type ImageDiffSideSource,
 } from '@/domains/diff/media/image-diff-cache';
-import { getImageDiffSides } from '@/domains/diff/media/media-files';
 import type {
   GitHubPullRequest,
   GitHubPullRequestFile,
@@ -16,7 +17,6 @@ import type {
   PullRequestDiffData,
 } from '@/domains/github/api';
 import { MediaFileFetchError } from '@/domains/github/blobs';
-import type { ReviewMediaImagePane } from '@/domains/review/model/comments';
 
 export type { ImageDiffSideSource };
 

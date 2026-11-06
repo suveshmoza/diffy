@@ -1,4 +1,4 @@
-import { formatFileChangeStatus } from '@/domains/diff/media/media-files';
+import { formatFileChangeStatus } from '@/domains/code-view/media/media-files';
 import type { GitHubPullRequestFile } from '@/domains/github/api';
 import { buildGitHubBlobUrl } from '@/domains/github/blobs';
 import { Button } from '@/shared/ui/button';

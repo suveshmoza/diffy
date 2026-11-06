@@ -1,4 +1,4 @@
-import { classifyChangedFile, getImageDiffSides } from '@/domains/diff/media/media-files';
+import { classifyChangedFile, getImageDiffSides } from '@/domains/code-view/media/media-files';
 import type {
   GitHubPullRequest,
   GitHubPullRequestFile,

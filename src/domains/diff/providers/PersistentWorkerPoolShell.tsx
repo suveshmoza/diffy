@@ -5,9 +5,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { DIFF_HIGHLIGHTER } from '@/domains/diff/highlighting/highlighter';
 import { DIFF_LANG_IDS } from '@/domains/diff/highlighting/lang-ids';
 import { workerFactory } from '@/domains/diff/highlighting/worker';
+import { ensureDiffThemesResolved } from '@/domains/diff/hooks/useDiffThemeReady';
 import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
 import { useDiffThemeProps } from '@/domains/theming/providers/useDiffThemeProps';
-import { ensureDiffThemesResolved } from '@/domains/theming/providers/useDiffThemeReady';
 
 setCustomExtension('mts', 'typescript');
 setCustomExtension('cts', 'typescript');

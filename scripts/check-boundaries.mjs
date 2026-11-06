@@ -108,7 +108,7 @@ for (const file of walk(SRC)) {
 
 if (crossDomainCounts.size > 0) {
   console.warn('Cross-domain imports (informational):');
-  for (const [edge, count] of [...crossDomainCounts].sort((a, b) => b[1] - a[1])) {
+  for (const [edge, count] of [...crossDomainCounts].toSorted((a, b) => b[1] - a[1])) {
     console.warn(`  ${edge}  ${count}`);
   }
   console.warn('');

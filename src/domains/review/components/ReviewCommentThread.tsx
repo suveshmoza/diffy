@@ -2,13 +2,13 @@ import type { DiffLineAnnotation, LineAnnotation } from '@pierre/diffs';
 import { IconComment } from '@pierre/icons';
 import { memo, useCallback, useState } from 'react';
 
-import type { GitHubPullRequestReviewComment } from '@/domains/github/api';
-import { useGitHubAuth } from '@/domains/github/auth/GitHubAuthProvider';
 import {
   formatReviewCommentHiddenLabel,
   isReviewCommentHidden,
   type ReviewAnnotationMetadata,
-} from '@/domains/review/model/comments';
+} from '@/domains/code-view/model/comments';
+import type { GitHubPullRequestReviewComment } from '@/domains/github/api';
+import { useGitHubAuth } from '@/domains/github/auth/GitHubAuthProvider';
 import {
   formatReviewCommentLineLabel,
   reviewCommentToSelectedLineRange,

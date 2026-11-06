@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { SetStateAction } from 'react';
 
-import { invalidateCodeViewItemsCache } from '@/domains/diff/model/build-items';
+import { invalidateCodeViewItemsCache } from '@/domains/code-view/model/build-items';
 import {
   fetchPullRequestDiffData,
   parseGitHubPullRequestUrl,

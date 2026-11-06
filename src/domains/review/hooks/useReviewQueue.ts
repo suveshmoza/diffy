@@ -9,9 +9,10 @@ import {
   type SetStateAction,
 } from 'react';
 
-import type { CodeViewItemsResult } from '@/domains/diff/model/build-items';
-import { getCodeViewItemIdForFile } from '@/domains/diff/model/build-items';
-import { runCodeViewMutationPreservingScroll } from '@/domains/diff/model/scroll-anchor';
+import type { CodeViewItemsResult } from '@/domains/code-view/model/build-items';
+import { getCodeViewItemIdForFile } from '@/domains/code-view/model/build-items';
+import type { ReviewAnnotationMetadata } from '@/domains/code-view/model/comments';
+import { runCodeViewMutationPreservingScroll } from '@/domains/code-view/model/scroll-anchor';
 import {
   fetchPullRequestReviewComments,
   type GitHubPullRequestRef,
@@ -19,7 +20,6 @@ import {
 } from '@/domains/github/api';
 import { publishBatchedReview, type ReviewEvent } from '@/domains/github/review-write';
 import { toBatchedReviewComments, type QueuedComment } from '@/domains/review/model/comment-queue';
-import type { ReviewAnnotationMetadata } from '@/domains/review/model/comments';
 import { confirmDiscardQueuedComments } from '@/domains/review/model/publish-review';
 import {
   addThreadAnnotationForComment,

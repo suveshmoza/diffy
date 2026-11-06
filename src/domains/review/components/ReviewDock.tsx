@@ -1,7 +1,6 @@
 import { IconCheck, IconComment, IconX } from '@pierre/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { SegmentedControl } from '@/domains/diff/components/header/SegmentedControl';
 import type { ReviewEvent } from '@/domains/github/review-write';
 import {
   canPublishReview,
@@ -18,6 +17,7 @@ import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Label } from '@/shared/ui/label';
 import { ScrollArea } from '@/shared/ui/scroll-area';
+import { SegmentedControl } from '@/shared/ui/segmented-control';
 import { cn } from '@/shared/utils';
 
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';

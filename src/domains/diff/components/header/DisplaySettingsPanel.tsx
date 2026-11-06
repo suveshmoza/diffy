@@ -36,6 +36,7 @@ import { useThemeSelection } from '@/domains/theming/providers/useThemeSelection
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
+import { SegmentedControl, type SegmentOption } from '@/shared/ui/segmented-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { cn } from '@/shared/utils';
 
@@ -47,7 +48,6 @@ import {
   OverflowMenuSettingsRow,
   OverflowMenuSettingsSection,
 } from './OverflowMenuUi';
-import { SegmentedControl, type SegmentOption } from './SegmentedControl';
 import { SettingsSwitch } from './SettingsSwitch';
 
 const DIFF_INDICATOR_OPTIONS: readonly SegmentOption<DiffIndicators>[] = [

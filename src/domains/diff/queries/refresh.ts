@@ -1,4 +1,4 @@
-import { invalidateCodeViewItemsCache } from '@/domains/diff/model/build-items';
+import { invalidateCodeViewItemsCache } from '@/domains/code-view/model/build-items';
 import type { GitHubPullRequestRef } from '@/domains/github/api';
 import { withBypassHttpCache } from '@/domains/github/github-fetch';
 import { viewedFilesQueryOptions } from '@/domains/review/queries/viewed-files';

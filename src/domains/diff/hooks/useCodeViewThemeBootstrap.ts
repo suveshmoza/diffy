@@ -1,10 +1,10 @@
 import type { CodeViewOptions } from '@pierre/diffs';
 import { useMemo } from 'react';
 
+import type { ReviewAnnotationMetadata } from '@/domains/code-view/model/comments';
 import { CODE_VIEW_CUSTOM_CSS } from '@/domains/diff/highlighting/unsafe-css';
 import type { CodeViewDisplayPrefs } from '@/domains/diff/prefs/display-prefs';
 import type { DiffLayout } from '@/domains/diff/prefs/layout-prefs';
-import type { ReviewAnnotationMetadata } from '@/domains/review/model/comments';
 import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
 
 type UseCodeViewThemeBootstrapOptions = {

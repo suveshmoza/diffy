@@ -1,7 +1,7 @@
 import type { LineAnnotation } from '@pierre/diffs';
 import { memo, useMemo } from 'react';
 
-import type { ReviewThreadMetadata } from '@/domains/review/model/comments';
+import type { ReviewThreadMetadata } from '@/domains/code-view/model/comments';
 import { Badge } from '@/shared/ui/badge';
 
 import { HeaderReviewCommentThread } from './ReviewCommentThread';

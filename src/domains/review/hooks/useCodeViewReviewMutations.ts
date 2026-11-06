@@ -9,15 +9,15 @@ import {
   type SetStateAction,
 } from 'react';
 
-import type { CodeViewItemsResult } from '@/domains/diff/model/build-items';
-import { runCodeViewMutationPreservingScroll } from '@/domains/diff/model/scroll-anchor';
+import type { CodeViewItemsResult } from '@/domains/code-view/model/build-items';
+import { getItemPath, type ReviewAnnotationMetadata } from '@/domains/code-view/model/comments';
+import { runCodeViewMutationPreservingScroll } from '@/domains/code-view/model/scroll-anchor';
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/domains/github/api';
 import {
   deleteReviewComment,
   GitHubReviewWriteError,
   updateReviewComment,
 } from '@/domains/github/review-write';
-import { getItemPath, type ReviewAnnotationMetadata } from '@/domains/review/model/comments';
 import { getReviewReplyKey } from '@/domains/review/model/reply-session';
 import {
   closeAllReplyComposers,

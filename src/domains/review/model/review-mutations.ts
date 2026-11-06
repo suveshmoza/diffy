@@ -7,7 +7,6 @@ import type {
   SelectionSide,
 } from '@pierre/diffs';
 
-import type { GitHubPullRequestReviewComment } from '@/domains/github/api';
 import {
   getCommentAnchorLine,
   toAnnotationSide,
@@ -15,7 +14,8 @@ import {
   type ReviewDraftMetadata,
   type ReviewQueuedMetadata,
   type ReviewThreadMetadata,
-} from '@/domains/review/model/comments';
+} from '@/domains/code-view/model/comments';
+import type { GitHubPullRequestReviewComment } from '@/domains/github/api';
 
 type ReviewAnnotation =
   | DiffLineAnnotation<ReviewAnnotationMetadata>

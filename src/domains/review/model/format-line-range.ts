@@ -1,8 +1,7 @@
 import type { SelectedLineRange } from '@pierre/diffs';
 
+import { toAnnotationSide } from '@/domains/code-view/model/comments';
 import type { GitHubPullRequestReviewComment } from '@/domains/github/api';
-
-import { toAnnotationSide } from './comments';
 
 function formatLineSpan(start: number, end: number): string {
   if (start === end) {

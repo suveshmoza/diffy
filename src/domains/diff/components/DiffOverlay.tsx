@@ -22,6 +22,15 @@ import {
   type SetStateAction,
 } from 'react';
 
+import { classifyChangedFile } from '@/domains/code-view/media/media-files';
+import { getCodeViewItemIdForFile } from '@/domains/code-view/model/build-items';
+import {
+  buildReviewCommentCountByPath,
+  getItemPath,
+  type ReviewAnnotationMetadata,
+  type ReviewThreadMetadata,
+} from '@/domains/code-view/model/comments';
+import { deferCodeViewControlledSync } from '@/domains/code-view/model/scroll-anchor';
 import { BinaryFilePanel } from '@/domains/diff/components/BinaryFilePanel';
 import { ImageDiffLightbox } from '@/domains/diff/components/ImageDiffLightbox';
 import { ImageDiffViewer } from '@/domains/diff/components/ImageDiffViewer';
@@ -34,15 +43,13 @@ import {
   useCodeViewLayoutRefresh,
 } from '@/domains/diff/hooks/useCodeViewLayoutRefresh';
 import { useCodeViewThemeBootstrap } from '@/domains/diff/hooks/useCodeViewThemeBootstrap';
+import { useDiffThemeReady } from '@/domains/diff/hooks/useDiffThemeReady';
 import { usePrefetchImageDiffs } from '@/domains/diff/hooks/useImageDiffSources';
 import {
   pickTreeThemeCustomProperties,
   useTreeThemeStyles,
 } from '@/domains/diff/hooks/useTreeThemeStyles';
 import { bumpImageDiffPriority } from '@/domains/diff/media/image-diff-cache';
-import { classifyChangedFile } from '@/domains/diff/media/media-files';
-import { getCodeViewItemIdForFile } from '@/domains/diff/model/build-items';
-import { deferCodeViewControlledSync } from '@/domains/diff/model/scroll-anchor';
 import {
   DEFAULT_CODE_VIEW_DISPLAY_PREFS,
   readCodeViewDisplayPrefs,
@@ -82,12 +89,6 @@ import { useCodeViewReviewMutations } from '@/domains/review/hooks/useCodeViewRe
 import { useRestoreReviewSession } from '@/domains/review/hooks/useRestoreReviewSession';
 import { useReviewQueue } from '@/domains/review/hooks/useReviewQueue';
 import { useViewedFiles } from '@/domains/review/hooks/useViewedFiles';
-import {
-  buildReviewCommentCountByPath,
-  getItemPath,
-  type ReviewAnnotationMetadata,
-  type ReviewThreadMetadata,
-} from '@/domains/review/model/comments';
 import { bindReplySession } from '@/domains/review/model/reply-session';
 import { hasAnyDraftAnnotation } from '@/domains/review/model/review-mutations';
 import { ReviewProvider, type ReviewContextValue } from '@/domains/review/providers/ReviewContext';
@@ -99,7 +100,6 @@ import { getReviewDraftBody, updateReviewDraftBody } from '@/domains/review/stat
 import { buildAnnotationThemeStyle } from '@/domains/theming/model/build-annotation-theme-style';
 import { diffyChromeMapping } from '@/domains/theming/model/diffy-chrome-mapping';
 import { useChromeThemeProps } from '@/domains/theming/providers/useChromeThemeProps';
-import { useDiffThemeReady } from '@/domains/theming/providers/useDiffThemeReady';
 import { useThemeColorScheme } from '@/domains/theming/providers/useThemeSelection';
 import { IconChevronDown } from '@/shared/icons/Chevron';
 import { IconSpinner } from '@/shared/icons/Spinner';

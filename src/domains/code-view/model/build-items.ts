@@ -12,7 +12,13 @@ import {
   getImageDiffSides,
   getMediaFileChangeType,
   isMediaFileExcludedFromCodeView,
-} from '@/domains/diff/media/media-files';
+} from '@/domains/code-view/media/media-files';
+import {
+  attachReviewCommentsToItems,
+  mapReviewCommentsToItems,
+  type ReviewAnnotationMetadata,
+  type ReviewMediaMetadata,
+} from '@/domains/code-view/model/comments';
 import {
   buildPatchFromFiles,
   getPullRequestContentCacheKey,
@@ -20,12 +26,6 @@ import {
   type GitHubPullRequestReviewComment,
   type PullRequestDiffData,
 } from '@/domains/github/api';
-import {
-  attachReviewCommentsToItems,
-  mapReviewCommentsToItems,
-  type ReviewAnnotationMetadata,
-  type ReviewMediaMetadata,
-} from '@/domains/review/model/comments';
 
 export type CodeViewItemsResult = {
   items: CodeViewItem<ReviewAnnotationMetadata>[];

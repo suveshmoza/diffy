@@ -13,7 +13,7 @@ import {
   type WheelEvent,
 } from 'react';
 
-import { SegmentedControl } from '@/domains/diff/components/header/SegmentedControl';
+import { formatFileChangeStatus } from '@/domains/code-view/media/media-files';
 import { useImageDiffSources } from '@/domains/diff/hooks/useImageDiffSources';
 import type { ImageDiffSideSource } from '@/domains/diff/media/image-diff-cache';
 import {
@@ -21,7 +21,6 @@ import {
   formatImageBytes,
   getResizeDelta,
 } from '@/domains/diff/media/image-diff-meta';
-import { formatFileChangeStatus } from '@/domains/diff/media/media-files';
 import type { ImageCompareMode } from '@/domains/diff/prefs/display-prefs';
 import type {
   GitHubPullRequest,
@@ -32,6 +31,7 @@ import { IconChevronLeft, IconChevronRight } from '@/shared/icons/Chevron';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Label } from '@/shared/ui/label';
+import { SegmentedControl } from '@/shared/ui/segmented-control';
 import { cn } from '@/shared/utils';
 
 const MODE_OPTIONS = [
