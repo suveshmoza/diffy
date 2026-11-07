@@ -16,10 +16,6 @@ import type {
 import { IconSpinner } from '@/shared/icons/Spinner';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
-import { cn } from '@/shared/utils';
-
-const IMAGE_DIFF_CHECKERBOARD =
-  'data-checkerboard:bg-background data-checkerboard:[background-image:linear-gradient(45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(-45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%),linear-gradient(-45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%)] data-checkerboard:[background-position:0_0,0_8px,8px_-8px,-8px_0] data-checkerboard:[background-size:16px_16px]';
 
 type ImageDiffViewerProps = {
   file: GitHubPullRequestFile;
@@ -88,10 +84,7 @@ export function ImageDiffViewer({
         {sources.status === 'ready' && source ? (
           <figure className='m-0 flex min-h-0 min-w-0 flex-col gap-1.5'>
             <div
-              className={cn(
-                'group/frame relative flex min-h-40 max-h-[min(70vh,720px)] items-center justify-center overflow-auto bg-transparent p-3',
-                IMAGE_DIFF_CHECKERBOARD,
-              )}
+              className='group/frame relative flex min-h-40 max-h-[min(70vh,720px)] items-center justify-center overflow-auto bg-transparent p-3 data-checkerboard:bg-background data-checkerboard:bg-[linear-gradient(45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(-45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%),linear-gradient(-45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%)] data-checkerboard:bg-position-[0_0,0_8px,8px_-8px,-8px_0] data-checkerboard:bg-size-[16px_16px]'
               data-checkerboard={checkerboard ? '' : undefined}
             >
               <Button

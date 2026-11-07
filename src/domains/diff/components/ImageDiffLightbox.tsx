@@ -44,12 +44,6 @@ const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 8;
 const ZOOM_STEP = 0.25;
 
-const LIGHTBOX_CHECKERBOARD =
-  'data-checkerboard:bg-background data-checkerboard:[background-image:linear-gradient(45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(-45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%),linear-gradient(-45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%)] data-checkerboard:[background-position:0_0,0_10px,10px_-10px,-10px_0] data-checkerboard:[background-size:20px_20px]';
-
-const OVERLAY_MEDIA_CLASS =
-  'pointer-events-none absolute top-0 left-0 block max-h-none max-w-none object-fill';
-
 type TransformState = {
   zoom: number;
   panX: number;
@@ -620,10 +614,7 @@ function ImageStage({
         <figcaption className='pb-1.5 pl-0.5 text-[11px] text-muted-foreground'>{label}</figcaption>
       ) : null}
       <div
-        className={cn(
-          'relative flex h-full min-h-0 cursor-grab items-center justify-center overflow-hidden bg-muted touch-none select-none data-panning:cursor-grabbing',
-          LIGHTBOX_CHECKERBOARD,
-        )}
+        className='relative flex h-full min-h-0 cursor-grab items-center justify-center overflow-hidden bg-muted touch-none select-none data-panning:cursor-grabbing data-checkerboard:bg-background data-checkerboard:bg-[linear-gradient(45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(-45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%),linear-gradient(-45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%)] data-checkerboard:bg-position-[0_0,0_10px,10px_-10px,-10px_0] data-checkerboard:bg-size-[20px_20px]'
         data-checkerboard={checkerboard ? '' : undefined}
         {...interactionProps}
       >
@@ -718,7 +709,7 @@ function OverlayStage({
         source={before}
         alt={`${before.path} (before)`}
         playing={animationsPlaying}
-        className={OVERLAY_MEDIA_CLASS}
+        className='pointer-events-none absolute top-0 left-0 block max-h-none max-w-none object-fill'
         style={beforeStyle}
       />
     </div>
@@ -734,7 +725,7 @@ function OverlayStage({
         alt={`${after.path} (after)`}
         playing={animationsPlaying}
         primary
-        className={OVERLAY_MEDIA_CLASS}
+        className='pointer-events-none absolute top-0 left-0 block max-h-none max-w-none object-fill'
         style={afterStyle}
       />
     </div>
@@ -743,10 +734,7 @@ function OverlayStage({
   return (
     <div
       ref={stageRef}
-      className={cn(
-        'relative flex h-full cursor-grab items-center justify-center overflow-hidden bg-muted touch-none select-none data-panning:cursor-grabbing',
-        LIGHTBOX_CHECKERBOARD,
-      )}
+      className='relative flex h-full cursor-grab items-center justify-center overflow-hidden bg-muted touch-none select-none data-panning:cursor-grabbing data-checkerboard:bg-background data-checkerboard:bg-[linear-gradient(45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(-45deg,color-mix(in_srgb,var(--foreground)_8%,transparent)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%),linear-gradient(-45deg,transparent_75%,color-mix(in_srgb,var(--foreground)_8%,transparent)_75%)] data-checkerboard:bg-position-[0_0,0_10px,10px_-10px,-10px_0] data-checkerboard:bg-size-[20px_20px]'
       data-checkerboard={checkerboard ? '' : undefined}
       {...interactionProps}
     >

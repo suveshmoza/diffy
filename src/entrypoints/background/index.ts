@@ -1,7 +1,7 @@
-const OVERLAY_PATH = '/overlay.html';
+const GITHUB_PULL_REQUEST_URL_REGEX = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/i;
 
 function isGitHubPullRequestUrl(url: string): boolean {
-  return /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/i.test(url);
+  return GITHUB_PULL_REQUEST_URL_REGEX.test(url);
 }
 
 export default defineBackground(() => {
@@ -36,9 +36,7 @@ export default defineBackground(() => {
       return;
     }
 
-    const overlayUrl = browser.runtime.getURL(
-      `${OVERLAY_PATH}?pr=${encodeURIComponent(targetUrl)}`,
-    );
+    const overlayUrl = browser.runtime.getURL(`/overlay.html?pr=${encodeURIComponent(targetUrl)}`);
     browser.tabs.create({ url: overlayUrl, active: false });
   });
 });
