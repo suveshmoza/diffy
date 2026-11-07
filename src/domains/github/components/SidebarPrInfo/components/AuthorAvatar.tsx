@@ -3,7 +3,7 @@ import { cn } from '@/shared/utils';
 function toAvatarSrc(url: string) {
   try {
     const next = new URL(url);
-    next.searchParams.set('s', '32');
+    next.searchParams.set('s', '16');
     return next.toString();
   } catch {
     return url;
