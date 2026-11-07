@@ -14,8 +14,6 @@ import {
   isMediaFileExcludedFromCodeView,
 } from '@/domains/code-view/media/media-files';
 import {
-  attachReviewCommentsToItems,
-  mapReviewCommentsToItems,
   type ReviewAnnotationMetadata,
   type ReviewMediaMetadata,
 } from '@/domains/code-view/model/comments';
@@ -23,46 +21,28 @@ import {
   buildPatchFromFiles,
   getPullRequestContentCacheKey,
   type GitHubPullRequestFile,
-  type GitHubPullRequestReviewComment,
   type PullRequestDiffData,
 } from '@/domains/github/api';
+
+/** Diff content that defines the code-view items, independent of review comments. */
+export type CodeViewContent = Pick<PullRequestDiffData, 'ref' | 'pullRequest' | 'files' | 'patch'>;
 
 export type CodeViewItemsResult = {
   items: CodeViewItem<ReviewAnnotationMetadata>[];
   diffPathSet: ReadonlySet<string>;
   fileByPath: ReadonlyMap<string, GitHubPullRequestFile>;
-  reviewCommentCountByPath: ReadonlyMap<string, number>;
-  orphanedReviewThreadsByItemId: ReadonlyMap<string, ReviewAnnotationMetadata[]>;
 };
 
 const codeViewItemsCache = new Map<string, CodeViewItemsResult>();
 
-function getReviewCommentsCacheSuffix(comments: GitHubPullRequestReviewComment[]): string {
-  let idSum = 0;
-  let newestUpdatedAt = '';
-
-  for (const comment of comments) {
-    idSum += comment.id;
-    if (comment.updated_at > newestUpdatedAt) {
-      newestUpdatedAt = comment.updated_at;
-    }
-  }
-
-  return `${comments.length}:${idSum}:${newestUpdatedAt}`;
-}
-
-function getCodeViewItemsCacheKey(data: PullRequestDiffData): string {
-  return `${getPullRequestContentCacheKey(data.ref, data.pullRequest.head.sha)}@${getReviewCommentsCacheSuffix(data.reviewComments)}`;
-}
-
-export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResult {
-  const cacheKey = getCodeViewItemsCacheKey(data);
+export function buildCodeViewItems(content: CodeViewContent): CodeViewItemsResult {
+  const cacheKey = getPullRequestContentCacheKey(content.ref, content.pullRequest.head.sha);
   const cached = codeViewItemsCache.get(cacheKey);
   if (cached) {
     return cached;
   }
 
-  const patch = data.patch.trim() ? data.patch : buildPatchFromFiles(data.files);
+  const patch = content.patch.trim() ? content.patch : buildPatchFromFiles(content.files);
 
   let parsed = parsePatchFiles(patch, { cacheKeyPrefix: cacheKey, throwOnError: true });
 
@@ -87,7 +67,7 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
   const items: CodeViewItem<ReviewAnnotationMetadata>[] = [];
 
   // Preserve PR file order so media appears inline with text files while scrolling.
-  for (const file of data.files) {
+  for (const file of content.files) {
     fileByPath.set(file.filename, file);
 
     const kind = classifyChangedFile(file);
@@ -119,14 +99,10 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
     });
   }
 
-  const reviewCommentMaps = mapReviewCommentsToItems(items, data.reviewComments);
-
   const result: CodeViewItemsResult = {
-    items: attachReviewCommentsToItems(items, reviewCommentMaps),
+    items,
     diffPathSet,
     fileByPath,
-    reviewCommentCountByPath: reviewCommentMaps.countByPath,
-    orphanedReviewThreadsByItemId: reviewCommentMaps.orphanedByItemId,
   };
 
   codeViewItemsCache.set(cacheKey, result);
@@ -287,6 +263,6 @@ function getMissingPatchMessage(file: GitHubPullRequestFile): string {
   return 'GitHub did not include diff text for this file.';
 }
 
-export function isLargePullRequestData(data: PullRequestDiffData): boolean {
-  return data.files.length > 150 || data.patch.length > 500_000;
+export function isLargePullRequestData(content: Pick<CodeViewContent, 'files' | 'patch'>): boolean {
+  return content.files.length > 150 || content.patch.length > 500_000;
 }

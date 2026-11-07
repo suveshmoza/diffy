@@ -3,6 +3,7 @@ import { startTransition, useEffect, useMemo, useState } from 'react';
 import {
   buildCodeViewItems,
   isLargePullRequestData,
+  type CodeViewContent,
   type CodeViewItemsResult,
 } from '@/domains/code-view/model/build-items';
 import type { PullRequestDiffData } from '@/domains/github/api';
@@ -14,10 +15,10 @@ type UseCodeViewItemsState = {
   error: string | null;
 };
 
-function buildSyncState(data: PullRequestDiffData): UseCodeViewItemsState {
+function buildSyncState(content: CodeViewContent): UseCodeViewItemsState {
   try {
     return {
-      result: buildCodeViewItems(data),
+      result: buildCodeViewItems(content),
       isBuilding: false,
       error: null,
     };
@@ -30,22 +31,41 @@ function buildSyncState(data: PullRequestDiffData): UseCodeViewItemsState {
   }
 }
 
+/**
+ * Builds the code-view items from diff content only.
+ *
+ * Review comments deliberately stay out of the content identity: adding,
+ * editing, or deleting a comment must not rebuild (or tear down) the viewer.
+ * Comment annotations are mapped separately where they are rendered.
+ */
 export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsState {
-  const isLarge = isLargePullRequestData(data);
-  const syncState = useMemo(() => (isLarge ? null : buildSyncState(data)), [data, isLarge]);
+  const content = useMemo<CodeViewContent>(
+    () => ({
+      ref: data.ref,
+      pullRequest: data.pullRequest,
+      files: data.files,
+      patch: data.patch,
+    }),
+    [data.ref, data.pullRequest, data.files, data.patch],
+  );
+
+  const isLarge = isLargePullRequestData(content);
+  const syncState = useMemo(() => (isLarge ? null : buildSyncState(content)), [content, isLarge]);
 
   const [largeState, setLargeState] = useState<UseCodeViewItemsState>(() => {
     if (!isLarge) {
-      return syncState ?? buildSyncState(data);
+      return syncState ?? buildSyncState(content);
     }
 
     return { result: null, isBuilding: true, error: null };
   });
-  const [buildingForData, setBuildingForData] = useState(data);
+  const [buildingForContent, setBuildingForContent] = useState(content);
 
-  if (isLarge && buildingForData !== data) {
-    setBuildingForData(data);
-    setLargeState({ result: null, isBuilding: true, error: null });
+  if (isLarge && buildingForContent !== content) {
+    setBuildingForContent(content);
+    // Keep the previous result visible while the next build runs so the viewer
+    // never unmounts (which used to flash an empty pane).
+    setLargeState((current) => ({ result: current.result, isBuilding: true, error: null }));
   }
 
   useEffect(() => {
@@ -65,7 +85,7 @@ export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsSta
           return;
         }
 
-        setLargeState(buildSyncState(data));
+        setLargeState(buildSyncState(content));
       });
     };
 
@@ -81,10 +101,10 @@ export function useCodeViewItems(data: PullRequestDiffData): UseCodeViewItemsSta
     return () => {
       isCancelled = true;
     };
-  }, [data, isLarge]);
+  }, [content, isLarge]);
 
   if (!isLarge) {
-    return syncState ?? buildSyncState(data);
+    return syncState ?? buildSyncState(content);
   }
 
   return largeState;

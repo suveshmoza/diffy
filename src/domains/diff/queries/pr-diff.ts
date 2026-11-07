@@ -1,7 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { SetStateAction } from 'react';
 
-import { invalidateCodeViewItemsCache } from '@/domains/code-view/model/build-items';
 import {
   fetchPullRequestDiffData,
   parseGitHubPullRequestUrl,
@@ -45,5 +44,4 @@ export function updatePullRequestReviewComments(
 
     return { ...current, reviewComments };
   });
-  invalidateCodeViewItemsCache(ref);
 }

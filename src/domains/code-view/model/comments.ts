@@ -121,24 +121,6 @@ export function mapReviewCommentsToItems(
   return { inlineByItemId, orphanedByItemId, countByPath };
 }
 
-export function buildReviewCommentCountByPath(
-  comments: readonly GitHubPullRequestReviewComment[],
-  items: readonly CodeViewItem<unknown>[],
-): Map<string, number> {
-  const countByPath = new Map<string, number>();
-  const itemIdByPath = buildItemIdByPath([...items]);
-  const itemById = new Map(items.map((item) => [item.id, item]));
-
-  for (const comment of comments) {
-    const itemId = itemIdByPath.get(comment.path);
-    const item = itemId ? itemById.get(itemId) : undefined;
-    const path = item ? getItemPath(item) : comment.path;
-    countByPath.set(path, (countByPath.get(path) ?? 0) + 1);
-  }
-
-  return countByPath;
-}
-
 export function attachReviewCommentsToItems(
   items: readonly CodeViewItem<ReviewAnnotationMetadata>[],
   maps: ReviewCommentItemMaps,

@@ -25,8 +25,9 @@ import {
 import { classifyChangedFile } from '@/domains/code-view/media/media-files';
 import { getCodeViewItemIdForFile } from '@/domains/code-view/model/build-items';
 import {
-  buildReviewCommentCountByPath,
+  attachReviewCommentsToItems,
   getItemPath,
+  mapReviewCommentsToItems,
   type ReviewAnnotationMetadata,
   type ReviewThreadMetadata,
 } from '@/domains/code-view/model/comments';
@@ -189,6 +190,14 @@ export function DiffOverlay({
   const viewedFiles = useViewedFiles(data.ref, orderedPaths);
 
   const { result: codeViewItems, isBuilding, error: codeViewBuildError } = useCodeViewItems(data);
+  const reviewCommentMaps = useMemo(
+    () => mapReviewCommentsToItems(codeViewItems?.items ?? [], data.reviewComments),
+    [codeViewItems, data.reviewComments],
+  );
+  const itemsWithReviewComments = useMemo(
+    () => attachReviewCommentsToItems(codeViewItems?.items ?? [], reviewCommentMaps),
+    [codeViewItems, reviewCommentMaps],
+  );
   usePrefetchImageDiffs(data);
 
   useEffect(() => {
@@ -498,13 +507,7 @@ export function DiffOverlay({
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, [collapseReviewDock, handleCloseOverlay, isReviewDockExpanded, lightboxImagePath]);
 
-  const reviewCommentCountByPath = useMemo(() => {
-    if (!codeViewItems) {
-      return new Map<string, number>();
-    }
-
-    return buildReviewCommentCountByPath(data.reviewComments, codeViewItems.items);
-  }, [codeViewItems, data.reviewComments]);
+  const reviewCommentCountByPath = reviewCommentMaps.countByPath;
 
   const handleGutterUtilityClick = useStableCallback(
     (range: SelectedLineRange, context: { item: { id: string } }) => {
@@ -530,10 +533,8 @@ export function DiffOverlay({
   }, [codeViewOptions, handleGutterUtilityClick]);
 
   useEffect(() => {
-    orphanedThreadsByItemIdRef.current = codeViewItems?.orphanedReviewThreadsByItemId as
-      | ReadonlyMap<string, ReviewThreadMetadata[]>
-      | undefined;
-  }, [codeViewItems?.orphanedReviewThreadsByItemId]);
+    orphanedThreadsByItemIdRef.current = reviewCommentMaps.orphanedByItemId;
+  }, [reviewCommentMaps]);
 
   useEffect(() => {
     if (!isCodeViewMounted) {
@@ -1243,7 +1244,7 @@ export function DiffOverlay({
                           <ThemedCodeView<ReviewAnnotationMetadata>
                             key={`codeview-${refreshGeneration}`}
                             ref={viewerRef}
-                            initialItems={codeViewItems.items}
+                            initialItems={itemsWithReviewComments}
                             className='gprv-code-view'
                             style={codeViewStyle}
                             renderAnnotation={renderReviewAnnotation}
