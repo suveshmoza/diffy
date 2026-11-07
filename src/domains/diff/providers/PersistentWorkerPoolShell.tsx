@@ -1,7 +1,7 @@
 import { WorkerPoolContextProvider } from '@pierre/diffs/react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
-import { DIFF_HIGHLIGHTER } from '@/domains/diff/highlighting/highlighter';
+import { DIFF_HIGHLIGHTER, DIFF_USE_WORKER_POOL } from '@/domains/diff/highlighting/highlighter';
 import { DIFF_LANG_IDS } from '@/domains/diff/highlighting/lang-ids';
 import { workerFactory } from '@/domains/diff/highlighting/worker';
 import { ensureDiffThemesResolved } from '@/domains/diff/hooks/useDiffThemeReady';
@@ -26,7 +26,7 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    if (!isThemeReady || hasResolvedForPoolRef.current) {
+    if (!DIFF_USE_WORKER_POOL || !isThemeReady || hasResolvedForPoolRef.current) {
       return;
     }
 
@@ -63,6 +63,10 @@ export function PersistentWorkerPoolShell({ children }: PersistentWorkerPoolShel
     }),
     [diffTheme.theme],
   );
+
+  if (!DIFF_USE_WORKER_POOL) {
+    return children;
+  }
 
   if (!isThemeReady || !areThemesResolved) {
     return children;

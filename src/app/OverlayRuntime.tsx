@@ -74,7 +74,7 @@ export function kickOverlayLayout(): void {
   });
 }
 
-/** Unmount app UI while keeping the worker pool shell alive in the React tree. */
+/** Unmount app UI while keeping the overlay runtime (and shiki-js worker pool, if any) alive. */
 export function unmountOverlayApp(): void {
   runtimeProps = { pullRequestUrl: null, onClose: runtimeProps.onClose };
   renderOverlayRuntime();

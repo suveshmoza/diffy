@@ -20,5 +20,5 @@ const DIFF_WORKER_PATH = '/diff-highlighter-worker.js';
 export function workerFactory(): Worker {
   // Same-origin extension file, so this works in dev and prod without a blob.
   const url = (browser.runtime.getURL as (path: string) => string)(DIFF_WORKER_PATH);
-  return new Worker(url, { name: 'github-pr-viewer-highlighter' });
+  return new Worker(url);
 }

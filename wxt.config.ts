@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'wxt';
 
-/** Stable output path for Pierre's portable highlighter worker (see src/lib/diff/worker.ts). */
+/** Stable output path for Pierre's portable highlighter worker (see src/domains/diff/highlighting/worker.ts). */
 const DIFF_WORKER_DEST = 'diff-highlighter-worker.js';
 
 function tolerateNullCustomElements(): Plugin {

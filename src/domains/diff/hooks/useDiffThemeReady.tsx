@@ -2,7 +2,7 @@ import { hasResolvedThemes, resolveThemes, type ThemesType } from '@pierre/diffs
 import { useWorkerPool } from '@pierre/diffs/react';
 import { useEffect, useRef, useState } from 'react';
 
-import { DIFF_HIGHLIGHTER } from '@/domains/diff/highlighting/highlighter';
+import { DIFF_HIGHLIGHTER, DIFF_USE_WORKER_POOL } from '@/domains/diff/highlighting/highlighter';
 import { useDiffThemeProps } from '@/domains/theming/providers/useDiffThemeProps';
 
 export function diffThemeNames(theme: ThemesType): string[] {
@@ -50,10 +50,16 @@ export function useDiffThemeReady(): boolean {
     void ensureWorkerDiffTheme(diffTheme.theme, workerPool)
       .catch(() => undefined)
       .finally(() => {
-        if (!cancelledRef.current && workerPool != null) {
-          hasPreparedRef.current = true;
-          setIsReady(true);
+        if (cancelledRef.current) {
+          return;
         }
+        // Highlights runs on the main thread (no pool). For shiki-js, wait until
+        // PersistentWorkerPoolShell mounts the pool before marking ready.
+        if (DIFF_USE_WORKER_POOL && workerPool == null) {
+          return;
+        }
+        hasPreparedRef.current = true;
+        setIsReady(true);
       });
 
     return () => {
