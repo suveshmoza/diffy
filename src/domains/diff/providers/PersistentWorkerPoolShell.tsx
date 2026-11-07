@@ -1,4 +1,3 @@
-import { setCustomExtension } from '@pierre/diffs';
 import { WorkerPoolContextProvider } from '@pierre/diffs/react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
@@ -8,9 +7,6 @@ import { workerFactory } from '@/domains/diff/highlighting/worker';
 import { ensureDiffThemesResolved } from '@/domains/diff/hooks/useDiffThemeReady';
 import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
 import { useDiffThemeProps } from '@/domains/theming/providers/useDiffThemeProps';
-
-setCustomExtension('mts', 'typescript');
-setCustomExtension('cts', 'typescript');
 
 const DIFF_WORKER_POOL_SIZE = Math.max(
   1,
