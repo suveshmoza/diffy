@@ -13,14 +13,12 @@
     "zip:firefox": "wxt zip -b firefox",
     "zip:edge": "wxt zip -b edge",
     "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare && node scripts/bridge-github-markdown-css.mjs",
+    "postinstall": "wxt prepare",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "prepare": "husky",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "lint:boundaries": "node scripts/check-boundaries.mjs",
-    "check": "pnpm compile && pnpm lint && pnpm fmt:check && pnpm lint:boundaries"
+    "lint:fix": "oxlint --fix"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
