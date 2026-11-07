@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GitHubPullRequestReviewComment } from '@/domains/github/api';
 import { useGitHubAuth } from '@/domains/github/auth/GitHubAuthProvider';
-import { GitHubReviewWriteError } from '@/domains/github/review-write';
-import { Button } from '@/shared/ui/button';
+import { useCommentSubmit } from '@/domains/review/hooks/useCommentSubmit';
 
+import { ReviewComposerActions } from './review-composer/ReviewComposerActions';
+import { ReviewComposerForm } from './review-composer/ReviewComposerForm';
+import { createComposerValidator } from './review-composer/validation';
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewCommentEditComposerProps = {
@@ -21,8 +23,6 @@ export function ReviewCommentEditComposer({
   const { hasToken } = useGitHubAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState(comment.body);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -32,91 +32,59 @@ export function ReviewCommentEditComposer({
     }
   }, []);
 
-  const handleSubmit = useCallback(async () => {
-    const trimmed = body.trim();
-    if (!trimmed) {
-      setError('Write a comment before saving.');
-      return;
-    }
+  const validate = useMemo(
+    () =>
+      createComposerValidator({
+        hasToken,
+        empty: 'Write a comment before saving.',
+        missingToken: 'Add a GitHub token in the diffy extension popup to edit comments.',
+      }),
+    [hasToken],
+  );
 
-    if (!hasToken) {
-      setError('Add a GitHub token in the diffy extension popup to edit comments.');
-      return;
-    }
+  const { error, errorId, isSubmitting, onSubmit, reset } = useCommentSubmit({
+    body,
+    validate,
+    submit: onSave,
+  });
 
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      await onSave(trimmed);
-    } catch (submitError: unknown) {
-      if (submitError instanceof GitHubReviewWriteError) {
-        setError(submitError.message);
-      } else {
-        setError(submitError instanceof Error ? submitError.message : String(submitError));
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [body, hasToken, onSave]);
-
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      event.stopPropagation();
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onCancel();
-        return;
-      }
-
-      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        void handleSubmit();
-      }
+  const handleBodyChange = useCallback(
+    (nextBody: string) => {
+      reset();
+      setBody(nextBody);
     },
-    [handleSubmit, onCancel],
+    [reset],
   );
 
   return (
-    <div className='mt-1 grid gap-2'>
+    <ReviewComposerForm
+      className='mt-1 grid gap-2'
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+    >
       <div className='mt-2 block w-full'>
         <ReviewMarkdownComposer
           ref={textareaRef}
           value={body}
-          onChange={setBody}
-          onKeyDown={handleKeyDown}
+          onChange={handleBodyChange}
           placeholder='Edit comment'
           rows={3}
           disabled={isSubmitting}
           aria-label='Edit comment'
+          aria-invalid={error != null}
+          aria-describedby={error ? errorId : undefined}
         />
       </div>
-      {!hasToken ? (
-        <p className='text-xs text-muted-foreground'>
-          Add a GitHub token in the diffy popup to edit comments.
-        </p>
-      ) : null}
-      {error ? <p className='text-xs text-destructive'>{error}</p> : null}
-      <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
-        <Button
-          type='button'
-          variant='outline'
-          size='sm'
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
-          Cancel
-        </Button>
-        <Button
-          type='button'
-          size='sm'
-          onClick={() => void handleSubmit()}
-          disabled={isSubmitting || !body.trim()}
-        >
-          {isSubmitting ? 'Saving…' : 'Save'}
-        </Button>
-      </div>
-    </div>
+      <ReviewComposerActions
+        error={error}
+        errorId={errorId}
+        tokenHint={hasToken ? null : 'Add a GitHub token in the diffy popup to edit comments.'}
+        isSubmitting={isSubmitting}
+        submitLabel='Save'
+        submittingLabel='Saving…'
+        onCancel={onCancel}
+        hintSpacing={false}
+      />
+    </ReviewComposerForm>
   );
 }

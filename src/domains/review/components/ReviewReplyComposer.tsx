@@ -1,11 +1,15 @@
-import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import type { GitHubPullRequestRef, GitHubPullRequestReviewComment } from '@/domains/github/api';
 import { useGitHubAuth } from '@/domains/github/auth/GitHubAuthProvider';
-import { createReviewCommentReply, GitHubReviewWriteError } from '@/domains/github/review-write';
-import { Button } from '@/shared/ui/button';
+import { createReviewCommentReply } from '@/domains/github/review-write';
+import { useCommentSubmit } from '@/domains/review/hooks/useCommentSubmit';
 import { cn } from '@/shared/utils';
 
+import { ReviewComposerActions } from './review-composer/ReviewComposerActions';
+import { ReviewComposerAuthor } from './review-composer/ReviewComposerAuthor';
+import { ReviewComposerForm } from './review-composer/ReviewComposerForm';
+import { createComposerValidator } from './review-composer/validation';
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewReplyComposerProps = {
@@ -23,130 +27,68 @@ export function ReviewReplyComposer({
   onCancel,
   onSuccess,
 }: ReviewReplyComposerProps) {
-  const { viewerUser, hasToken } = useGitHubAuth();
+  const { hasToken } = useGitHubAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = useCallback(async () => {
-    const trimmed = body.trim();
-    if (!trimmed) {
-      setError('Write a reply before submitting.');
-      return;
-    }
-
-    if (!hasToken) {
-      setError('Add a GitHub token in the diffy extension popup to reply.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const comment = await createReviewCommentReply(pullRequestRef, {
-        body: trimmed,
-        inReplyToId,
-      });
-      onSuccess(comment);
-    } catch (submitError: unknown) {
-      if (submitError instanceof GitHubReviewWriteError) {
-        setError(submitError.message);
-      } else {
-        setError(submitError instanceof Error ? submitError.message : String(submitError));
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [body, hasToken, inReplyToId, onSuccess, pullRequestRef]);
-
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      event.stopPropagation();
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onCancel();
-        return;
-      }
-
-      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        void handleSubmit();
-      }
-    },
-    [handleSubmit, onCancel],
+  const validate = useMemo(
+    () =>
+      createComposerValidator({
+        hasToken,
+        empty: 'Write a reply before submitting.',
+        missingToken: 'Add a GitHub token in the diffy extension popup to reply.',
+      }),
+    [hasToken],
   );
 
-  const initials = viewerUser?.login.slice(0, 1).toUpperCase() ?? '?';
+  const { error, errorId, isSubmitting, onSubmit, reset } = useCommentSubmit({
+    body,
+    validate,
+    submit: (trimmedBody) =>
+      createReviewCommentReply(pullRequestRef, {
+        body: trimmedBody,
+        inReplyToId,
+      }).then(onSuccess),
+  });
+
+  const handleBodyChange = useCallback(
+    (nextBody: string) => {
+      reset();
+      setBody(nextBody);
+    },
+    [reset],
+  );
 
   return (
-    <div className={cn('mt-2 max-w-full min-w-0', nested ? 'ml-0' : 'ml-8')}>
-      <div className='flex w-full min-w-0 max-w-full items-start gap-2'>
-        <span
-          className='inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[11px] font-bold text-primary'
-          aria-hidden='true'
-        >
-          {viewerUser?.avatar_url ? (
-            <img
-              src={viewerUser.avatar_url}
-              alt=''
-              width={24}
-              height={24}
-              loading='lazy'
-              decoding='async'
-              className='size-full object-cover'
-            />
-          ) : (
-            initials
-          )}
-        </span>
-        <div className='min-w-0 max-w-full flex-1'>
-          {viewerUser ? (
-            <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
-              <strong className='text-sm font-semibold'>{viewerUser.login}</strong>
-            </div>
-          ) : null}
-          <div className='mt-2 block w-full'>
-            <ReviewMarkdownComposer
-              ref={textareaRef}
-              value={body}
-              onChange={setBody}
-              onKeyDown={handleKeyDown}
-              placeholder='Leave a reply'
-              rows={3}
-              disabled={isSubmitting}
-              aria-label='Reply'
-            />
-          </div>
-          {!hasToken ? (
-            <p className='mt-2 text-xs text-muted-foreground'>
-              Add a GitHub token in the diffy popup to reply.
-            </p>
-          ) : null}
-          {error ? <p className='mt-2 text-xs text-destructive'>{error}</p> : null}
-          <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              onClick={onCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type='button'
-              size='sm'
-              onClick={() => void handleSubmit()}
-              disabled={isSubmitting || !body.trim()}
-            >
-              {isSubmitting ? 'Posting…' : 'Reply'}
-            </Button>
-          </div>
+    <ReviewComposerForm
+      className={cn('mt-2 max-w-full min-w-0', nested ? 'ml-0' : 'ml-8')}
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+    >
+      <ReviewComposerAuthor>
+        <div className='mt-2 block w-full'>
+          <ReviewMarkdownComposer
+            ref={textareaRef}
+            value={body}
+            onChange={handleBodyChange}
+            placeholder='Leave a reply'
+            rows={3}
+            disabled={isSubmitting}
+            aria-label='Reply'
+            aria-invalid={error != null}
+            aria-describedby={error ? errorId : undefined}
+          />
         </div>
-      </div>
-    </div>
+        <ReviewComposerActions
+          error={error}
+          errorId={errorId}
+          tokenHint={hasToken ? null : 'Add a GitHub token in the diffy popup to reply.'}
+          isSubmitting={isSubmitting}
+          submitLabel='Reply'
+          submittingLabel='Posting…'
+          onCancel={onCancel}
+        />
+      </ReviewComposerAuthor>
+    </ReviewComposerForm>
   );
 }

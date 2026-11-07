@@ -1,16 +1,17 @@
 import type { SelectedLineRange } from '@pierre/diffs';
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GitHubPullRequestReviewComment } from '@/domains/github/api';
 import { useGitHubAuth } from '@/domains/github/auth/GitHubAuthProvider';
-import {
-  createImmediateReviewComment,
-  GitHubReviewWriteError,
-} from '@/domains/github/review-write';
+import { createImmediateReviewComment } from '@/domains/github/review-write';
+import { useCommentSubmit } from '@/domains/review/hooks/useCommentSubmit';
 import { formatSelectedLineRangeLabel } from '@/domains/review/model/format-line-range';
 import { useReview } from '@/domains/review/providers/ReviewContext';
-import { Button } from '@/shared/ui/button';
 
+import { ReviewComposerActions } from './review-composer/ReviewComposerActions';
+import { ReviewComposerAuthor } from './review-composer/ReviewComposerAuthor';
+import { ReviewComposerForm } from './review-composer/ReviewComposerForm';
+import { createComposerValidator } from './review-composer/validation';
 import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 
 type ReviewCommentComposerProps = {
@@ -34,159 +35,89 @@ export function ReviewCommentComposer({
   onSuccess,
   onQueue,
 }: ReviewCommentComposerProps) {
-  const { viewerUser, hasToken } = useGitHubAuth();
+  const { hasToken } = useGitHubAuth();
   const {
     meta: { pullRequestRef, headSha: commitId },
   } = useReview();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState(initialBody);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     textareaRef.current?.focus({ preventScroll: true });
   }, []);
 
-  const handleBodyChange = useCallback(
-    (nextBody: string) => {
-      setBody(nextBody);
-      onBodyChange?.(nextBody);
-    },
-    [onBodyChange],
+  const validate = useMemo(
+    () =>
+      createComposerValidator({
+        hasToken,
+        empty: 'Write a comment before submitting.',
+        missingToken: 'Add a GitHub token in the diffy extension popup to comment.',
+      }),
+    [hasToken],
   );
 
-  const handleSubmit = useCallback(async () => {
-    const trimmed = body.trim();
-    if (!trimmed) {
-      setError('Write a comment before submitting.');
-      return;
-    }
-
-    if (!hasToken) {
-      setError('Add a GitHub token in the diffy extension popup to comment.');
-      return;
-    }
-
-    if (isBatchMode && onQueue) {
-      onQueue(trimmed);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const comment = await createImmediateReviewComment(pullRequestRef, {
-        body: trimmed,
-        commitId,
-        path,
-        range,
-      });
-      onSuccess(comment);
-    } catch (submitError: unknown) {
-      if (submitError instanceof GitHubReviewWriteError) {
-        setError(submitError.message);
-      } else {
-        setError(submitError instanceof Error ? submitError.message : String(submitError));
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [body, commitId, hasToken, isBatchMode, onQueue, onSuccess, path, pullRequestRef, range]);
-
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLTextAreaElement>) => {
-      event.stopPropagation();
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onCancel();
+  const { error, errorId, isSubmitting, onSubmit, reset } = useCommentSubmit({
+    body,
+    validate,
+    submit: (trimmedBody) => {
+      if (isBatchMode && onQueue) {
+        onQueue(trimmedBody);
         return;
       }
 
-      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        void handleSubmit();
-      }
+      return createImmediateReviewComment(pullRequestRef, {
+        body: trimmedBody,
+        commitId,
+        path,
+        range,
+      }).then(onSuccess);
     },
-    [handleSubmit, onCancel],
+  });
+
+  const handleBodyChange = useCallback(
+    (nextBody: string) => {
+      reset();
+      setBody(nextBody);
+      onBodyChange?.(nextBody);
+    },
+    [onBodyChange, reset],
   );
 
-  const initials = viewerUser?.login.slice(0, 1).toUpperCase() ?? '?';
-
   return (
-    <div className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'>
+    <ReviewComposerForm
+      className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+    >
       <div className='box-border w-full min-w-0 max-w-[90%] rounded-[10px] border border-border bg-card p-4 text-foreground shadow-sm lg:max-w-full'>
         <p className='mb-2.5 text-xs font-semibold text-foreground/65'>
           {formatSelectedLineRangeLabel(range)}
         </p>
-        <div className='flex w-full min-w-0 max-w-full items-start gap-2'>
-          <span
-            className={
-              'inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[11px] font-bold text-primary'
-            }
-            aria-hidden='true'
-          >
-            {viewerUser?.avatar_url ? (
-              <img
-                src={viewerUser.avatar_url}
-                alt=''
-                width={24}
-                height={24}
-                loading='lazy'
-                decoding='async'
-                className='size-full object-cover'
-              />
-            ) : (
-              initials
-            )}
-          </span>
-          <div className='min-w-0 max-w-full flex-1'>
-            {viewerUser ? (
-              <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
-                <strong className='text-sm font-semibold'>{viewerUser.login}</strong>
-              </div>
-            ) : null}
-            <div className='mt-2 block w-full'>
-              <ReviewMarkdownComposer
-                ref={textareaRef}
-                value={body}
-                onChange={handleBodyChange}
-                onKeyDown={handleKeyDown}
-                placeholder='Leave a comment'
-                rows={3}
-                disabled={isSubmitting}
-                aria-label='Comment'
-              />
-            </div>
-            {!hasToken ? (
-              <p className='mt-2 text-xs text-muted-foreground'>
-                Add a GitHub token in the diffy popup to post comments.
-              </p>
-            ) : null}
-            {error ? <p className='mt-2 text-xs text-destructive'>{error}</p> : null}
-            <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                onClick={onCancel}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type='button'
-                size='sm'
-                onClick={() => void handleSubmit()}
-                disabled={isSubmitting || !body.trim()}
-              >
-                {isBatchMode ? 'Add to review' : isSubmitting ? 'Posting…' : 'Comment'}
-              </Button>
-            </div>
+        <ReviewComposerAuthor>
+          <div className='mt-2 block w-full'>
+            <ReviewMarkdownComposer
+              ref={textareaRef}
+              value={body}
+              onChange={handleBodyChange}
+              placeholder='Leave a comment'
+              rows={3}
+              disabled={isSubmitting}
+              aria-label='Comment'
+              aria-invalid={error != null}
+              aria-describedby={error ? errorId : undefined}
+            />
           </div>
-        </div>
+          <ReviewComposerActions
+            error={error}
+            errorId={errorId}
+            tokenHint={hasToken ? null : 'Add a GitHub token in the diffy popup to post comments.'}
+            isSubmitting={isSubmitting}
+            submitLabel={isBatchMode ? 'Add to review' : 'Comment'}
+            submittingLabel='Posting…'
+            onCancel={onCancel}
+          />
+        </ReviewComposerAuthor>
       </div>
-    </div>
+    </ReviewComposerForm>
   );
 }

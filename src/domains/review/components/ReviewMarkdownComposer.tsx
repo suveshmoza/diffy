@@ -13,31 +13,22 @@ import type { GitHubPullRequestRef } from '@/domains/github/api';
 import { useReviewOptional } from '@/domains/review/providers/ReviewContext';
 import { cn } from '@/shared/utils';
 
-import {
-  reviewComposerToolbarClassName,
-  reviewPreviewPaneClassName,
-  reviewTextareaClassName,
-} from './review-composer-styles';
 import { ReviewCommentBody } from './ReviewCommentBody';
 
 type ComposerMode = 'write' | 'preview';
-
-const COMPOSER_MODE_ICON_SIZE = 16;
 
 const MODE_OPTIONS = [
   {
     value: 'write' as const,
     label: 'Write',
-    icon: <IconPencil size={COMPOSER_MODE_ICON_SIZE} />,
+    icon: <IconPencil size={16} />,
   },
   {
     value: 'preview' as const,
     label: 'Preview',
-    icon: <IconEye size={COMPOSER_MODE_ICON_SIZE} />,
+    icon: <IconEye size={16} />,
   },
 ] as const;
-
-const MODE_TOGGLE_GROUP_CLASSNAME = 'inline-flex w-fit rounded-lg';
 
 function modeToggleButtonClassName(isSelected: boolean, isFirst: boolean, isLast: boolean) {
   return cn(
@@ -62,6 +53,8 @@ type ReviewMarkdownComposerProps = {
   disabled?: boolean;
   id?: string;
   'aria-label'?: string;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
   pullRequestRef?: GitHubPullRequestRef;
 };
 
@@ -75,6 +68,8 @@ export const ReviewMarkdownComposer = forwardRef(function ReviewMarkdownComposer
     disabled = false,
     id,
     'aria-label': ariaLabel,
+    'aria-invalid': ariaInvalid,
+    'aria-describedby': ariaDescribedBy,
     pullRequestRef: pullRequestRefProp,
   }: ReviewMarkdownComposerProps,
   ref: Ref<HTMLTextAreaElement>,
@@ -108,11 +103,11 @@ export const ReviewMarkdownComposer = forwardRef(function ReviewMarkdownComposer
 
   return (
     <div className='grid gap-2'>
-      <div className={reviewComposerToolbarClassName}>
+      <div className='flex items-center'>
         <div
           role='group'
           aria-label='Comment editor mode'
-          className={MODE_TOGGLE_GROUP_CLASSNAME}
+          className='inline-flex w-fit rounded-lg'
         >
           {MODE_OPTIONS.map((option, index) => {
             const isSelected = mode === option.value;
@@ -148,7 +143,7 @@ export const ReviewMarkdownComposer = forwardRef(function ReviewMarkdownComposer
         <textarea
           ref={setTextareaRef}
           id={id}
-          className={reviewTextareaClassName}
+          className='flex min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50'
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={onKeyDown}
@@ -156,9 +151,11 @@ export const ReviewMarkdownComposer = forwardRef(function ReviewMarkdownComposer
           rows={rows}
           disabled={disabled}
           aria-label={ariaLabel}
+          aria-invalid={ariaInvalid}
+          aria-describedby={ariaDescribedBy}
         />
       ) : (
-        <div className={reviewPreviewPaneClassName}>
+        <div className='flex min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm'>
           <ReviewCommentBody
             body={value}
             pullRequestRef={pullRequestRef}
