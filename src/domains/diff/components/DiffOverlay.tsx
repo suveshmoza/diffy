@@ -1,9 +1,4 @@
-import type {
-  CodeViewItem,
-  CodeViewLineSelection,
-  CodeViewOptions,
-  SelectedLineRange,
-} from '@pierre/diffs';
+import type { CodeViewItem, CodeViewOptions, SelectedLineRange } from '@pierre/diffs';
 import {
   useStableCallback,
   type CodeViewAnnotationArgs,
@@ -18,7 +13,6 @@ import {
   useState,
   useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
-  type PointerEvent as ReactPointerEvent,
   type SetStateAction,
 } from 'react';
 
@@ -31,7 +25,6 @@ import {
   type ReviewAnnotationMetadata,
   type ReviewThreadMetadata,
 } from '@/domains/code-view/model/comments';
-import { deferCodeViewControlledSync } from '@/domains/code-view/model/scroll-anchor';
 import { BinaryFilePanel } from '@/domains/diff/components/BinaryFilePanel';
 import { ImageDiffLightbox } from '@/domains/diff/components/ImageDiffLightbox';
 import { ImageDiffViewer } from '@/domains/diff/components/ImageDiffViewer';
@@ -43,9 +36,11 @@ import {
   useCodeViewHostReady,
   useCodeViewLayoutRefresh,
 } from '@/domains/diff/hooks/useCodeViewLayoutRefresh';
+import { useCodeViewSelection } from '@/domains/diff/hooks/useCodeViewSelection';
 import { useCodeViewThemeBootstrap } from '@/domains/diff/hooks/useCodeViewThemeBootstrap';
 import { useDiffThemeReady } from '@/domains/diff/hooks/useDiffThemeReady';
 import { usePrefetchImageDiffs } from '@/domains/diff/hooks/useImageDiffSources';
+import { useSidebarLayout } from '@/domains/diff/hooks/useSidebarLayout';
 import {
   pickTreeThemeCustomProperties,
   useTreeThemeStyles,
@@ -58,18 +53,7 @@ import {
   type CodeViewDisplayPrefs,
 } from '@/domains/diff/prefs/display-prefs';
 import { ensureGoogleFontsLoaded, resolveFontCssVariables } from '@/domains/diff/prefs/font-prefs';
-import {
-  clampSidebarWidth,
-  DEFAULT_DIFF_LAYOUT,
-  DEFAULT_SIDEBAR_WIDTH,
-  MAX_SIDEBAR_WIDTH,
-  MIN_SIDEBAR_WIDTH,
-  readDiffLayoutPreference,
-  readSidebarWidthPreference,
-  writeDiffLayoutPreference,
-  writeSidebarWidthPreference,
-  type DiffLayout,
-} from '@/domains/diff/prefs/layout-prefs';
+import { MAX_SIDEBAR_WIDTH, MIN_SIDEBAR_WIDTH } from '@/domains/diff/prefs/layout-prefs';
 import { useSidebarContext, MOBILE_SIDEBAR_QUERY } from '@/domains/diff/providers/SidebarContext';
 import { updatePullRequestReviewComments } from '@/domains/diff/queries/pr-diff';
 import {
@@ -91,7 +75,6 @@ import { useRestoreReviewSession } from '@/domains/review/hooks/useRestoreReview
 import { useReviewQueue } from '@/domains/review/hooks/useReviewQueue';
 import { useViewedFiles } from '@/domains/review/hooks/useViewedFiles';
 import { bindReplySession } from '@/domains/review/model/reply-session';
-import { hasAnyDraftAnnotation } from '@/domains/review/model/review-mutations';
 import { ReviewProvider, type ReviewContextValue } from '@/domains/review/providers/ReviewContext';
 import {
   ReviewQueueProvider,
@@ -135,29 +118,25 @@ export function DiffOverlay({
     modalRef.current = node;
     setPortalContainer(node);
   }, []);
-  const selectedLinesRef = useRef<CodeViewLineSelection | null>(null);
-  const hoveredThreadSelectionRef = useRef<CodeViewLineSelection | null>(null);
-  const isOpeningDraftRef = useRef(false);
-  const handleTreeSelectRef = useRef<((path: string) => void) | null>(null);
   const orphanedThreadsByItemIdRef = useRef<
     ReadonlyMap<string, ReviewThreadMetadata[]> | undefined
   >(undefined);
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
-  const [selectedLines, setSelectedLines] = useState<CodeViewLineSelection | null>(null);
-  const [hoveredThreadSelection, setHoveredThreadSelection] =
-    useState<CodeViewLineSelection | null>(null);
   const [lightboxImagePath, setLightboxImagePath] = useState<string | null>(null);
-  const [diffLayout, setDiffLayout] = useState<DiffLayout>(DEFAULT_DIFF_LAYOUT);
-  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
-  const [sidebarDragWidth, setSidebarDragWidth] = useState<number | null>(null);
   const [displayPrefs, setDisplayPrefs] = useState<CodeViewDisplayPrefs>(
     DEFAULT_CODE_VIEW_DISPLAY_PREFS,
   );
-  const layoutGridRef = useRef<HTMLDivElement>(null);
-  const sidebarWidthRef = useRef(sidebarWidth);
-  const isSidebarResizingRef = useRef(false);
-  const activeSidebarWidth = sidebarDragWidth ?? sidebarWidth;
-  const isResizingSidebar = sidebarDragWidth != null;
+  const {
+    diffLayout,
+    sidebarWidth,
+    activeSidebarWidth,
+    isResizingSidebar,
+    layoutGridRef,
+    updateDiffLayout,
+    handleSidebarResizePointerDown,
+    handleSidebarResizePointerMove,
+    handleSidebarResizePointerUp,
+    handleSidebarResizeKeyDown,
+  } = useSidebarLayout();
 
   const updateReviewComments = useCallback(
     (updater: SetStateAction<typeof data.reviewComments>) => {
@@ -165,18 +144,6 @@ export function DiffOverlay({
     },
     [data.ref],
   );
-
-  useEffect(() => {
-    selectedLinesRef.current = selectedLines;
-  }, [selectedLines]);
-
-  useEffect(() => {
-    hoveredThreadSelectionRef.current = hoveredThreadSelection;
-  }, [hoveredThreadSelection]);
-
-  useEffect(() => {
-    sidebarWidthRef.current = sidebarWidth;
-  }, [sidebarWidth]);
 
   const orderedPaths = useMemo(() => data.files.map((file) => file.filename), [data.files]);
   const imageFiles = useMemo(
@@ -211,26 +178,6 @@ export function DiffOverlay({
 
   useEffect(() => {
     let isCancelled = false;
-
-    readDiffLayoutPreference()
-      .then((storedLayout) => {
-        if (!isCancelled) {
-          setDiffLayout(storedLayout);
-        }
-      })
-      .catch(() => {
-        // Ignore preference read failures and keep the default layout.
-      });
-
-    readSidebarWidthPreference()
-      .then((storedWidth) => {
-        if (!isCancelled) {
-          setSidebarWidth(storedWidth);
-        }
-      })
-      .catch(() => {
-        // Ignore preference read failures and keep the default sidebar width.
-      });
 
     readCodeViewDisplayPrefs()
       .then((storedPrefs) => {
@@ -329,6 +276,28 @@ export function DiffOverlay({
 
     return new Map(codeViewItems.items.map((item) => [item.id, item]));
   }, [codeViewItems]);
+
+  const {
+    selectedPath,
+    setSelectedPath,
+    selectedLines,
+    setSelectedLines,
+    hoveredThreadSelection,
+    setHoveredThreadSelection,
+    selectedLinesRef,
+    isOpeningDraftRef,
+    handleTreeSelect,
+    handleSelectedLinesChange,
+    handleThreadHighlight,
+    handleThreadHighlightClear,
+  } = useCodeViewSelection({
+    viewerRef,
+    codeViewItems,
+    itemById,
+    pullRequestRef: data.ref,
+    pullRequest: data.pullRequest,
+    closeSidebar,
+  });
 
   const layoutRefreshKey = useMemo(
     () => [
@@ -564,14 +533,6 @@ export function DiffOverlay({
     };
   }, [isCodeViewMounted]);
 
-  const handleThreadHighlight = useStableCallback((selection: CodeViewLineSelection) => {
-    setHoveredThreadSelection(selection);
-  });
-
-  const handleThreadHighlightClear = useStableCallback(() => {
-    setHoveredThreadSelection(null);
-  });
-
   const reviewContextValue = useMemo<ReviewContextValue>(
     () => ({
       actions: {
@@ -723,9 +684,9 @@ export function DiffOverlay({
   const handleJumpToNextUnviewed = useCallback(() => {
     const next = viewedFiles.nextUnviewedPath(selectedPath);
     if (next) {
-      handleTreeSelectRef.current?.(next);
+      handleTreeSelect(next);
     }
-  }, [selectedPath, viewedFiles]);
+  }, [handleTreeSelect, selectedPath, viewedFiles]);
 
   const codeViewStyle = useMemo(
     () => ({
@@ -736,11 +697,6 @@ export function DiffOverlay({
     [colorScheme, annotationThemeStyle],
   );
 
-  const updateDiffLayout = useCallback((nextLayout: DiffLayout) => {
-    setDiffLayout(nextLayout);
-    void writeDiffLayoutPreference(nextLayout);
-  }, []);
-
   const updateDisplayPrefs = useCallback((partial: Partial<CodeViewDisplayPrefs>) => {
     setDisplayPrefs((current) => {
       const next = { ...current, ...partial };
@@ -748,160 +704,6 @@ export function DiffOverlay({
       return next;
     });
   }, []);
-
-  const persistSidebarWidth = useCallback((width: number) => {
-    void writeSidebarWidthPreference(width);
-  }, []);
-
-  const clampSidebarWidthForLayout = useCallback((width: number) => {
-    const layout = layoutGridRef.current;
-    const maxForLayout =
-      layout != null
-        ? Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, layout.clientWidth - 320))
-        : MAX_SIDEBAR_WIDTH;
-    return Math.min(maxForLayout, clampSidebarWidth(width));
-  }, []);
-
-  const handleSidebarResizePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    isSidebarResizingRef.current = true;
-    setSidebarDragWidth(sidebarWidthRef.current);
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }, []);
-
-  const handleSidebarResizePointerMove = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
-        return;
-      }
-
-      const layout = layoutGridRef.current;
-      if (!layout) {
-        return;
-      }
-
-      const nextWidth = clampSidebarWidthForLayout(
-        event.clientX - layout.getBoundingClientRect().left,
-      );
-      sidebarWidthRef.current = nextWidth;
-      setSidebarDragWidth(nextWidth);
-    },
-    [clampSidebarWidthForLayout],
-  );
-
-  const handleSidebarResizePointerUp = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-
-      if (!isSidebarResizingRef.current) {
-        return;
-      }
-
-      isSidebarResizingRef.current = false;
-      const nextWidth = sidebarWidthRef.current;
-      setSidebarWidth(nextWidth);
-      setSidebarDragWidth(null);
-      persistSidebarWidth(nextWidth);
-    },
-    [persistSidebarWidth],
-  );
-
-  const handleSidebarResizeKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLDivElement>) => {
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
-        return;
-      }
-
-      event.preventDefault();
-      const delta = event.key === 'ArrowRight' ? 16 : -16;
-      const nextWidth = clampSidebarWidthForLayout(sidebarWidthRef.current + delta);
-      sidebarWidthRef.current = nextWidth;
-      setSidebarWidth(nextWidth);
-      persistSidebarWidth(nextWidth);
-    },
-    [clampSidebarWidthForLayout, persistSidebarWidth],
-  );
-
-  const handleTreeSelect = useCallback(
-    (path: string) => {
-      if (!codeViewItems) {
-        return;
-      }
-
-      setSelectedPath(path);
-      const file = codeViewItems.fileByPath.get(path);
-      if (!file) {
-        return;
-      }
-
-      bumpImageDiffPriority(data.ref, data.pullRequest, file);
-      const id = getCodeViewItemIdForFile(file, codeViewItems.diffPathSet);
-      viewerRef.current?.scrollTo({
-        type: 'item',
-        id,
-        align: 'start',
-        behavior: 'smooth',
-      });
-
-      if (window.matchMedia(MOBILE_SIDEBAR_QUERY).matches) {
-        closeSidebar();
-      }
-    },
-    [closeSidebar, codeViewItems, data.pullRequest, data.ref],
-  );
-
-  useEffect(() => {
-    handleTreeSelectRef.current = handleTreeSelect;
-  }, [handleTreeSelect]);
-
-  const handleSelectedLinesChange = useStableCallback((selection: CodeViewLineSelection | null) => {
-    const viewer = viewerRef.current;
-    if (
-      selection == null &&
-      viewer &&
-      codeViewItems &&
-      hasAnyDraftAnnotation(viewer, codeViewItems.items)
-    ) {
-      return;
-    }
-
-    if (selection == null && hoveredThreadSelectionRef.current != null) {
-      return;
-    }
-
-    // openDraftComposer runs first on gutter + clicks and defers selection sync itself.
-    if (selection != null && isOpeningDraftRef.current) {
-      return;
-    }
-
-    const applySelectionState = () => {
-      if (selection != null) {
-        setHoveredThreadSelection(null);
-      }
-
-      setSelectedLines(selection);
-      if (!selection || !itemById) {
-        return;
-      }
-
-      const item = itemById.get(selection.id);
-      if (!item) {
-        return;
-      }
-
-      const path = getItemPath(item);
-      setSelectedPath((current) => (current === path ? current : path));
-    };
-
-    if (selection != null && viewer) {
-      deferCodeViewControlledSync(viewer, applySelectionState);
-      return;
-    }
-
-    applySelectionState();
-  });
 
   const stopGitHubKeybindings = useCallback((event: ReactKeyboardEvent) => {
     event.stopPropagation();

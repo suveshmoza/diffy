@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 
 import { shouldShowReviewFlowTokenWarning } from '@/domains/github/auth/token-hints';
 import {
@@ -9,16 +9,12 @@ import {
   setGitHubTokenViewer,
 } from '@/domains/github/auth/token-storage';
 import { fetchGitHubViewer, type GitHubViewer } from '@/domains/github/review-write';
-import { popupReducer } from '@/domains/popup/popup-reducer';
+import { createInitialPopupState, popupReducer } from '@/domains/popup/popup-reducer';
 
 const storageAvailable = browser?.storage?.local != null;
 
 export function usePopup() {
-  const [state, dispatch] = useReducer(
-    popupReducer,
-    storageAvailable ? { status: 'loading' } : { status: 'empty' },
-  );
-  const [tokenInput, setTokenInput] = useState('');
+  const [state, dispatch] = useReducer(popupReducer, storageAvailable, createInitialPopupState);
 
   useEffect(() => {
     if (!storageAvailable) {
@@ -35,7 +31,7 @@ export function usePopup() {
         }
 
         if (token) {
-          setTokenInput(token);
+          dispatch({ type: 'HYDRATE_TOKEN', tokenInput: token });
 
           if (viewerJson) {
             try {
@@ -65,7 +61,7 @@ export function usePopup() {
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (state.status === 'validating') return;
+    if (state.ui.status === 'validating') return;
 
     if (!storageAvailable) {
       dispatch({
@@ -75,7 +71,7 @@ export function usePopup() {
       return;
     }
 
-    const trimmed = tokenInput.trim();
+    const trimmed = state.tokenInput.trim();
 
     if (trimmed.length < 10) {
       dispatch({
@@ -115,19 +111,17 @@ export function usePopup() {
     if (!storageAvailable) return;
 
     await clearGitHubToken();
-    setTokenInput('');
-    dispatch({ type: 'SET_EMPTY' });
+    dispatch({ type: 'CLEAR_TOKEN' });
   }
 
   function handleTokenChange(value: string) {
-    setTokenInput(value);
-    dispatch({ type: 'SET_TOKEN' });
+    dispatch({ type: 'SET_TOKEN', tokenInput: value });
   }
 
   return {
-    state,
-    tokenInput,
-    showReviewFlowWarning: shouldShowReviewFlowTokenWarning(tokenInput),
+    state: state.ui,
+    tokenInput: state.tokenInput,
+    showReviewFlowWarning: shouldShowReviewFlowTokenWarning(state.tokenInput),
     handleSave,
     handleClear,
     handleTokenChange,

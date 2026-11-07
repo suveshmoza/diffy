@@ -3,6 +3,7 @@ import type { CodeViewHandle } from '@pierre/diffs/react';
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type Dispatch,
   type RefObject,
@@ -75,10 +76,23 @@ export function useReviewQueue({
   const [isBatchMode, setIsBatchMode] = useState(initialSession.isBatchMode);
   const [queue, setQueue] = useState<QueuedComment[]>(() => initialSession.queue);
   const [isReviewDockExpanded, setIsReviewDockExpanded] = useState(false);
+  const queueRef = useRef(queue);
+  const isBatchModeRef = useRef(isBatchMode);
 
   useEffect(() => {
-    syncReviewQueue(pullRequestRef, queue, isBatchMode);
-  }, [isBatchMode, pullRequestRef, queue]);
+    queueRef.current = queue;
+  }, [queue]);
+
+  useEffect(() => {
+    isBatchModeRef.current = isBatchMode;
+  }, [isBatchMode]);
+
+  const persistQueue = useCallback(
+    (nextQueue: QueuedComment[], nextBatchMode: boolean) => {
+      syncReviewQueue(pullRequestRef, nextQueue, nextBatchMode);
+    },
+    [pullRequestRef],
+  );
 
   const handleQueueComment = useCallback(
     (itemId: string, path: string, draftId: string, range: SelectedLineRange, body: string) => {
@@ -103,20 +117,28 @@ export function useReviewQueue({
           );
           viewer.updateItem(nextItem);
           removeReviewDraft(pullRequestRef, draftId);
-          setQueue((current) => [...current, { queuedId, itemId, path, range, body }]);
+          setQueue((current) => {
+            const next = [...current, { queuedId, itemId, path, range, body }];
+            persistQueue(next, isBatchModeRef.current);
+            return next;
+          });
         },
         () => {
           clearSelectionIfNoDrafts();
         },
       );
     },
-    [clearSelectionIfNoDrafts, codeViewItems, pullRequestRef, viewerRef],
+    [clearSelectionIfNoDrafts, codeViewItems, persistQueue, pullRequestRef, viewerRef],
   );
 
   const handleRemoveQueued = useCallback(
     (queuedId: string, itemId: string) => {
       const viewer = viewerRef.current;
-      setQueue((current) => current.filter((entry) => entry.queuedId !== queuedId));
+      setQueue((current) => {
+        const next = current.filter((entry) => entry.queuedId !== queuedId);
+        persistQueue(next, isBatchModeRef.current);
+        return next;
+      });
 
       if (viewer) {
         const item = viewer.getItem(itemId);
@@ -127,15 +149,19 @@ export function useReviewQueue({
         }
       }
     },
-    [viewerRef],
+    [persistQueue, viewerRef],
   );
 
   const handleEditQueued = useCallback(
     (queuedId: string, itemId: string, body: string) => {
       const viewer = viewerRef.current;
-      setQueue((current) =>
-        current.map((entry) => (entry.queuedId === queuedId ? { ...entry, body } : entry)),
-      );
+      setQueue((current) => {
+        const next = current.map((entry) =>
+          entry.queuedId === queuedId ? { ...entry, body } : entry,
+        );
+        persistQueue(next, isBatchModeRef.current);
+        return next;
+      });
 
       if (viewer) {
         const item = viewer.getItem(itemId);
@@ -146,7 +172,7 @@ export function useReviewQueue({
         }
       }
     },
-    [viewerRef],
+    [persistQueue, viewerRef],
   );
 
   const handlePublishReview = useCallback(
@@ -240,11 +266,15 @@ export function useReviewQueue({
 
     setIsReviewDockExpanded(false);
     setIsBatchMode(false);
-  }, [pullRequestRef, queue, viewerRef]);
+    if (queue.length === 0) {
+      persistQueue([], false);
+    }
+  }, [persistQueue, pullRequestRef, queue, viewerRef]);
 
   const handleStartReview = useCallback(() => {
     setIsBatchMode(true);
-  }, []);
+    persistQueue(queueRef.current, true);
+  }, [persistQueue]);
 
   const expandReviewDock = useCallback(() => {
     setIsReviewDockExpanded(true);

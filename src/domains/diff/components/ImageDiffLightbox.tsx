@@ -1,13 +1,10 @@
 import { IconMagnifyingGlassFocus, IconMinus, IconPlus, IconX } from '@pierre/icons';
 import {
-  useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
-  type KeyboardEvent,
   type PointerEvent,
   type ReactNode,
   type WheelEvent,
@@ -15,6 +12,11 @@ import {
 
 import { formatFileChangeStatus } from '@/domains/code-view/media/media-files';
 import { useImageDiffSources } from '@/domains/diff/hooks/useImageDiffSources';
+import {
+  IMAGE_LIGHTBOX_MODE_OPTIONS,
+  useImageLightbox,
+  type ImageLightboxTransform,
+} from '@/domains/diff/hooks/useImageLightbox';
 import type { ImageDiffSideSource } from '@/domains/diff/media/image-diff-cache';
 import {
   formatDimensions,
@@ -33,28 +35,6 @@ import { Button } from '@/shared/ui/button';
 import { Label } from '@/shared/ui/label';
 import { SegmentedControl } from '@/shared/ui/segmented-control';
 import { cn } from '@/shared/utils';
-
-const MODE_OPTIONS = [
-  { value: '2up' as const, label: '2-up' },
-  { value: 'swipe' as const, label: 'Swipe' },
-  { value: 'onion' as const, label: 'Onion' },
-];
-
-const MIN_ZOOM = 0.25;
-const MAX_ZOOM = 8;
-const ZOOM_STEP = 0.25;
-
-type TransformState = {
-  zoom: number;
-  panX: number;
-  panY: number;
-};
-
-const INITIAL_TRANSFORM: TransformState = {
-  zoom: 1,
-  panX: 0,
-  panY: 0,
-};
 
 type ImageDiffLightboxProps = {
   file: GitHubPullRequestFile;
@@ -81,15 +61,6 @@ export function ImageDiffLightbox({
   onNavigate,
   onClose,
 }: ImageDiffLightboxProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ pointerId: number; x: number; y: number } | null>(null);
-  const [transform, setTransform] = useState<TransformState>(INITIAL_TRANSFORM);
-  const [swipePosition, setSwipePosition] = useState(50);
-  const [onionOpacity, setOnionOpacity] = useState(50);
-  const [blinkActive, setBlinkActive] = useState(false);
-  const [blinkAfter, setBlinkAfter] = useState(true);
-  const [animationsPlaying, setAnimationsPlaying] = useState(true);
-
   const sources = useImageDiffSources({
     file,
     pullRequest,
@@ -108,6 +79,39 @@ export function ImageDiffLightbox({
   const hasAnimatedSource =
     isAnimatedMimeType(sources.before?.mimeType) || isAnimatedMimeType(sources.after?.mimeType);
 
+  const {
+    dialogRef,
+    transform,
+    swipePosition,
+    setSwipePosition,
+    onionOpacity,
+    setOnionOpacity,
+    blinkActive,
+    setBlinkActive,
+    blinkAfter,
+    setBlinkAfter,
+    animationsPlaying,
+    setAnimationsPlaying,
+    setZoom,
+    resetTransform,
+    handleActualSize,
+    handleWheel,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handleKeyDown,
+    zoomStep,
+  } = useImageLightbox({
+    mode,
+    hasBoth,
+    primarySource,
+    previousFile,
+    nextFile,
+    onModeChange,
+    onNavigate,
+    onClose,
+  });
+
   const sourceSummary = useMemo(() => {
     const parts: string[] = [];
     if (sources.before) {
@@ -122,148 +126,6 @@ export function ImageDiffLightbox({
     }
     return parts.join('  |  ');
   }, [sources.after, sources.before]);
-
-  const resetTransform = useCallback(() => {
-    setTransform(INITIAL_TRANSFORM);
-  }, [setTransform]);
-
-  useLayoutEffect(() => {
-    dialogRef.current?.focus({ preventScroll: true });
-  }, []);
-
-  const setZoom = useCallback(
-    (nextZoom: number) => {
-      setTransform((current) => ({
-        ...current,
-        zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom)),
-      }));
-    },
-    [setTransform],
-  );
-
-  const handleActualSize = useCallback(() => {
-    const media = dialogRef.current?.querySelector<HTMLElement>('[data-primary-media]');
-    if (!media || !primarySource) {
-      return;
-    }
-    const renderedWidth = media.getBoundingClientRect().width / transform.zoom;
-    if (renderedWidth === 0) {
-      return;
-    }
-    setTransform({
-      zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, primarySource.width / renderedWidth)),
-      panX: 0,
-      panY: 0,
-    });
-  }, [primarySource, transform.zoom]);
-
-  const handleWheel = useCallback(
-    (event: WheelEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      const direction = event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-      setZoom(transform.zoom + direction);
-    },
-    [setZoom, transform.zoom],
-  );
-
-  const handlePointerDown = useCallback((event: PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) {
-      return;
-    }
-    dragRef.current = {
-      pointerId: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-    event.currentTarget.dataset.panning = '';
-  }, []);
-
-  const handlePointerMove = useCallback(
-    (event: PointerEvent<HTMLDivElement>) => {
-      const drag = dragRef.current;
-      if (!drag || drag.pointerId !== event.pointerId) {
-        return;
-      }
-      const deltaX = event.clientX - drag.x;
-      const deltaY = event.clientY - drag.y;
-      dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
-      setTransform((current) => ({
-        ...current,
-        panX: current.panX + deltaX,
-        panY: current.panY + deltaY,
-      }));
-    },
-    [setTransform],
-  );
-
-  const handlePointerUp = useCallback((event: PointerEvent<HTMLDivElement>) => {
-    if (dragRef.current?.pointerId !== event.pointerId) {
-      return;
-    }
-    dragRef.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-    delete event.currentTarget.dataset.panning;
-  }, []);
-
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>) => {
-      event.stopPropagation();
-      const target = event.target;
-      const isFormControl =
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement;
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-      if (event.key === 'ArrowLeft' && previousFile) {
-        if (isFormControl) {
-          return;
-        }
-        event.preventDefault();
-        onNavigate(previousFile.filename);
-        return;
-      }
-      if (event.key === 'ArrowRight' && nextFile) {
-        if (isFormControl) {
-          return;
-        }
-        event.preventDefault();
-        onNavigate(nextFile.filename);
-        return;
-      }
-      if (event.key.toLowerCase() === 'm' && hasBoth) {
-        event.preventDefault();
-        setBlinkActive(false);
-        const modeIndex = MODE_OPTIONS.findIndex((option) => option.value === mode);
-        onModeChange(MODE_OPTIONS[(modeIndex + 1) % MODE_OPTIONS.length]?.value ?? '2up');
-        return;
-      }
-      if (event.key === ' ' && hasBoth) {
-        if (isFormControl || target instanceof HTMLButtonElement) {
-          return;
-        }
-        event.preventDefault();
-        setBlinkActive(true);
-        setBlinkAfter((current) => !current);
-      }
-    },
-    [
-      hasBoth,
-      mode,
-      nextFile,
-      onClose,
-      onModeChange,
-      onNavigate,
-      previousFile,
-      setBlinkActive,
-      setBlinkAfter,
-    ],
-  );
 
   const stageProps = {
     transform,
@@ -330,7 +192,7 @@ export function ImageDiffLightbox({
           {hasBoth ? (
             <SegmentedControl
               ariaLabel='Image comparison mode'
-              options={MODE_OPTIONS}
+              options={IMAGE_LIGHTBOX_MODE_OPTIONS}
               value={mode}
               onChange={(nextMode) => {
                 setBlinkActive(false);
@@ -360,7 +222,7 @@ export function ImageDiffLightbox({
               variant='outline'
               size='icon-sm'
               aria-label='Zoom out'
-              onClick={() => setZoom(transform.zoom - ZOOM_STEP)}
+              onClick={() => setZoom(transform.zoom - zoomStep)}
             >
               <IconMinus size={17} />
             </Button>
@@ -372,7 +234,7 @@ export function ImageDiffLightbox({
               variant='outline'
               size='icon-sm'
               aria-label='Zoom in'
-              onClick={() => setZoom(transform.zoom + ZOOM_STEP)}
+              onClick={() => setZoom(transform.zoom + zoomStep)}
             >
               <IconPlus size={17} />
             </Button>
@@ -578,7 +440,7 @@ export function ImageDiffLightbox({
 }
 
 type StageInteractionProps = {
-  transform: TransformState;
+  transform: ImageLightboxTransform;
   checkerboard: boolean;
   onWheel: (event: WheelEvent<HTMLDivElement>) => void;
   onPointerDown: (event: PointerEvent<HTMLDivElement>) => void;

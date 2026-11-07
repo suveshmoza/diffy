@@ -71,7 +71,7 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
       return;
     }
 
-    const lifecycle = {
+    const handles = {
       cancelled: false,
       observer: null as ResizeObserver | null,
       fallbackTimer: null as ReturnType<typeof setTimeout> | null,
@@ -79,19 +79,19 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
     };
 
     const markReadyIfSized = () => {
-      if (lifecycle.cancelled) {
+      if (handles.cancelled) {
         return true;
       }
 
       if (currentHost.getBoundingClientRect().height > 0) {
         setIsReady(true);
 
-        lifecycle.observer?.disconnect();
-        lifecycle.observer = null;
+        handles.observer?.disconnect();
+        handles.observer = null;
 
-        if (lifecycle.fallbackTimer != null) {
-          clearTimeout(lifecycle.fallbackTimer);
-          lifecycle.fallbackTimer = null;
+        if (handles.fallbackTimer != null) {
+          clearTimeout(handles.fallbackTimer);
+          handles.fallbackTimer = null;
         }
 
         return true;
@@ -105,7 +105,7 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
         return;
       }
 
-      lifecycle.rafId = requestAnimationFrame(() => {
+      handles.rafId = requestAnimationFrame(() => {
         scheduleRafChecks(framesLeft - 1);
       });
     };
@@ -119,30 +119,30 @@ export function useCodeViewHostReady(hostRef: RefObject<HTMLDivElement | null>):
       return;
     }
 
-    lifecycle.observer = new ResizeObserver(() => {
+    handles.observer = new ResizeObserver(() => {
       markReadyIfSized();
     });
 
-    lifecycle.observer.observe(currentHost);
+    handles.observer.observe(currentHost);
 
     window.addEventListener(OVERLAY_LAYOUT_KICK_EVENT, onLayoutKick);
 
     scheduleRafChecks(HOST_READY_RAF_FRAMES);
 
-    lifecycle.fallbackTimer = setTimeout(() => {
-      if (!lifecycle.cancelled) {
+    handles.fallbackTimer = setTimeout(() => {
+      if (!handles.cancelled) {
         setIsReady(true);
       }
     }, HOST_READY_FALLBACK_MS);
 
     return () => {
-      lifecycle.cancelled = true;
+      handles.cancelled = true;
 
-      cancelAnimationFrame(lifecycle.rafId);
-      lifecycle.observer?.disconnect();
+      cancelAnimationFrame(handles.rafId);
+      handles.observer?.disconnect();
 
-      if (lifecycle.fallbackTimer != null) {
-        clearTimeout(lifecycle.fallbackTimer);
+      if (handles.fallbackTimer != null) {
+        clearTimeout(handles.fallbackTimer);
       }
 
       window.removeEventListener(OVERLAY_LAYOUT_KICK_EVENT, onLayoutKick);
