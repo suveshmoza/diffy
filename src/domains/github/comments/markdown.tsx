@@ -1,8 +1,12 @@
-import MarkdownToJsx, { type MarkdownToJSX } from 'markdown-to-jsx';
 import { useMemo, type ReactNode } from 'react';
+import ReactMarkdown, { type Components } from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 import type { GitHubPullRequestRef } from '@/domains/github/api';
 import { preprocessGithubCommentAutolinks } from '@/domains/github/comments/autolinks';
+import { parseGitHubPermalink } from '@/domains/github/comments/parse-github-permalink';
+import { PermalinkCodeEmbed } from '@/domains/github/comments/PermalinkCodeEmbed';
 
 export type RenderGitHubCommentBodyOptions = {
   pullRequestRef?: GitHubPullRequestRef;
@@ -37,136 +41,39 @@ function GitHubCommentMarkdown({ body, pullRequestRef }: GitHubCommentMarkdownPr
   }
 
   return (
-    <MarkdownToJsx
-      className='gprv-review-prose'
-      options={MARKDOWN_OPTIONS}
-    >
-      {markdown}
-    </MarkdownToJsx>
+    <div className='markdown-body gprv-markdown'>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+        components={MARKDOWN_COMPONENTS}
+      >
+        {markdown}
+      </ReactMarkdown>
+    </div>
   );
 }
 
-const MARKDOWN_OPTIONS: MarkdownToJSX.Options = {
-  disableParsingRawHTML: false,
-  forceBlock: true,
-  overrides: {
-    p: {
-      component: 'p',
-      props: { className: 'gprv-review-paragraph' },
-    },
-    em: {
-      component: 'em',
-      props: { className: 'gprv-review-em' },
-    },
-    del: {
-      component: 'del',
-      props: { className: 'gprv-review-strikethrough' },
-    },
-    a: {
-      component: SafeMarkdownLink,
-    },
-    blockquote: {
-      component: 'blockquote',
-      props: { className: 'gprv-review-quote' },
-    },
-    ul: {
-      component: 'ul',
-      props: { className: 'gprv-review-list gprv-review-list-unordered' },
-    },
-    ol: {
-      component: 'ol',
-      props: { className: 'gprv-review-list gprv-review-list-ordered' },
-    },
-    li: {
-      component: 'li',
-      props: { className: 'gprv-review-list-item' },
-    },
-    h1: {
-      component: 'h1',
-      props: { className: 'gprv-review-heading gprv-review-heading-h1' },
-    },
-    h2: {
-      component: 'h2',
-      props: { className: 'gprv-review-heading gprv-review-heading-h2' },
-    },
-    h3: {
-      component: 'h3',
-      props: { className: 'gprv-review-heading gprv-review-heading-h3' },
-    },
-    h4: {
-      component: 'h4',
-      props: { className: 'gprv-review-heading gprv-review-heading-h4' },
-    },
-    h5: {
-      component: 'h5',
-      props: { className: 'gprv-review-heading gprv-review-heading-h5' },
-    },
-    h6: {
-      component: 'h6',
-      props: { className: 'gprv-review-heading gprv-review-heading-h6' },
-    },
-    hr: {
-      component: 'hr',
-      props: { className: 'gprv-review-divider' },
-    },
-    table: {
-      component: MarkdownTable,
-    },
-    thead: {
-      component: 'thead',
-      props: { className: 'gprv-review-table-head' },
-    },
-    tbody: {
-      component: 'tbody',
-      props: { className: 'gprv-review-table-body' },
-    },
-    tr: {
-      component: 'tr',
-      props: { className: 'gprv-review-table-row' },
-    },
-    th: {
-      component: 'th',
-      props: { className: 'gprv-review-table-cell gprv-review-table-header-cell' },
-    },
-    td: {
-      component: 'td',
-      props: { className: 'gprv-review-table-cell' },
-    },
-    img: {
-      component: SafeMarkdownImage,
-    },
-    input: {
-      component: MarkdownTaskCheckbox,
-    },
-    code: {
-      component: MarkdownCode,
-    },
-    pre: {
-      component: MarkdownPre,
-    },
-    details: {
-      component: 'details',
-      props: { className: 'gprv-review-details' },
-    },
-    summary: {
-      component: 'summary',
-      props: { className: 'gprv-review-summary' },
-    },
-  },
+/** Only security + GitHub suggestion UX — styling comes from github-markdown-css. */
+const MARKDOWN_COMPONENTS: Components = {
+  a: SafeMarkdownLink,
+  img: SafeMarkdownImage,
+  input: MarkdownTaskCheckbox,
+  pre: MarkdownPre,
+  code: MarkdownCode,
 };
 
 function SafeMarkdownLink({
   href,
   children,
+  node: _node,
   ...props
-}: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
+}: React.ComponentPropsWithoutRef<'a'> & { node?: unknown }) {
   if (!href || !isSafeLinkUrl(href)) {
     return <span>{children}</span>;
   }
 
-  return (
+  const link = (
     <a
-      className='gprv-review-link'
       href={href}
       target='_blank'
       rel='noopener noreferrer'
@@ -174,6 +81,18 @@ function SafeMarkdownLink({
     >
       {children}
     </a>
+  );
+
+  const permalink = parseGitHubPermalink(href);
+  if (!permalink) {
+    return link;
+  }
+
+  return (
+    <PermalinkCodeEmbed
+      permalink={permalink}
+      fallback={link}
+    />
   );
 }
 
@@ -183,23 +102,21 @@ function SafeMarkdownImage({
   width: _width,
   height: _height,
   style: _style,
+  node: _node,
   ...props
-}: React.ImgHTMLAttributes<HTMLImageElement>) {
+}: React.ComponentPropsWithoutRef<'img'> & { node?: unknown }) {
   if (!src || !isSafeImageUrl(src)) {
     return null;
   }
 
   return (
-    <span className='gprv-review-image-wrap'>
-      <img
-        className='gprv-review-image'
-        src={src}
-        alt={alt ?? ''}
-        loading='lazy'
-        decoding='async'
-        {...props}
-      />
-    </span>
+    <img
+      src={src}
+      alt={alt ?? ''}
+      loading='lazy'
+      decoding='async'
+      {...props}
+    />
   );
 }
 
@@ -207,15 +124,15 @@ function MarkdownTaskCheckbox({
   type,
   checked,
   disabled,
+  node: _node,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+}: React.ComponentPropsWithoutRef<'input'> & { node?: unknown }) {
   if (type !== 'checkbox') {
     return null;
   }
 
   return (
     <input
-      className='gprv-review-task-checkbox'
       type='checkbox'
       checked={checked}
       disabled={disabled ?? true}
@@ -225,19 +142,16 @@ function MarkdownTaskCheckbox({
   );
 }
 
-function MarkdownTable({ children }: { children?: ReactNode }) {
-  return (
-    <div className='gprv-review-table-wrap'>
-      <table className='gprv-review-table'>{children}</table>
-    </div>
-  );
-}
-
-function MarkdownPre({ children }: { children?: ReactNode }) {
+function MarkdownPre({ children }: { children?: ReactNode; node?: unknown }) {
   return <>{children}</>;
 }
 
-function MarkdownCode({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) {
+function MarkdownCode({
+  className,
+  children,
+  node: _node,
+  ...props
+}: React.ComponentPropsWithoutRef<'code'> & { node?: unknown }) {
   const language = getCodeLanguage(className);
   const rawContent = String(children);
   const content = rawContent.replace(/\n$/, '');
@@ -246,7 +160,7 @@ function MarkdownCode({ className, children, ...props }: React.HTMLAttributes<HT
   if (!isFenced) {
     return (
       <code
-        className='gprv-review-inline-code'
+        className={className}
         {...props}
       >
         {children}
@@ -254,32 +168,21 @@ function MarkdownCode({ className, children, ...props }: React.HTMLAttributes<HT
     );
   }
 
-  return (
-    <CommentCodeBlock
-      language={language ?? ''}
-      content={content}
-    />
-  );
-}
+  if (language === 'suggestion') {
+    return (
+      <div className='gprv-markdown-suggestion'>
+        <div className='gprv-markdown-suggestion-label'>Suggested change</div>
+        <pre>
+          <code>{normalizeSuggestionContent(content)}</code>
+        </pre>
+      </div>
+    );
+  }
 
-function CommentCodeBlock({ language, content }: { language: string; content: string }) {
-  const isSuggestion = language === 'suggestion';
-  const normalizedContent = isSuggestion ? normalizeSuggestionContent(content) : content;
-
   return (
-    <div
-      className={
-        isSuggestion
-          ? 'gprv-review-code gprv-review-suggestion'
-          : 'gprv-review-code gprv-review-code-block'
-      }
-    >
-      {isSuggestion ? <div className='gprv-review-code-label'>Suggested change</div> : null}
-      {!isSuggestion && language ? <div className='gprv-review-code-label'>{language}</div> : null}
-      <pre>
-        <code>{normalizedContent}</code>
-      </pre>
-    </div>
+    <pre>
+      <code className={className}>{content}</code>
+    </pre>
   );
 }
 

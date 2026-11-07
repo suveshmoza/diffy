@@ -13,7 +13,6 @@ import {
   formatReviewCommentLineLabel,
   reviewCommentToSelectedLineRange,
 } from '@/domains/review/model/format-line-range';
-import { formatQuoteReplyPrefill } from '@/domains/review/model/format-quote-reply';
 import { getReviewReplyKey } from '@/domains/review/model/reply-session';
 import { useReview } from '@/domains/review/providers/ReviewContext';
 import { Button } from '@/shared/ui/button';
@@ -72,7 +71,7 @@ const ReviewCommentThreadBase = memo(function ReviewCommentThreadBase({
 
   return (
     <div
-      className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'
+      className='box-border w-full min-w-0 max-w-full p-1 whitespace-normal text-foreground'
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -150,7 +149,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
   const { actions, meta } = useReview();
   const { pullRequestRef } = meta;
   const replyKey = getReviewReplyKey(itemId, comment.id);
-  const replyLabel = depth > 0 ? 'Quote reply' : 'Reply';
+  const replyLabel = 'Reply';
   const isMinimized = isReviewCommentHidden(comment);
   const [isExpanded, setIsExpanded] = useState(false);
   const isHidden = isMinimized && !isExpanded;
@@ -187,22 +186,21 @@ const CommentReplySlot = memo(function CommentReplySlot({
     <div
       className='grid max-w-full min-w-0 gap-0'
       data-reply-key={replyKey}
-      {...(depth > 0 ? { 'data-reply-prefill': formatQuoteReplyPrefill(comment) } : {})}
     >
       {lineRangeLabel ? (
         <p className='mb-2.5 text-xs font-semibold text-foreground/65'>{lineRangeLabel}</p>
       ) : null}
       <article className='flex w-full min-w-0 max-w-full items-start gap-2'>
         <span
-          className='inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[11px] font-bold text-primary'
+          className='inline-flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-xs font-bold text-primary'
           aria-hidden='true'
         >
           {comment.user.avatar_url ? (
             <img
               src={comment.user.avatar_url}
               alt=''
-              width={24}
-              height={24}
+              width={16}
+              height={16}
               loading='lazy'
               decoding='async'
               className='size-full object-cover'
@@ -213,7 +211,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
         </span>
         <div className='min-w-0 max-w-full flex-1'>
           <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
-            <strong className='text-sm font-semibold'>{comment.user.login}</strong>
+            <strong className='text-xs font-mono'>{comment.user.login}</strong>
             <time
               className='text-xs text-muted-foreground'
               dateTime={comment.created_at}

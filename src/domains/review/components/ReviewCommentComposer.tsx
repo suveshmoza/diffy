@@ -85,7 +85,7 @@ export function ReviewCommentComposer({
 
   return (
     <ReviewComposerForm
-      className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'
+      className='box-border w-full min-w-0 max-w-full p-1 whitespace-normal text-foreground'
       onSubmit={onSubmit}
       onCancel={onCancel}
     >

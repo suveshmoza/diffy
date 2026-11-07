@@ -14,15 +14,15 @@ export function ReviewComposerAuthor({ children }: ReviewComposerAuthorProps) {
   return (
     <div className='flex w-full min-w-0 max-w-full items-start gap-2'>
       <span
-        className='inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[11px] font-bold text-primary'
+        className='inline-flex size-4 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[10px] font-bold text-primary'
         aria-hidden='true'
       >
         {viewerUser?.avatar_url ? (
           <img
             src={viewerUser.avatar_url}
             alt=''
-            width={24}
-            height={24}
+            width={16}
+            height={16}
             loading='lazy'
             decoding='async'
             className='size-full object-cover'
@@ -34,7 +34,7 @@ export function ReviewComposerAuthor({ children }: ReviewComposerAuthorProps) {
       <div className='min-w-0 max-w-full flex-1'>
         {viewerUser ? (
           <div className='flex flex-wrap items-baseline gap-x-2 gap-y-0'>
-            <strong className='text-sm font-semibold'>{viewerUser.login}</strong>
+            <strong className='text-xs'>{viewerUser.login}</strong>
           </div>
         ) : null}
         {children}

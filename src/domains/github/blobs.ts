@@ -24,11 +24,13 @@ export class MediaFileFetchError extends Error {
   }
 }
 
+export type GitHubRepoRef = Pick<GitHubPullRequestRef, 'owner' | 'repo'>;
+
 /**
  * Fetch raw file bytes at a commit via the Contents API (works for private repos with PAT).
  */
 export async function fetchRepoFileBytes(
-  ref: GitHubPullRequestRef,
+  ref: GitHubRepoRef,
   path: string,
   commitSha: string,
 ): Promise<RepoFileBytes> {

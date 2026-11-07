@@ -75,7 +75,7 @@ export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedComme
   );
 
   return (
-    <div className='box-border w-full min-w-0 max-w-full p-3.5 whitespace-normal text-foreground lg:max-w-lg'>
+    <div className='box-border w-full min-w-0 max-w-full p-1 whitespace-normal text-foreground'>
       <div
         className={cn(
           'box-border w-full min-w-0 max-w-[90%] rounded-[10px] border border-border bg-card p-4 text-foreground shadow-sm lg:max-w-full',

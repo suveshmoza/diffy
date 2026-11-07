@@ -3,7 +3,6 @@ const REPLY_SLOT_ATTR = 'data-reply-key';
 const REPLY_DRAFT_ATTR = 'data-reply-draft';
 const REPLY_COMPOSER_ATTR = 'data-reply-composer';
 const REPLY_OPEN_ATTR = 'data-reply-open';
-const REPLY_PREFILL_ATTR = 'data-reply-prefill';
 
 const REPLY_TEXTAREA_SELECTOR = '[data-reply-composer] textarea';
 
@@ -104,8 +103,7 @@ export function openReplySession(modal: HTMLElement, replyKey: string): void {
   slot.setAttribute(REPLY_OPEN_ATTR, '');
 
   if (wasHidden) {
-    const draft = readDraft(replyKey, slot);
-    textarea.value = draft.length > 0 ? draft : (slot.getAttribute(REPLY_PREFILL_ATTR) ?? '');
+    textarea.value = readDraft(replyKey, slot);
   }
 
   modal.setAttribute(REPLY_KEY_ATTR, replyKey);
