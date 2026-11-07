@@ -3,10 +3,9 @@ import type { SupportedLanguages } from '@pierre/diffs';
 import langIds from './lang-ids.json';
 
 /**
- * Language ids loaded by the diff worker.
+ * Canonical Shiki language ids loaded by the diff worker (no aliases).
  *
- * AUTO-GENERATED — do not edit `lang-ids.json` by hand.
- * To add or remove a language, edit `blocked-lang-ids.json` and rebuild.
- * See README § "Syntax highlighting languages".
+ * Edit `lang-ids.json` to add or remove languages, then rebuild so
+ * `shiki-pruner` drops unused grammar chunks. See CONTRIBUTING.
  */
 export const DIFF_LANG_IDS = langIds as readonly SupportedLanguages[];

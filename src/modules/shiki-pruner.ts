@@ -1,31 +1,34 @@
-import { readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises';
+import { readFile, readdir, stat, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { bundledLanguages, bundledThemes } from 'shiki';
+import { bundledLanguagesInfo, bundledThemes } from 'shiki';
 import { defineWxtModule } from 'wxt/modules';
 
-import blockedLangIds from '../domains/diff/highlighting/blocked-lang-ids.json' with { type: 'json' };
+import allowedLangIds from '../domains/diff/highlighting/lang-ids.json' with { type: 'json' };
 
-/** Shiki chunk stems that alias to a canonical lang id. */
-const DIFF_LANG_ALIASES: Record<string, string> = {
-  shellscript: 'shell',
-  shellsession: 'shell',
-  docker: 'dockerfile',
-};
-
-function resolveLangCanonical(stem: string): string {
-  return DIFF_LANG_ALIASES[stem] ?? stem;
+/** Map Shiki alias (and id) → canonical language id. */
+const ALIAS_TO_CANONICAL = new Map<string, string>();
+for (const info of bundledLanguagesInfo) {
+  ALIAS_TO_CANONICAL.set(info.id, info.id);
+  for (const alias of info.aliases ?? []) {
+    ALIAS_TO_CANONICAL.set(alias, info.id);
+  }
 }
 
-const BLOCKED_SHIKI_LANGS = new Set<string>(blockedLangIds);
+/** Canonical ids from the hand-maintained allowlist. */
+const ALLOWED_CANONICAL = new Set(allowedLangIds.map((id) => ALIAS_TO_CANONICAL.get(id) ?? id));
+
 const BUNDLED_THEME_STEMS = new Set(Object.keys(bundledThemes));
-const ALIAS_LANG_KEYS = new Set(Object.keys(DIFF_LANG_ALIASES));
 
 /** Vite app chunks that are not Shiki grammars/themes — always keep. */
 const KEEP_BUNDLE_STEMS = new Set(['overlay', 'popup', 'jsx-runtime']);
 
 /** Vite default chunk hash: 8 chars from [A-Za-z0-9_-]. */
 const VITE_CHUNK_HASH_RE = /-[A-Za-z0-9_-]{8}\.js$/;
+
+function resolveLangCanonical(stem: string): string {
+  return ALIAS_TO_CANONICAL.get(stem) ?? stem;
+}
 
 function getShikiChunkStem(filename: string): string | null {
   if (!filename.endsWith('.js')) {
@@ -38,8 +41,8 @@ function getShikiChunkStem(filename: string): string | null {
   return filename.slice(0, match.index);
 }
 
-function isBlockedLangStem(stem: string): boolean {
-  return BLOCKED_SHIKI_LANGS.has(resolveLangCanonical(stem));
+function isAllowedLangStem(stem: string): boolean {
+  return ALLOWED_CANONICAL.has(resolveLangCanonical(stem));
 }
 
 function isShikiChunkToKeep(stem: string): boolean {
@@ -55,39 +58,7 @@ function isShikiChunkToKeep(stem: string): boolean {
     return true;
   }
 
-  return !isBlockedLangStem(stem);
-}
-
-function computeWorkerLangIds(): string[] {
-  const blocked = BLOCKED_SHIKI_LANGS;
-  return Object.keys(bundledLanguages)
-    .filter((id) => {
-      const canonical = resolveLangCanonical(id);
-      if (blocked.has(canonical)) {
-        return false;
-      }
-      if (ALIAS_LANG_KEYS.has(id)) {
-        return false;
-      }
-      return true;
-    })
-    .toSorted();
-}
-
-async function syncWorkerLangIds(
-  wxtRoot: string,
-  logger: { info: (msg: string) => void },
-): Promise<void> {
-  const langIds = computeWorkerLangIds();
-  const outPath = resolve(wxtRoot, './src/domains/diff/highlighting/lang-ids.json');
-  const next = `${JSON.stringify(langIds, null, 2)}\n`;
-  const current = await readFile(outPath, 'utf-8').catch(() => null);
-  if (current === next) {
-    return;
-  }
-
-  await writeFile(outPath, next, 'utf-8');
-  logger.info(`\`[shiki-pruner]\` Updated lang-ids.json (${langIds.length} langs).`);
+  return isAllowedLangStem(stem);
 }
 
 async function pruneUnusedShikiChunks(
@@ -176,8 +147,6 @@ async function pruneUnusedShikiChunks(
 
 export default defineWxtModule((wxt) => {
   wxt.hooks.hook('build:done', async () => {
-    await syncWorkerLangIds(wxt.config.root, wxt.logger);
-
     if (wxt.server) {
       return;
     }
