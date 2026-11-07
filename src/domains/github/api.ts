@@ -8,8 +8,6 @@ import { readGitHubToken, subscribeToGitHubTokenChanges } from './auth/token-sto
 import { githubFetch } from './github-fetch';
 import { addRateLimitListener, getOctokitClient, resetOctokitClients } from './octokit';
 
-export { isGitHubRateLimitError } from '@/shared/rate-limit';
-
 export type GitHubPullRequestRef = {
   owner: string;
   repo: string;
