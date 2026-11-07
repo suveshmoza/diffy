@@ -222,24 +222,26 @@ function buildReviewCommentThreads(
   return threadMetadata;
 }
 
-function createAnnotationForItem(
+export function createAnnotationForItem(
   item: CodeViewItem<ReviewAnnotationMetadata> | undefined,
   lineNumber: number,
-  side: AnnotationSide,
-  thread: ReviewThreadMetadata,
+  side: AnnotationSide | undefined,
+  metadata: ReviewAnnotationMetadata,
 ): DiffLineAnnotation<ReviewAnnotationMetadata> | LineAnnotation<ReviewAnnotationMetadata> {
+  // OptionalMetadata distributes over the metadata union, so the library types
+  // cannot infer which variant this object belongs to from a union-typed value.
   if (item?.type === 'file') {
     return {
       lineNumber,
-      metadata: thread,
-    };
+      metadata,
+    } as LineAnnotation<ReviewAnnotationMetadata>;
   }
 
   return {
     lineNumber,
-    side,
-    metadata: thread,
-  };
+    side: side ?? 'additions',
+    metadata,
+  } as DiffLineAnnotation<ReviewAnnotationMetadata>;
 }
 
 function buildItemIdByPath(items: readonly CodeViewItem<unknown>[]): Map<string, string> {

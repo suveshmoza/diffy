@@ -1,13 +1,12 @@
 import type {
-  AnnotationSide,
   CodeViewItem,
   DiffLineAnnotation,
   LineAnnotation,
   SelectedLineRange,
-  SelectionSide,
 } from '@pierre/diffs';
 
 import {
+  createAnnotationForItem,
   getCommentAnchorLine,
   toAnnotationSide,
   type ReviewAnnotationMetadata,
@@ -92,7 +91,7 @@ export function addDraftAnnotation(
   }
 
   const metadata: ReviewDraftMetadata = { kind: 'draft', draftId, range };
-  const draftAnnotation = createAnnotationForMetadata(
+  const draftAnnotation = createAnnotationForItem(
     item,
     range.end,
     range.endSide ?? range.side,
@@ -121,7 +120,7 @@ export function replaceDraftWithThreadAnnotation(
     return withoutDraft;
   }
 
-  const annotation = createAnnotationForMetadata(
+  const annotation = createAnnotationForItem(
     withoutDraft,
     line,
     toAnnotationSide(comment.side),
@@ -152,7 +151,7 @@ export function addQueuedAnnotation(
   body: string,
 ): CodeViewItem<ReviewAnnotationMetadata> {
   const metadata: ReviewQueuedMetadata = { kind: 'queued', queuedId, range, body };
-  const annotation = createAnnotationForMetadata(
+  const annotation = createAnnotationForItem(
     item,
     range.end,
     range.endSide ?? range.side,
@@ -217,7 +216,7 @@ export function addThreadAnnotationForComment(
     return item;
   }
 
-  const annotation = createAnnotationForMetadata(
+  const annotation = createAnnotationForItem(
     item,
     line,
     toAnnotationSide(comment.side),
@@ -377,24 +376,4 @@ function withAnnotations(
     ...item,
     annotations: nextAnnotations as DiffLineAnnotation<ReviewAnnotationMetadata>[] | undefined,
   });
-}
-
-function createAnnotationForMetadata(
-  item: CodeViewItem<ReviewAnnotationMetadata>,
-  lineNumber: number,
-  side: SelectionSide | undefined,
-  metadata: ReviewAnnotationMetadata,
-): ReviewAnnotation {
-  if (item.type === 'file') {
-    return {
-      lineNumber,
-      metadata,
-    } as ReviewAnnotation;
-  }
-
-  return {
-    lineNumber,
-    side: (side ?? 'additions') as AnnotationSide,
-    metadata,
-  } as ReviewAnnotation;
 }

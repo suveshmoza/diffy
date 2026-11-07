@@ -340,8 +340,11 @@ export function DiffOverlay({
     ],
   );
 
-  const { containerRef: handleCodeViewContainer, refresh: refreshCodeViewLayout } =
-    useCodeViewLayoutRefresh(viewerRef, codeViewHostRef, layoutRefreshKey);
+  const { refresh: refreshCodeViewLayout } = useCodeViewLayoutRefresh(
+    viewerRef,
+    codeViewHostRef,
+    layoutRefreshKey,
+  );
 
   useRestoreReviewSession({
     ref: data.ref,
@@ -1240,7 +1243,6 @@ export function DiffOverlay({
                           <ThemedCodeView<ReviewAnnotationMetadata>
                             key={`codeview-${refreshGeneration}`}
                             ref={viewerRef}
-                            containerRef={handleCodeViewContainer}
                             initialItems={codeViewItems.items}
                             className='gprv-code-view'
                             style={codeViewStyle}

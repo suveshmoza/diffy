@@ -45,10 +45,6 @@ export function useCodeViewLayoutRefresh<T>(
   hostRef: RefObject<HTMLDivElement | null>,
   layoutKey: unknown,
 ) {
-  const containerRef = useCallback((_node: HTMLDivElement | null) => {
-    // Pierre CodeView manages scroll container lifecycle and resize observation.
-  }, []);
-
   const refresh = useCallback(() => {
     kickCodeViewLayout(viewerRef.current, hostRef.current);
   }, [hostRef, viewerRef]);
@@ -59,7 +55,7 @@ export function useCodeViewLayoutRefresh<T>(
     // oxlint-disable-next-line react-hooks/exhaustive-deps, react/exhaustive-effect-dependencies
   }, [layoutKey, refresh]);
 
-  return { containerRef, refresh };
+  return { refresh };
 }
 
 const HOST_READY_FALLBACK_MS = 300;

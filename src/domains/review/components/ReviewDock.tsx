@@ -87,6 +87,7 @@ export function ReviewDock() {
       await onPublish(event, body);
     } catch (publishError: unknown) {
       setError(toErrorMessage(publishError));
+    } finally {
       setIsSubmitting(false);
     }
   }, [body, event, onPublish]);
