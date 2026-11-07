@@ -12,6 +12,7 @@ import {
   verdictHelperText,
 } from '@/domains/review/model/publish-review';
 import { useReviewQueueContext } from '@/domains/review/providers/ReviewQueueContext';
+import { toErrorMessage } from '@/shared/errors';
 import { IconChevronDown } from '@/shared/icons/Chevron';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -85,7 +86,7 @@ export function ReviewDock() {
     try {
       await onPublish(event, body);
     } catch (publishError: unknown) {
-      setError(publishError instanceof Error ? publishError.message : String(publishError));
+      setError(toErrorMessage(publishError));
       setIsSubmitting(false);
     }
   }, [body, event, onPublish]);

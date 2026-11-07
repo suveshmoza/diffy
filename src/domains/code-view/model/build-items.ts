@@ -64,13 +64,7 @@ export function buildCodeViewItems(data: PullRequestDiffData): CodeViewItemsResu
 
   const patch = data.patch.trim() ? data.patch : buildPatchFromFiles(data.files);
 
-  let parsed;
-  try {
-    parsed = parsePatchFiles(patch, { cacheKeyPrefix: cacheKey, throwOnError: true });
-  } catch (error: unknown) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to parse pull request diff: ${detail}`, { cause: error });
-  }
+  let parsed = parsePatchFiles(patch, { cacheKeyPrefix: cacheKey, throwOnError: true });
 
   const fileDiffByPath = new Map<string, FileDiffMetadata>();
   const diffPathSet = new Set<string>();

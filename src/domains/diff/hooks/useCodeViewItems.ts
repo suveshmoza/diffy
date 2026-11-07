@@ -6,6 +6,7 @@ import {
   type CodeViewItemsResult,
 } from '@/domains/code-view/model/build-items';
 import type { PullRequestDiffData } from '@/domains/github/api';
+import { toErrorMessage } from '@/shared/errors';
 
 type UseCodeViewItemsState = {
   result: CodeViewItemsResult | null;
@@ -24,7 +25,7 @@ function buildSyncState(data: PullRequestDiffData): UseCodeViewItemsState {
     return {
       result: null,
       isBuilding: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: toErrorMessage(error),
     };
   }
 }

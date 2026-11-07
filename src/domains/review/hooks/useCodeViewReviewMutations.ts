@@ -35,6 +35,7 @@ import {
   updateCommentInAnnotation,
 } from '@/domains/review/model/review-mutations';
 import { removeReviewDraft, upsertReviewDraft } from '@/domains/review/state/review-session';
+import { toErrorMessage } from '@/shared/errors';
 
 type UseCodeViewReviewMutationsParams = {
   viewerRef: RefObject<CodeViewHandle<ReviewAnnotationMetadata, undefined> | null>;
@@ -285,7 +286,7 @@ export function useCodeViewReviewMutations({
           throw error;
         }
 
-        throw new Error(error instanceof Error ? error.message : String(error), { cause: error });
+        throw new Error(toErrorMessage(error), { cause: error });
       }
 
       updateReviewComments((comments) =>

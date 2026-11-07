@@ -2,6 +2,8 @@ import { RequestError } from '@octokit/request-error';
 import type { RestEndpointMethodTypes } from '@octokit/rest';
 import type { SelectedLineRange, SelectionSide } from '@pierre/diffs';
 
+import { toErrorMessage } from '@/shared/errors';
+
 import {
   getGitHubToken,
   type GitHubPullRequestRef,
@@ -148,7 +150,7 @@ function toGitHubReviewWriteError(error: unknown): GitHubReviewWriteError {
     }
   }
 
-  const message = error instanceof Error ? error.message : String(error);
+  const message = toErrorMessage(error);
   if (message.toLowerCase().includes('rate limit')) {
     return new GitHubReviewWriteError(
       'GitHub rate limit reached. Try again shortly.',

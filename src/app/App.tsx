@@ -13,6 +13,7 @@ import {
 } from '@/domains/github/api';
 import { useThemeControllerReady } from '@/domains/theming/providers/ThemeControllerProvider';
 import { useThemeSource } from '@/domains/theming/providers/useThemeSource';
+import { toErrorMessage } from '@/shared/errors';
 
 import { ErrorOverlay } from './ErrorOverlay';
 import { LoadingOverlay } from './LoadingOverlay';
@@ -116,7 +117,7 @@ export function App({ pullRequestUrl, onClose }: AppProps) {
     if (isError) {
       return (
         <ErrorOverlay
-          message={error instanceof Error ? error.message : String(error)}
+          message={toErrorMessage(error)}
           onRetry={retry}
           onClose={onClose}
         />
