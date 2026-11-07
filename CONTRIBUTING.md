@@ -23,7 +23,7 @@ pnpm dev
 
 `pnpm dev` watches for changes and rebuilds the extension. Reload the unpacked extension in your browser after each rebuild.
 
-When developing with `pnpm dev`, load the extension from `.output/chrome-mv3-dev`. Production builds output to `.output/chrome-mv3`.
+When developing with `pnpm dev`, load the extension from `dist/chrome-mv3-dev`. Production builds output to `dist/chrome-mv3`.
 
 ## Build
 
@@ -49,8 +49,8 @@ pnpm zip:edge           # Packaged Edge zip
 3. Enable **Developer mode**.
 4. Click **Load unpacked**.
 5. Select the build output folder:
-   - `pnpm dev` → `.output/chrome-mv3-dev`
-   - `pnpm build` → `.output/chrome-mv3`
+   - `pnpm dev` → `dist/chrome-mv3-dev`
+   - `pnpm build` → `dist/chrome-mv3`
 
 ## Load in Firefox
 
@@ -62,7 +62,7 @@ pnpm zip:edge           # Packaged Edge zip
 
 2. Open `about:debugging#/runtime/this-firefox`.
 3. Click **Load Temporary Add-on…**.
-4. Select any file inside `.output/firefox-mv2` (for example `manifest.json`).
+4. Select any file inside `dist/firefox-mv3` (for example `manifest.json`).
 
 To remove the extension, use **Remove** on the extension card (Chrome) or reload the temporary add-on page (Firefox).
 
@@ -71,13 +71,11 @@ To remove the extension, use **Remove** on the extension card (Chrome) or reload
 ```text
 diffy/
 ├── src/
-│   ├── components/      # React UI (app, diff, review, theming)
+│   ├── app/             # Overlay React composition root
+│   ├── domains/         # Feature slices (code-view, diff, github, review, theming, …)
 │   ├── entrypoints/     # background, github-pr.content, overlay, popup
-│   ├── hooks/
-│   ├── lib/             # code-view, diff, file-tree, github, overlay, query, review, theming
-│   ├── modules/         # shiki-pruner (lang allowlist + bundle pruning)
-│   ├── providers/
-│   ├── reducers/
+│   ├── modules/         # WXT modules (shiki-pruner)
+│   ├── shared/          # Shared UI and utilities
 │   └── types/
 ├── patches/             # pnpm patchedDependencies (@pierre/trees)
 └── wxt.config.ts
@@ -85,41 +83,31 @@ diffy/
 
 ## Syntax highlighting languages
 
-Syntax highlighting is powered by [Shiki](https://shiki.style/) via Pierre Diffs. To keep the extension size small, we do not ship every Shiki grammar. The extension currently includes **106 Shiki grammars** (100+ languages, including common aliases like `js`/`javascript` and `py`/`python`). Which languages are included is controlled by a **blocklist**: every Shiki bundled language is enabled except those listed in the blocklist.
+Syntax highlighting is powered by [Pierre Diffs](https://diffs.com/docs), which selects one highlighter backend at runtime:
+
+- **[Highlights](https://diffs.com/docs#highlights)** when WebAssembly SIMD is available (the usual case)
+- **[Shiki](https://shiki.style/) JS** (`shiki-js`) as a fallback when WASM is unavailable or blocked
+
+Only one backend is active per page. To keep the extension size small, we do not ship every Shiki grammar or theme. Languages and themes are controlled by hand-maintained **allowlists** (preload + pruning unused chunks from production builds).
 
 ### Files
 
-| File                                 | Editable?               | Role                                                                |
-| ------------------------------------ | ----------------------- | ------------------------------------------------------------------- |
-| `src/lib/diff/blocked-lang-ids.json` | **Yes**                 | Language ids to **exclude** from the worker and production bundle   |
-| `src/lib/diff/lang-ids.json`         | **No (auto-generated)** | Language ids the diff worker loads at runtime                       |
-| `src/lib/diff/lang-ids.ts`           | No                      | Typed re-export of `lang-ids.json` for app code                     |
-| `src/modules/shiki-pruner.ts`        | No                      | Regenerates `lang-ids.json` and prunes unused Shiki chunks on build |
+| File                                          | Editable? | Role                                                                   |
+| --------------------------------------------- | --------- | ---------------------------------------------------------------------- |
+| `src/domains/diff/highlighting/lang-ids.json` | **Yes**   | Allowlist of canonical language ids to load and keep in the zip        |
+| `src/domains/diff/highlighting/lang-ids.ts`   | No        | Typed re-export of `lang-ids.json` for app / worker preload code       |
+| `src/domains/theming/model/theme-ids.json`    | **Yes**   | Allowlist of theme names offered in the UI and kept in the zip         |
+| `src/domains/theming/model/theme-ids.ts`      | No        | Typed re-export of `theme-ids.json` for catalog / preload code         |
+| `src/modules/shiki-pruner.ts`                 | No        | On `pnpm build`, deletes Shiki lang/theme chunks not in the allowlists |
 
-On every build (including `pnpm dev`), `shiki-pruner` reads the blocklist, computes **all Shiki bundled languages minus blocked**, and writes the result to `src/lib/diff/lang-ids.json`. On production builds only, it also removes unneeded grammar chunks from the output zip.
+### Languages
 
-**Do not edit `src/lib/diff/lang-ids.json` by hand.** Changes will be overwritten on the next build.
+Use [Shiki **canonical** language ids](https://shiki.style/languages) (the **ID** column, not Alias) — e.g. `python`, `typescript`, `shellscript`, `docker`. Aliases like `ts` / `py` / `sh` still work at highlight time; do not list them in `lang-ids.json`.
 
-Language ids are [Shiki language ids](https://shiki.style/languages) (e.g. `python`, `typescript`, `shell`, `dockerfile`).
+**Add / remove:** edit `src/domains/diff/highlighting/lang-ids.json`, then `pnpm build` and reload the extension.
 
-### Add a language
+### Themes
 
-1. Open `src/lib/diff/blocked-lang-ids.json`.
-2. **Remove** the language id you want to support (keep the JSON array valid and sorted if you like).
-3. Rebuild:
+Theme names match Pierre / Shiki theme ids (e.g. `pierre-dark`, `pierre-light`). The default allowlist is the Pierre family only; adding a Shiki theme name (e.g. `catppuccin-mocha`) keeps its grammar chunk and makes it selectable in the UI.
 
-   ```bash
-   pnpm build
-   ```
-
-4. Reload the unpacked extension.
-
-The new language is included in `src/lib/diff/lang-ids.json`, loaded by the diff worker, and its grammar chunk is kept in the bundle.
-
-### Remove a language
-
-1. Open `src/lib/diff/blocked-lang-ids.json`.
-2. **Add** the language id to the array.
-3. Rebuild with `pnpm build` and reload the extension.
-
-Removing a language shrinks the zip and helps reduce the size of the extension.
+**Add / remove:** edit `src/domains/theming/model/theme-ids.json`, then `pnpm build` and reload the extension. Persisted theme names that are no longer allowlisted fall back to `pierre-light` / `pierre-dark`.

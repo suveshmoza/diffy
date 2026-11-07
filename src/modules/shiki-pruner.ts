@@ -5,6 +5,7 @@ import { bundledLanguagesInfo, bundledThemes } from 'shiki';
 import { defineWxtModule } from 'wxt/modules';
 
 import allowedLangIds from '../domains/diff/highlighting/lang-ids.json' with { type: 'json' };
+import allowedThemeIds from '../domains/theming/model/theme-ids.json' with { type: 'json' };
 
 /** Map Shiki alias (and id) → canonical language id. */
 const ALIAS_TO_CANONICAL = new Map<string, string>();
@@ -15,10 +16,13 @@ for (const info of bundledLanguagesInfo) {
   }
 }
 
-/** Canonical ids from the hand-maintained allowlist. */
-const ALLOWED_CANONICAL = new Set(allowedLangIds.map((id) => ALIAS_TO_CANONICAL.get(id) ?? id));
+/** Canonical ids from the hand-maintained language allowlist. */
+const ALLOWED_LANGS = new Set(allowedLangIds.map((id) => ALIAS_TO_CANONICAL.get(id) ?? id));
 
-const BUNDLED_THEME_STEMS = new Set(Object.keys(bundledThemes));
+/** Theme names from the hand-maintained theme allowlist. */
+const ALLOWED_THEMES = new Set(allowedThemeIds);
+
+const SHIKI_THEME_STEMS = new Set(Object.keys(bundledThemes));
 
 /** Vite app chunks that are not Shiki grammars/themes — always keep. */
 const KEEP_BUNDLE_STEMS = new Set(['overlay', 'popup', 'jsx-runtime']);
@@ -41,10 +45,18 @@ function getShikiChunkStem(filename: string): string | null {
   return filename.slice(0, match.index);
 }
 
-function isAllowedLangStem(stem: string): boolean {
-  return ALLOWED_CANONICAL.has(resolveLangCanonical(stem));
+function isLanguageGrammarStem(stem: string): boolean {
+  return ALIAS_TO_CANONICAL.has(stem);
 }
 
+function isShikiThemeStem(stem: string): boolean {
+  return SHIKI_THEME_STEMS.has(stem);
+}
+
+/**
+ * Keep app/runtime chunks; allowlisted langs; allowlisted Shiki themes.
+ * Unknown non-lang/non-theme stems stay (shared helpers, etc.).
+ */
 function isShikiChunkToKeep(stem: string): boolean {
   if (KEEP_BUNDLE_STEMS.has(stem)) {
     return true;
@@ -54,11 +66,15 @@ function isShikiChunkToKeep(stem: string): boolean {
     return true;
   }
 
-  if (BUNDLED_THEME_STEMS.has(stem)) {
-    return true;
+  if (isLanguageGrammarStem(stem)) {
+    return ALLOWED_LANGS.has(resolveLangCanonical(stem));
   }
 
-  return isAllowedLangStem(stem);
+  if (isShikiThemeStem(stem)) {
+    return ALLOWED_THEMES.has(stem);
+  }
+
+  return true;
 }
 
 async function pruneUnusedShikiChunks(
