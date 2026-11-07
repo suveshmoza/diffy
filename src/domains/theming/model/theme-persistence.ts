@@ -5,7 +5,6 @@ import { diffyThemeCatalog } from '@/domains/theming/model/theme-catalog';
 const MODE_KEY = 'diffThemeMode';
 const LIGHT_THEME_KEY = 'diffThemeLight';
 const DARK_THEME_KEY = 'diffThemeDark';
-const LEGACY_THEME_KEY = 'diffTheme';
 
 const DEFAULT_SELECTION: ThemeSelection = {
   mode: 'system',
@@ -35,46 +34,14 @@ export async function readThemeSelection(): Promise<ThemeSelection | null> {
     return null;
   }
 
-  const stored = await browser.storage.sync.get([
-    MODE_KEY,
-    LIGHT_THEME_KEY,
-    DARK_THEME_KEY,
-    LEGACY_THEME_KEY,
-  ]);
+  const stored = await browser.storage.sync.get([MODE_KEY, LIGHT_THEME_KEY, DARK_THEME_KEY]);
 
   const mode = stored[MODE_KEY];
   const light = stored[LIGHT_THEME_KEY];
   const dark = stored[DARK_THEME_KEY];
-  const legacy = stored[LEGACY_THEME_KEY];
 
-  if (mode == null && light == null && dark == null && legacy == null) {
+  if (mode == null && light == null && dark == null) {
     return null;
-  }
-
-  if (mode == null && light == null && dark == null && typeof legacy === 'string') {
-    const legacyTheme = legacy;
-    const isLight =
-      legacyTheme.includes('light') ||
-      legacyTheme === 'catppuccin-latte' ||
-      legacyTheme === 'kanagawa-lotus' ||
-      legacyTheme === 'rose-pine-dawn' ||
-      legacyTheme === 'slack-ochin';
-
-    return {
-      mode: isLight ? 'light' : 'dark',
-      lightThemeName: isLight
-        ? diffyThemeCatalog.hasTheme(legacyTheme)
-          ? legacyTheme
-          : diffyThemeCatalog.defaultLightThemeName
-        : diffyThemeCatalog.hasTheme(legacyTheme)
-          ? legacyTheme
-          : diffyThemeCatalog.defaultLightThemeName,
-      darkThemeName: isLight
-        ? diffyThemeCatalog.defaultDarkThemeName
-        : diffyThemeCatalog.hasTheme(legacyTheme)
-          ? legacyTheme
-          : diffyThemeCatalog.defaultDarkThemeName,
-    };
   }
 
   const validMode: ColorMode =
