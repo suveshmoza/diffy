@@ -282,6 +282,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
             <ReviewCommentBody
               body={comment.body}
               pullRequestRef={pullRequestRef}
+              filePath={comment.path}
             />
           )}
           {canReply && !isHidden && !isEditing ? (
@@ -311,6 +312,7 @@ const CommentReplySlot = memo(function CommentReplySlot({
           <ReviewReplyComposer
             pullRequestRef={pullRequestRef}
             inReplyToId={rootCommentId}
+            filePath={comment.path}
             nested={depth > 0}
             onCancel={() => actions.closeReply(replyKey)}
             onSuccess={(postedComment) =>

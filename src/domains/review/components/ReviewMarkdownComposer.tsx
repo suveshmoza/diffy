@@ -56,6 +56,7 @@ type ReviewMarkdownComposerProps = {
   'aria-invalid'?: boolean;
   'aria-describedby'?: string;
   pullRequestRef?: GitHubPullRequestRef;
+  filePath?: string;
 };
 
 export const ReviewMarkdownComposer = forwardRef(function ReviewMarkdownComposer(
@@ -71,6 +72,7 @@ export const ReviewMarkdownComposer = forwardRef(function ReviewMarkdownComposer
     'aria-invalid': ariaInvalid,
     'aria-describedby': ariaDescribedBy,
     pullRequestRef: pullRequestRefProp,
+    filePath,
   }: ReviewMarkdownComposerProps,
   ref: Ref<HTMLTextAreaElement>,
 ) {
@@ -159,6 +161,7 @@ export const ReviewMarkdownComposer = forwardRef(function ReviewMarkdownComposer
           <ReviewCommentBody
             body={value}
             pullRequestRef={pullRequestRef}
+            filePath={filePath}
           />
         </div>
       )}

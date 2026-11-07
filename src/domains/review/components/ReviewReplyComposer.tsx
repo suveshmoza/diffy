@@ -15,6 +15,7 @@ import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 type ReviewReplyComposerProps = {
   pullRequestRef: GitHubPullRequestRef;
   inReplyToId: number;
+  filePath?: string;
   nested?: boolean;
   onCancel: () => void;
   onSuccess: (comment: GitHubPullRequestReviewComment) => void;
@@ -23,6 +24,7 @@ type ReviewReplyComposerProps = {
 export function ReviewReplyComposer({
   pullRequestRef,
   inReplyToId,
+  filePath,
   nested = false,
   onCancel,
   onSuccess,
@@ -77,6 +79,7 @@ export function ReviewReplyComposer({
             aria-label='Reply'
             aria-invalid={error != null}
             aria-describedby={error ? errorId : undefined}
+            filePath={filePath}
           />
         </div>
         <ReviewComposerActions

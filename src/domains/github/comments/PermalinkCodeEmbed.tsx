@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
 import type { GitHubPermalink } from '@/domains/github/comments/parse-github-permalink';
 import { permalinkFileQueryOptions } from '@/domains/github/comments/permalink-query';
+import { renderLineTokens, resolveDiffThemeName } from '@/domains/github/comments/themed-tokens';
+import { useDiffThemeProps } from '@/domains/theming/providers/useDiffThemeProps';
 
 type PermalinkCodeEmbedProps = {
   permalink: GitHubPermalink;
@@ -10,7 +12,12 @@ type PermalinkCodeEmbedProps = {
 };
 
 export function PermalinkCodeEmbed({ permalink, fallback }: PermalinkCodeEmbedProps) {
-  const query = useQuery(permalinkFileQueryOptions(permalink));
+  const diffTheme = useDiffThemeProps();
+  const themeName = useMemo(
+    () => resolveDiffThemeName(diffTheme.theme, diffTheme.themeType),
+    [diffTheme.theme, diffTheme.themeType],
+  );
+  const query = useQuery(permalinkFileQueryOptions(permalink, themeName));
 
   if (query.isPending) {
     return (
@@ -32,7 +39,7 @@ export function PermalinkCodeEmbed({ permalink, fallback }: PermalinkCodeEmbedPr
     return <>{fallback}</>;
   }
 
-  const { path, lines, startLine } = query.data;
+  const { path, lines, startLine, fg } = query.data;
   const lineLabel =
     permalink.startLine === permalink.endLine
       ? `L${permalink.startLine}`
@@ -51,9 +58,12 @@ export function PermalinkCodeEmbed({ permalink, fallback }: PermalinkCodeEmbedPr
         </a>
         <span className='gprv-markdown-permalink-lines'>{lineLabel}</span>
       </div>
-      <pre className='gprv-markdown-permalink-body'>
+      <pre
+        className='gprv-markdown-permalink-body'
+        style={fg != null ? { color: fg } : undefined}
+      >
         <code>
-          {lines.map((line, index) => {
+          {lines.map((tokens, index) => {
             const lineNumber = startLine + index;
             return (
               <span
@@ -66,7 +76,7 @@ export function PermalinkCodeEmbed({ permalink, fallback }: PermalinkCodeEmbedPr
                 >
                   {lineNumber}
                 </span>
-                <span className='gprv-markdown-permalink-text'>{line || ' '}</span>
+                <span className='gprv-markdown-permalink-text'>{renderLineTokens(tokens)}</span>
               </span>
             );
           })}

@@ -5,6 +5,7 @@ import { cn } from '@/shared/utils';
 type ReviewCommentBodyProps = {
   body: string;
   pullRequestRef?: GitHubPullRequestRef;
+  filePath?: string;
   emptyMessage?: string;
   className?: string;
 };
@@ -12,6 +13,7 @@ type ReviewCommentBodyProps = {
 export function ReviewCommentBody({
   body,
   pullRequestRef,
+  filePath,
   emptyMessage = 'Nothing to preview',
   className,
 }: ReviewCommentBodyProps) {
@@ -32,7 +34,7 @@ export function ReviewCommentBody({
 
   return (
     <div className={cn('mt-1 min-w-0 text-sm leading-relaxed text-foreground', className)}>
-      {renderGitHubCommentBody(body, { pullRequestRef })}
+      {renderGitHubCommentBody(body, { pullRequestRef, filePath })}
     </div>
   );
 }

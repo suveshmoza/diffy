@@ -230,6 +230,10 @@
   white-space: pre;
 }
 
+.gprv-markdown-code-line-plain {
+  display: inline;
+}
+
 .gprv-code-view-collapse-btn {
   align-items: center;
   background: transparent;

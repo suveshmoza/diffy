@@ -73,6 +73,7 @@ export function ReviewCommentEditComposer({
           aria-label='Edit comment'
           aria-invalid={error != null}
           aria-describedby={error ? errorId : undefined}
+          filePath={comment.path}
         />
       </div>
       <ReviewComposerActions

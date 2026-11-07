@@ -797,6 +797,7 @@ export function DiffOverlay({
             key={metadata.queuedId}
             queuedId={metadata.queuedId}
             itemId={item.id}
+            path={path}
             body={metadata.body}
             range={metadata.range}
           />

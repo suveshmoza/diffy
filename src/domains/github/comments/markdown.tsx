@@ -1,16 +1,26 @@
-import { useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
 import type { GitHubPullRequestRef } from '@/domains/github/api';
 import { preprocessGithubCommentAutolinks } from '@/domains/github/comments/autolinks';
+import { resolveMarkdownHighlightLanguage } from '@/domains/github/comments/highlight-code-source';
+import { HighlightedCodeBlock } from '@/domains/github/comments/HighlightedCodeBlock';
 import { parseGitHubPermalink } from '@/domains/github/comments/parse-github-permalink';
 import { PermalinkCodeEmbed } from '@/domains/github/comments/PermalinkCodeEmbed';
 
 export type RenderGitHubCommentBodyOptions = {
   pullRequestRef?: GitHubPullRequestRef;
+  /** File path for the comment; used to highlight `suggestion` fences. */
+  filePath?: string;
 };
+
+type MarkdownRenderContextValue = {
+  filePath?: string;
+};
+
+const MarkdownRenderContext = createContext<MarkdownRenderContextValue>({});
 
 export function renderGitHubCommentBody(
   body: string,
@@ -20,6 +30,7 @@ export function renderGitHubCommentBody(
     <GitHubCommentMarkdown
       body={body}
       pullRequestRef={options?.pullRequestRef}
+      filePath={options?.filePath}
     />
   );
 }
@@ -27,29 +38,33 @@ export function renderGitHubCommentBody(
 type GitHubCommentMarkdownProps = {
   body: string;
   pullRequestRef?: GitHubPullRequestRef;
+  filePath?: string;
 };
 
-function GitHubCommentMarkdown({ body, pullRequestRef }: GitHubCommentMarkdownProps) {
+function GitHubCommentMarkdown({ body, pullRequestRef, filePath }: GitHubCommentMarkdownProps) {
   const trimmed = body.trim();
   const markdown = useMemo(
     () => preprocessGithubCommentAutolinks(trimmed, pullRequestRef),
     [trimmed, pullRequestRef],
   );
+  const contextValue = useMemo((): MarkdownRenderContextValue => ({ filePath }), [filePath]);
 
   if (!trimmed) {
     return null;
   }
 
   return (
-    <div className='markdown-body gprv-markdown'>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-        components={MARKDOWN_COMPONENTS}
-      >
-        {markdown}
-      </ReactMarkdown>
-    </div>
+    <MarkdownRenderContext.Provider value={contextValue}>
+      <div className='markdown-body gprv-markdown'>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
+          components={MARKDOWN_COMPONENTS}
+        >
+          {markdown}
+        </ReactMarkdown>
+      </div>
+    </MarkdownRenderContext.Provider>
   );
 }
 
@@ -152,6 +167,7 @@ function MarkdownCode({
   node: _node,
   ...props
 }: React.ComponentPropsWithoutRef<'code'> & { node?: unknown }) {
+  const { filePath } = useContext(MarkdownRenderContext);
   const language = getCodeLanguage(className);
   const rawContent = String(children);
   const content = rawContent.replace(/\n$/, '');
@@ -168,22 +184,24 @@ function MarkdownCode({
     );
   }
 
+  const highlightLanguage = resolveMarkdownHighlightLanguage(language, filePath);
+  const highlighted = (
+    <HighlightedCodeBlock
+      source={language === 'suggestion' ? normalizeSuggestionContent(content) : content}
+      language={highlightLanguage}
+    />
+  );
+
   if (language === 'suggestion') {
     return (
       <div className='gprv-markdown-suggestion'>
         <div className='gprv-markdown-suggestion-label'>Suggested change</div>
-        <pre>
-          <code>{normalizeSuggestionContent(content)}</code>
-        </pre>
+        {highlighted}
       </div>
     );
   }
 
-  return (
-    <pre>
-      <code className={className}>{content}</code>
-    </pre>
-  );
+  return highlighted;
 }
 
 function normalizeSuggestionContent(content: string): string {

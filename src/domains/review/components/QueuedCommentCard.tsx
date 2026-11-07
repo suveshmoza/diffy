@@ -20,11 +20,12 @@ import { ReviewMarkdownComposer } from './ReviewMarkdownComposer';
 type QueuedCommentCardProps = {
   queuedId: string;
   itemId: string;
+  path: string;
   body: string;
   range: SelectedLineRange;
 };
 
-export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedCommentCardProps) {
+export function QueuedCommentCard({ queuedId, itemId, path, body, range }: QueuedCommentCardProps) {
   const { removeQueued, editQueued } = useReviewQueueContext();
   const { actions, meta } = useReview();
   const [isEditing, setIsEditing] = useState(false);
@@ -127,6 +128,7 @@ export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedComme
               onChange={setDraft}
               onKeyDown={handleKeyDown}
               rows={3}
+              filePath={path}
             />
             <div className='mt-2.5 flex flex-wrap justify-end gap-2'>
               <Button
@@ -151,6 +153,7 @@ export function QueuedCommentCard({ queuedId, itemId, body, range }: QueuedComme
           <ReviewCommentBody
             body={body}
             pullRequestRef={meta.pullRequestRef}
+            filePath={path}
             className='mt-0'
           />
         )}
