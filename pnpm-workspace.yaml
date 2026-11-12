@@ -5,5 +5,3 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@pierre/theming@1.0.2'
   - '@pierre/diffs@1.6.1'
-patchedDependencies:
-  '@pierre/trees@1.0.0-beta.6': patches/@pierre__trees@1.0.0-beta.6.patch
