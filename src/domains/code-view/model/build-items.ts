@@ -121,6 +121,8 @@ function createMediaCodeViewItem(
     type: 'diff',
     fileDiff: createMediaFileDiffMetadata(file, changeType),
     annotations: createMediaAnnotations(file, kind),
+    // Unsupported binaries are a short notice — collapse them by default.
+    collapsed: kind === 'binary',
   };
 }
 
