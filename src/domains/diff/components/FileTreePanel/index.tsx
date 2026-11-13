@@ -1,3 +1,8 @@
+import {
+  FileTree as FileTreeModel,
+  FILE_TREE_UNSAFE_CSS_ATTRIBUTE,
+  type FileTreeRowDecorationContext,
+} from '@pierre/trees';
 import { FileTree, useFileTree, useFileTreeSearch } from '@pierre/trees/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -16,6 +21,29 @@ import { FileTreeSearchHeader } from './components/FileTreeSearchHeader';
 
 const TREE_INITIAL_VISIBLE_ROW_COUNT = 50;
 const TREE_OVERSCAN = 8;
+
+/** Mirrors @pierre/trees wrapUnsafeCSS — not exported from the package entry. */
+function wrapFileTreeUnsafeCss(unsafeCss: string): string {
+  return `@layer base, unsafe;\n@layer unsafe {\n  ${unsafeCss}\n}`;
+}
+
+function syncFileTreeUnsafeCss(model: FileTreeModel, unsafeCss: string): void {
+  const host = model.getFileTreeContainer();
+  const shadowRoot = host?.shadowRoot;
+  if (shadowRoot == null) {
+    return;
+  }
+
+  let style = shadowRoot.querySelector(`style[${FILE_TREE_UNSAFE_CSS_ATTRIBUTE}]`);
+  if (!(style instanceof HTMLStyleElement)) {
+    style = document.createElement('style');
+    style.setAttribute(FILE_TREE_UNSAFE_CSS_ATTRIBUTE, '');
+    shadowRoot.appendChild(style);
+  }
+
+  style.textContent = wrapFileTreeUnsafeCss(unsafeCss);
+  model.render({});
+}
 
 type FileTreePanelProps = {
   files: GitHubPullRequestFile[];
@@ -71,6 +99,10 @@ export function FileTreePanel({
     [onSelectPath],
   );
 
+  const renderRowDecoration = useCallback((context: FileTreeRowDecorationContext) => {
+    return annotationsByPathRef.current.get(context.item.path) ?? null;
+  }, []);
+
   const handleSearchQueryChange = useCallback((query: string) => {
     const shouldKeepFocus = document.activeElement === searchInputRef.current;
     setSearchQuery(query);
@@ -93,6 +125,7 @@ export function FileTreePanel({
     initialVisibleRowCount: TREE_INITIAL_VISIBLE_ROW_COUNT,
     overscan: TREE_OVERSCAN,
     onSelectionChange: handleSelectionChange,
+    renderRowDecoration,
     density: 'compact',
   });
 
@@ -139,9 +172,14 @@ export function FileTreePanel({
 
   useEffect(() => {
     selectedPathRef.current = selectedPath;
-    annotationsByPathRef.current = treeInput.annotationsByPath;
     syncExternalSelection();
-  }, [selectedPath, treeInput.annotationsByPath, syncExternalSelection]);
+  }, [selectedPath, syncExternalSelection]);
+
+  // Options are mount-frozen; keep decoration data/CSS in sync and repaint rows.
+  useEffect(() => {
+    annotationsByPathRef.current = treeInput.annotationsByPath;
+    syncFileTreeUnsafeCss(model, fileTreePanelCss);
+  }, [model, fileTreePanelCss, treeInput.annotationsByPath]);
 
   useEffect(() => {
     if (searchQuery) {

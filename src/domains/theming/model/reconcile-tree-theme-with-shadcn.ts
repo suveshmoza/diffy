@@ -14,6 +14,7 @@ const TREE_SHADCN_MAP: Array<{
   { treeKey: '--trees-theme-focus-ring', token: 'sidebarRing' },
   { treeKey: '--trees-theme-list-active-selection-fg', token: 'sidebarPrimaryForeground' },
   { treeKey: '--trees-theme-git-added-fg', token: 'primary' },
+  { treeKey: '--trees-theme-git-deleted-fg', token: 'destructive' },
 ];
 
 function isMissingTreeValue(value: string | undefined): boolean {

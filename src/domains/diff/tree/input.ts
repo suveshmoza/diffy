@@ -17,6 +17,14 @@ export type PreparedFileTreeInput = {
   preparedInput: FileTreePreparedInput;
 };
 
+type FileTreeRowDecorationTextPart = NonNullable<
+  Extract<FileTreeRowDecoration, { text: string }>['parts']
+>[number];
+
+/** Pierre tree status colors — resolve inside the FileTree shadow tree. */
+const ADDITION_COLOR = 'var(--trees-status-added)';
+const DELETION_COLOR = 'var(--trees-status-deleted)';
+
 const preparedInputCache = new Map<string, FileTreePreparedInput>();
 
 function getPathsSignature(paths: readonly string[]): string {
@@ -63,36 +71,47 @@ function formatFileTreeRowDecoration(
   file: GitHubPullRequestFile,
   reviewCommentCount: number,
 ): FileTreeRowDecoration {
-  const changeSummary = formatFileChangeAnnotation(file);
-  const changeTitle = `${file.changes.toLocaleString()} total changes: +${file.additions.toLocaleString()} / -${file.deletions.toLocaleString()}`;
+  const parts = formatFileChangeParts(file);
+  const text = parts.map((part) => part.text).join('');
+  const changeTitle = `${file.changes.toLocaleString()} total changes: +${file.additions.toLocaleString()} -${file.deletions.toLocaleString()}`;
 
   if (reviewCommentCount === 0) {
     return {
-      text: changeSummary,
+      text,
       title: changeTitle,
+      parts,
     };
   }
 
   return {
-    text: `${changeSummary} · `,
+    text,
     title: formatReviewCommentDecorationTitle(changeTitle, reviewCommentCount),
+    parts,
   };
 }
 
-function formatFileChangeAnnotation(file: GitHubPullRequestFile): string {
+function formatFileChangeParts(file: GitHubPullRequestFile): FileTreeRowDecorationTextPart[] {
   if (file.additions === 0 && file.deletions === 0) {
-    return file.changes > 0 ? file.changes.toLocaleString() : '0';
+    return [{ text: file.changes > 0 ? file.changes.toLocaleString() : '0' }];
   }
 
-  if (file.additions === 0) {
-    return `-${file.deletions.toLocaleString()}`;
+  const parts: FileTreeRowDecorationTextPart[] = [];
+
+  if (file.additions > 0) {
+    parts.push({
+      text: `+${file.additions.toLocaleString()}`,
+      color: ADDITION_COLOR,
+    });
   }
 
-  if (file.deletions === 0) {
-    return `+${file.additions.toLocaleString()}`;
+  if (file.deletions > 0) {
+    parts.push({
+      text: `-${file.deletions.toLocaleString()}`,
+      color: DELETION_COLOR,
+    });
   }
 
-  return `+${file.additions.toLocaleString()} / -${file.deletions.toLocaleString()}`;
+  return parts;
 }
 
 function toTreeGitStatus(

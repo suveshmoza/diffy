@@ -13,10 +13,11 @@ export const FILE_TREE_COMMENT_BADGE_CSS = `
   align-items: center;
 }
 
-[data-item-section="decoration"] > span[title*="${FILE_TREE_REVIEW_COMMENT_TITLE_MARKER}"] {
+[data-item-section="decoration"] > span {
   align-items: center;
   display: inline-flex;
-  gap: 3px;
+  font-variant-numeric: tabular-nums;
+  gap: 4px;
   line-height: 1;
   white-space: nowrap;
 }
