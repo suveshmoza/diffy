@@ -37,11 +37,12 @@ Powered by Pierre [Trees](https://trees.software) and [Diffs](https://diffs.com)
 - **Searchable file tree** — jump to any file; resize the sidebar and keep the width
 - **Inline comments & batch reviews** — queue comments and publish from the review dock
 - **Viewed-file tracking** — mark files as read and see review progress
+- **New & classic PR pages** — View Diff works on GitHub’s Overview and Conversation layouts
 - **Split or unified layout** — plus themes, custom fonts, image diffs, and open-in-tab
 
 ## Quick start
 
-1. Open a PR on GitHub → **View Diff** (or right-click a PR link → **Open in diffy**).
+1. Open a PR on GitHub → **View Diff** next to Files changed (or right-click a PR link → **Open in diffy**).
 2. Scroll the diff and use the file tree to jump around.
 3. Comment on lines, then publish from the review dock when ready.
 

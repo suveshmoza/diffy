@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.6.0
+
+### Features
+
+- Show View Diff on GitHub’s new PR Overview page, next to Files changed (#31)
+- Style review comments like GitHub markdown, with syntax-highlighted code permalinks
+- Show themed `+`/`−` line counts and review comment badges on file tree rows
+- Keep unsupported binary files collapsed by default in the code view
+
+### Fixes
+
+- Stop the diff view from flashing empty when comments change on large PRs
+- Skip the Shiki worker pool when `@pierre/highlights` runs on the main thread
+- Wait for the code view to have height before measuring layout
+- Cancel outdated async effects when the overlay remounts
+
+### Chores & Refactoring
+
+- Split the app into `src/app`, `src/domains`, and `src/shared`
+- Keep only allowlisted themes and languages in the zip
+- Remove the `@pierre/trees` patch and bump dependencies
+- Add import boundary checks for domain cycles
+
 ## v1.5.0
 
 ### Features

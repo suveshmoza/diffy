@@ -62,7 +62,7 @@ export default defineConfig({
       : undefined,
   },
   manifest: {
-    version: '1.5.0',
+    version: '1.6.0',
     name: 'diffy',
     description: 'Browser extension for reviewing large PRs on GitHub',
     permissions: ['storage', 'contextMenus'],
